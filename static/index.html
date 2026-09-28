@@ -491,6 +491,32 @@
     overflow-wrap: anywhere;
   }
 
+  .result-breadcrumb {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 3px 0 4px;
+  }
+
+  .breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  .breadcrumb-link {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--font-body);
+    color: var(--accent-strong);
+    font-size: 13px;
+  }
+  .breadcrumb-link:hover { text-decoration: underline; }
+  .breadcrumb-sep, .breadcrumb-ellipsis { color: var(--muted); }
+
   .pager-row { display: flex; gap: 8px; margin-top: 14px; }
   .pager-btn {
     font-family: var(--font-mono);
@@ -1567,11 +1593,92 @@
     renderCardGroup(wrap, groups[key], 0);
   }
 
+  // ---------- Hierarchy breadcrumbs ----------
+  // findingaid-etl's nested archive components and Dataverse's datasets-in-
+  // a-catalog are both real sdo:isPartOf chains, just of different depths.
+  // Walk them generically rather than special-casing either shape: resolve
+  // one "hop" for every still-active chain at once (a breadth-first sweep,
+  // not one query per item), so a whole page of results costs at most a
+  // handful of round trips no matter how many cards need a breadcrumb.
+
+  // sdo:Dataset deliberately isn't here: a Dataverse dataset can belong to
+  // several catalogs at once via sdo:includedInDataCatalog (a many-to-many
+  // membership, not a single-parent chain) -- confirmed on real data, one
+  // dataset filed under 3 catalogs simultaneously. A breadcrumb would have
+  // to arbitrarily pick one; the existing "In catalog" field already lists
+  // all of them correctly.
+  var HIERARCHICAL_TYPES = { "sdo:ArchiveComponent": true, "rico:RecordSet": true };
+
+  function fetchAncestorChains(uris) {
+    var chains = {};
+    var frontier = {};
+    uris.forEach(function (u) { chains[u] = []; frontier[u] = u; });
+
+    function step(hopsLeft) {
+      var tips = Object.keys(frontier).map(function (k) { return frontier[k]; });
+      var uniqueTips = tips.filter(function (v, i) { return tips.indexOf(v) === i; });
+      if (!uniqueTips.length || hopsLeft <= 0) return Promise.resolve(chains);
+
+      var values = uniqueTips.map(iriRef).join(" ");
+      var q = "SELECT ?child ?parent (SAMPLE(?lbl) AS ?label) WHERE {\n" +
+        "  VALUES ?child { " + values + " }\n" +
+        "  { ?child <http://schema.org/isPartOf> ?parent } UNION { ?child <https://schema.org/isPartOf> ?parent }\n" +
+        "  OPTIONAL { ?parent <http://schema.org/name> ?n1 }\n" +
+        "  OPTIONAL { ?parent <https://schema.org/name> ?n2 }\n" +
+        "  OPTIONAL { ?parent <http://www.w3.org/2000/01/rdf-schema#label> ?n3 }\n" +
+        "  BIND(COALESCE(?n1, ?n2, ?n3) AS ?lbl)\n" +
+        "} GROUP BY ?child ?parent";
+
+      return sparql(q).then(function (rows) {
+        var byChild = {};
+        rows.forEach(function (r) { if (!byChild[r.child.value]) byChild[r.child.value] = { parent: r.parent.value, label: r.label ? r.label.value : null }; });
+        var advanced = false;
+        Object.keys(frontier).forEach(function (orig) {
+          var tip = frontier[orig];
+          var info = byChild[tip];
+          if (!info) { delete frontier[orig]; return; }
+          // Stop at a pipeline's own NDE dataset-registration node
+          // (dataset:biblio etc.) -- that's plumbing, not a conceptual
+          // ancestor a reader would recognize.
+          if ((curie(info.parent) || "").indexOf("dataset:") === 0) { delete frontier[orig]; return; }
+          chains[orig].unshift({ uri: info.parent, label: info.label || shortLabel(info.parent) });
+          frontier[orig] = info.parent;
+          advanced = true;
+        });
+        return advanced ? step(hopsLeft - 1) : chains;
+      }).catch(function () { return chains; });
+    }
+
+    return step(15);
+  }
+
+  function truncateChain(chain) {
+    if (chain.length <= 4) return chain;
+    return [chain[0], { uri: null, label: "…" }, chain[chain.length - 2], chain[chain.length - 1]];
+  }
+
+  function breadcrumbEl(chain, className) {
+    var nav = el("div", { class: className });
+    truncateChain(chain).forEach(function (node, i) {
+      if (i > 0) nav.appendChild(el("span", { class: "breadcrumb-sep", text: "›" }));
+      if (!node.uri) { nav.appendChild(el("span", { class: "breadcrumb-ellipsis", text: node.label })); return; }
+      var seg = el("button", { class: "breadcrumb-link", text: node.label });
+      seg.addEventListener("click", function (e) { e.stopPropagation(); navigate(node.uri, { label: node.label }); });
+      nav.appendChild(seg);
+    });
+    return nav;
+  }
+
+  function textBreadcrumb(chain) {
+    return truncateChain(chain).map(function (n) { return n.label; }).join(" › ");
+  }
+
   function renderCardGroup(container, items, shown) {
     while (container.children.length > 0) {
       container.removeChild(container.lastChild);
     }
     var page = items.slice(0, shown + PAGE_SIZE);
+    var cardByUri = {};
     page.forEach(function (it) {
       var card = el("button", { class: "result-card" });
       card.appendChild(el("div", { class: "result-label", text: it.label }));
@@ -1581,7 +1688,26 @@
       card.appendChild(meta);
       card.addEventListener("click", function () { navigate(it.uri, { label: it.label }); });
       container.appendChild(card);
+      if (HIERARCHICAL_TYPES[it.typeCurie]) cardByUri[it.uri] = card;
     });
+
+    // Where it sits in the hierarchy (collection > series > ... for archive
+    // components, catalog for datasets) -- read-only text here, since these
+    // cards are themselves clickable buttons and a button can't nest
+    // another one; the full clickable trail is one click away, on the
+    // record page.
+    var hierarchyUris = Object.keys(cardByUri);
+    if (hierarchyUris.length) {
+      fetchAncestorChains(hierarchyUris).then(function (chains) {
+        hierarchyUris.forEach(function (u) {
+          if (!chains[u] || !chains[u].length) return;
+          var card = cardByUri[u];
+          if (!card || !card.isConnected) return;
+          var label = card.querySelector(".result-label");
+          label.insertAdjacentElement("afterend", el("div", { class: "result-breadcrumb", text: textBreadcrumb(chains[u]) }));
+        });
+      });
+    }
     if (page.length < items.length) {
       var pager = el("div", { class: "pager-row" });
       var btn = el("button", { class: "pager-btn", text: "Show " + Math.min(PAGE_SIZE, items.length - page.length) + " more" });
@@ -1759,6 +1885,15 @@
     pushTrail(uri, label);
 
     var header = el("div", { class: "record-header" });
+    var breadcrumbHolder = el("div", {});
+    header.appendChild(breadcrumbHolder);
+    if (view && HIERARCHICAL_TYPES[view.type]) {
+      fetchAncestorChains([uri]).then(function (chains) {
+        if (currentUri !== uri) return; // navigated elsewhere while this was in flight
+        var chain = chains[uri];
+        if (chain && chain.length) breadcrumbHolder.appendChild(breadcrumbEl(chain, "breadcrumb"));
+      });
+    }
     var eyebrow = el("div", { class: "record-eyebrow" });
     if (view) {
       var kindPill = el("span", { class: "view-kind-pill" });
