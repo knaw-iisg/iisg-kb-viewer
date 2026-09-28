@@ -121,6 +121,7 @@
     font-weight: 600;
     font-size: 19px;
     letter-spacing: -0.01em;
+    cursor: pointer;
   }
 
   .brand-sub {
@@ -195,6 +196,45 @@
     justify-content: space-between;
   }
 
+  .rail-graphs {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .rail-graph-btn {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+    padding: 6px 9px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  .rail-graph-btn:hover { background: var(--surface); }
+  .rail-graph-btn .dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-right: 7px;
+    flex-shrink: 0;
+  }
+  .rail-graph-btn .n {
+    font-family: var(--font-mono);
+    color: var(--muted);
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+
   .trail-list {
     list-style: none;
     padding: 0;
@@ -249,15 +289,14 @@
 
   .main {
     padding: 34px 40px 60px;
-    max-width: 920px;
+    max-width: 960px;
   }
 
-  .empty-state {
-    margin-top: 10vh;
-    max-width: 520px;
+  .empty-state, .home-dash {
+    max-width: 720px;
   }
 
-  .empty-state h1 {
+  .empty-state h1, .home-dash h1 {
     font-family: var(--font-display);
     font-weight: 600;
     font-size: 30px;
@@ -265,7 +304,7 @@
     text-wrap: balance;
   }
 
-  .empty-state p {
+  .empty-state p, .home-dash > p {
     color: var(--ink-soft);
     margin: 0 0 8px;
   }
@@ -314,6 +353,60 @@
     flex-shrink: 0;
   }
 
+  /* ---------- Home dashboard ---------- */
+
+  .dash-section { margin: 26px 0 32px; }
+  .dash-heading {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0 0 12px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .dash-heading span { color: var(--ink-soft); font-family: var(--font-body); text-transform: none; letter-spacing: 0; font-size: 11.5px; }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  .stat-tile {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--font-body);
+    color: var(--ink);
+  }
+  .stat-tile:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+  .stat-tile .n {
+    font-family: var(--font-mono);
+    font-size: 19px;
+    font-weight: 600;
+    display: block;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-tile .lbl { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; display: flex; align-items: center; gap: 5px; }
+  .stat-tile .sub {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+  }
+  .stat-tile .sub .dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; flex-shrink: 0;
+  }
+  .dash-loading { color: var(--muted); font-size: 13px; font-style: italic; }
+
   /* results list */
 
   .results-heading {
@@ -323,6 +416,10 @@
     letter-spacing: 0.06em;
     color: var(--muted);
     margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
   }
 
   .result-card {
@@ -358,9 +455,34 @@
     font-size: 11px;
     background: var(--accent-soft);
     color: var(--accent-strong);
-    padding: 2px 8px;
+    padding: 3px 8px 3px 6px;
     border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
+  .type-icon { display: inline-flex; flex-shrink: 0; }
+
+  .file-thumb {
+    max-width: 220px;
+    max-height: 140px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    display: block;
+    margin-bottom: 14px;
+    object-fit: contain;
+    background: var(--surface-alt);
+  }
+  .result-thumb {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  .result-card-row { display: flex; gap: 12px; align-items: center; }
+  .result-card-row .result-body { min-width: 0; flex: 1; }
 
   .uri-sub {
     font-family: var(--font-mono);
@@ -368,6 +490,20 @@
     color: var(--muted);
     overflow-wrap: anywhere;
   }
+
+  .pager-row { display: flex; gap: 8px; margin-top: 14px; }
+  .pager-btn {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    background: none;
+    border: 1px dashed var(--line);
+    color: var(--accent-strong);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .pager-btn:hover { border-color: var(--accent); }
+  .pager-btn:disabled { opacity: 0.4; cursor: default; }
 
   /* record view */
 
@@ -377,7 +513,7 @@
     border-radius: 12px;
     padding: 22px 24px;
     box-shadow: var(--shadow);
-    margin-bottom: 26px;
+    margin-bottom: 22px;
   }
 
   .record-eyebrow {
@@ -385,6 +521,18 @@
     gap: 8px;
     flex-wrap: wrap;
     margin-bottom: 10px;
+    align-items: center;
+  }
+  .view-kind-pill {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--accent-strong);
+    color: var(--surface);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px 3px 7px;
+    border-radius: 20px;
   }
 
   .record-title {
@@ -427,6 +575,7 @@
     color: var(--ink-soft);
     padding: 3px 9px;
     border-radius: 20px;
+    cursor: pointer;
   }
   .source-chip b { color: var(--ink); font-weight: 600; }
 
@@ -448,6 +597,91 @@
     color: var(--ink);
     font-weight: 600;
   }
+
+  /* ---------- Type-specific hero facts ---------- */
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+
+  .hero-group {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 14px;
+  }
+  .hero-group h3 {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0 0 7px;
+  }
+  .hero-fact-val {
+    font-size: 13.5px;
+    margin-bottom: 3px;
+    overflow-wrap: anywhere;
+  }
+  .hero-fact-val:last-child { margin-bottom: 0; }
+  button.hero-link {
+    background: none; border: none; padding: 0; cursor: pointer;
+    font-family: var(--font-body); color: var(--accent-strong); font-size: 13.5px;
+    text-align: left; font-weight: 500;
+  }
+  button.hero-link:hover { text-decoration: underline; }
+  .hero-ext { color: var(--muted); text-decoration: none; margin-left: 4px; }
+  .hero-ext:hover { color: var(--accent); }
+
+  .hero-textblocks { margin: 18px 0 22px; display: flex; flex-direction: column; gap: 14px; }
+  .hero-textblock h3 {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0 0 6px;
+  }
+  .hero-textblock p {
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin: 0;
+    white-space: pre-wrap;
+    max-width: 74ch;
+  }
+
+  .download-btn {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    background: var(--accent);
+    color: var(--surface);
+    padding: 9px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin-bottom: 18px;
+  }
+  .download-btn:hover { background: var(--accent-strong); }
+
+  .details-toggle {
+    margin-top: 6px;
+  }
+  .details-toggle > summary {
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    padding: 10px 0;
+    list-style: none;
+  }
+  .details-toggle > summary::-webkit-details-marker { display: none; }
+  .details-toggle > summary::before { content: "\25B8  "; }
+  .details-toggle[open] > summary::before { content: "\25BE  "; }
 
   .columns {
     display: grid;
@@ -608,16 +842,21 @@
 <div class="app">
   <aside class="rail">
     <div class="brand">
-      <span class="brand-mark">IISG Knowledge Base Explorer</span>
+      <span class="brand-mark" id="brand-home" title="Home">IISG Knowledge Base Explorer</span>
     </div>
     <div class="brand-sub">IISH knowledge graph</div>
 
     <div class="search-box">
       <label for="search-input">Search the graph</label>
       <div class="search-input-wrap">
-        <input id="search-input" type="text" placeholder="A person, union, place…" autocomplete="off" spellcheck="false" />
+        <input id="search-input" type="text" placeholder="A person, union, place, book…" autocomplete="off" spellcheck="false" />
         <div class="search-spinner" id="search-spinner"></div>
       </div>
+    </div>
+
+    <div class="rail-section">
+      <div class="rail-heading"><span>Pipelines</span></div>
+      <ul class="rail-graphs" id="rail-graphs"><li class="rail-empty">Loading…</li></ul>
     </div>
 
     <div class="rail-section" style="flex: 1;">
@@ -625,9 +864,9 @@
       <ul class="trail-list" id="trail-list"></ul>
     </div>
 
-    <div class="rail-endpoint">
+    <div class="rail-endpoint" id="rail-endpoint">
       Live SPARQL query against<br />
-      <a href="https://druid.datalegend.net/IISG/iisg-kg" target="_blank" rel="noopener">druid.datalegend.net/IISG/iisg-kg</a>
+      <a id="rail-endpoint-link" href="#" target="_blank" rel="noopener"></a>
     </div>
   </aside>
 
@@ -638,38 +877,266 @@
 (function () {
   "use strict";
 
-  var ENDPOINT = "https://api.druid.datalegend.net/datasets/IISG/iisg-kg/services/iisg-kg/sparql";
+  // The endpoint defaults to the local QLever instance loaded by the
+  // `triplestore` repo (biblio-etl, archive-etl, findingaid-etl,
+  // authorities-etl, dataverse-etl, each in its own named graph). Override
+  // with ?endpoint=http://host:port for a differently-hosted store.
+  var params = new URLSearchParams(location.search);
+  var ENDPOINT = params.get("endpoint") || "http://localhost:7878";
   var PAGE_SIZE = 20;
 
   var PREFIXES = {
-    "https://schema.org/": "schema",
+    "http://schema.org/": "sdo",
+    "https://schema.org/": "sdo",
     "http://www.w3.org/1999/02/22-rdf-syntax-ns#": "rdf",
     "http://www.w3.org/2000/01/rdf-schema#": "rdfs",
     "http://www.w3.org/2002/07/owl#": "owl",
     "http://www.w3.org/2001/XMLSchema#": "xsd",
     "http://xmlns.com/foaf/0.1/": "foaf",
     "http://purl.org/dc/terms/": "dcterms",
+    "http://purl.org/dc/dcmitype/": "dcmitype",
     "http://www.w3.org/2004/02/skos/core#": "skos",
+    "https://iisg.amsterdam/vocab/": "iisgv",
     "https://iisg.amsterdam/authority/person/": "person",
-    "https://iisg.amsterdam/id/item/": "item",
-    "https://triplydb.com/graph/": "graph",
-    "http://id.loc.gov/vocabulary/relators/": "relator",
+    "https://iisg.amsterdam/authority/organization/": "organization",
+    "https://iisg.amsterdam/authority/place/": "place",
+    "https://iisg.amsterdam/authority/topic/": "topic",
+    "https://iisg.amsterdam/authority/period/": "period",
+    "https://iisg.amsterdam/authority/form/": "form",
     "https://iisg.amsterdam/authority/title/": "title",
+    "https://iisg.amsterdam/authority/event/": "event",
+    "https://iisg.amsterdam/id/item/": "item",
+    "https://iisg.amsterdam/id/dataset/": "dataset",
+    "https://iisg.amsterdam/id/collection/": "collection",
+    "https://iisg.amsterdam/graph/": "graph",
     "https://iisg.amsterdam/marc/": "marc",
+    "https://iisg.amsterdam/relators/": "iisg-relator",
+    "http://id.loc.gov/vocabulary/relators/": "relator",
+    "http://id.loc.gov/vocabulary/iso639-2/": "iso6392",
+    "http://lexvo.org/id/iso639-3/": "lexvo",
     "https://www.ica.org/standards/RiC/ontology#": "rico",
-    "https://triplydb.com/.well-known/genid/": "skolem",
-    "https://triplydb.com/model/con/": "con",
-    "https://triplydb.com/model/def/": "def",
-    "https://triplydb.com/id/": "id",
-    "https://triplydb.com/model/scheme/": "scheme",
-    "https://triplydb.com/model/shp/": "shp"
+    "http://rdf-vocabulary.ddialliance.org/discovery#": "discovery",
+    "https://triplydb.com/graph/": "tgraph",
+    "https://triplydb.com/.well-known/genid/": "skolem"
   };
-  var LOCAL_HOSTS = ["iisg.amsterdam", "triplydb.com", "druid.datalegend.net"];
+  var LOCAL_HOSTS = ["iisg.amsterdam"];
 
-  var LABEL_PREDICATES = [
-    "https://schema.org/name",
-    "http://www.w3.org/2000/01/rdf-schema#label"
+  var GRAPHS = [
+    { iri: "https://iisg.amsterdam/graph/biblio", label: "Biblio", sub: "biblio-etl · library catalogue", color: "#406e8c" },
+    { iri: "https://iisg.amsterdam/graph/archive", label: "Archives", sub: "archive-etl · archival collections", color: "#8c5b40" },
+    { iri: "https://iisg.amsterdam/graph/findingaid", label: "Finding aids", sub: "findingaid-etl · EAD hierarchies", color: "#5b8c40" },
+    { iri: "https://iisg.amsterdam/graph/authority", label: "Authorities", sub: "authorities-etl · people, places, terms", color: "#7c5ba0" },
+    { iri: "https://iisg.amsterdam/graph/dataverse", label: "Dataverse", sub: "dataverse-etl · research datasets", color: "#a06b3a" }
   ];
+
+  var RELATOR_LABELS = {
+    cre: "Creator", aut: "Author", edt: "Editor", col: "Collector",
+    pht: "Photographer", drm: "Draftsman", art: "Artist", ill: "Illustrator",
+    trn: "Translator", com: "Compiler", car: "Cartographer", mus: "Musician",
+    cur: "Curator", orm: "Organizer", res: "Researcher", dis: "Dissertant",
+    aft: "Author of afterword", cor: "Collection registrar", corr: "Corrector",
+    ivr: "Interviewer", edc: "Editor of compilation", copr: "Copyright holder",
+    ver: "Voice actor", dsr: "Distributor", painter: "Painter"
+  };
+
+  // ---------- Icons ----------
+  // Small hand-drawn (not copy-pasted) 24x24 stroke icons, one per type
+  // family, so a cluster of search/browse results reads at a glance instead
+  // of as a wall of identical pills.
+
+  var ICONS = {
+    "sdo:Book": '<path d="M4 4.5C4 3.7 4.7 3 5.5 3H11V19H5.5C4.7 19 4 19.7 4 20.5V4.5Z"/><path d="M20 4.5C20 3.7 19.3 3 18.5 3H13V19H18.5C19.3 19 20 19.7 20 20.5V4.5Z"/>',
+    "sdo:Article": '<path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>',
+    "sdo:ImageObject": '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5-4 4-3-3-6 6"/>',
+    "sdo:AudioObject": '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    "sdo:MusicRecording": '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    "sdo:VideoObject": '<rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3Z"/>',
+    "dcmitype:PhysicalObject": '<path d="M12 2 3 7v10l9 5 9-5V7Z"/><path d="M3 7l9 5 9-5"/><path d="M12 22V12"/>',
+    "sdo:ArchiveComponent": '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><line x1="10" y1="13" x2="14" y2="13"/>',
+    "rico:RecordSet": '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><line x1="10" y1="13" x2="14" y2="13"/>',
+    "sdo:Dataset": '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+    "sdo:DataDownload": '<path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v6h6"/><path d="M12 11v6"/><path d="M9 14.5 12 17.5 15 14.5"/>',
+    "sdo:DataCatalog": '<path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+    "sdo:Person": '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>',
+    "sdo:Organization": '<rect x="4" y="3" width="10" height="18"/><rect x="14" y="9" width="6" height="12"/><line x1="7" y1="7" x2="7" y2="7.01"/><line x1="11" y1="7" x2="11" y2="7.01"/><line x1="7" y1="11" x2="7" y2="11.01"/><line x1="11" y1="11" x2="11" y2="11.01"/><line x1="7" y1="15" x2="7" y2="15.01"/>',
+    "sdo:Place": '<path d="M12 22s7-7.4 7-12a7 7 0 1 0-14 0c0 4.6 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/>',
+    "sdo:Event": '<rect x="3" y="4" width="18" height="17" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    "sdo:DefinedTerm": '<path d="M2 12 12 2h8v8L10 20a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8Z"/><circle cx="15.5" cy="7.5" r="1.6"/>',
+    "sdo:CreativeWorkSeries": '<path d="M12 2 2 7l10 5 10-5Z"/><path d="M2 12l10 5 10-5"/><path d="M2 17l10 5 10-5"/>',
+    "sdo:ContactPoint": '<path d="M4 4h16v13H8l-4 4Z"/>'
+  };
+  var ICON_FALLBACK = '<circle cx="12" cy="12" r="8"/>';
+
+  function iconSpan(typeCurie) {
+    var inner = ICONS[typeCurie] || ICON_FALLBACK;
+    var span = document.createElement("span");
+    span.className = "type-icon";
+    span.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+    return span;
+  }
+
+  function typePillEl(typeCurie, displayText) {
+    var pill = el("span", { class: "type-pill" });
+    pill.appendChild(iconSpan(typeCurie));
+    pill.appendChild(document.createTextNode(displayText || typeCurie));
+    return pill;
+  }
+
+  // ---------- Type-specific views ----------
+  // One flat list per view: predicate curie -> heading -> how to render it.
+  // Rows with no data for this entity are simply skipped, so archive-etl's
+  // flat records and findingaid-etl's much richer hierarchy share one
+  // "archive" view without either looking sparse or overcrowded.
+
+  var BOOK_FIELDS = [
+    { pred: "sdo:creator", heading: "Creator", kind: "link" },
+    { pred: "relator:cre", heading: "Creator", kind: "link" },
+    { pred: "relator:aut", heading: "Author", kind: "link" },
+    { pred: "relator:edt", heading: "Editor", kind: "link" },
+    { pred: "relator:col", heading: "Collector", kind: "link" },
+    { pred: "relator:pht", heading: "Photographer", kind: "link" },
+    { pred: "relator:art", heading: "Artist", kind: "link" },
+    { pred: "relator:drm", heading: "Draftsman", kind: "link" },
+    { pred: "relator:ill", heading: "Illustrator", kind: "link" },
+    { pred: "relator:trn", heading: "Translator", kind: "link" },
+    { pred: "relator:com", heading: "Compiler", kind: "link" },
+    { pred: "relator:car", heading: "Cartographer", kind: "link" },
+    { pred: "relator:mus", heading: "Musician", kind: "link" },
+    { pred: "relator:cur", heading: "Curator", kind: "link" },
+    { pred: "relator:orm", heading: "Organizer", kind: "link" },
+    { pred: "relator:res", heading: "Researcher", kind: "link" },
+    { pred: "relator:dis", heading: "Dissertant", kind: "link" },
+    { pred: "relator:aft", heading: "Author of afterword", kind: "link" },
+    { pred: "relator:cor", heading: "Collection registrar", kind: "link" },
+    { pred: "relator:corr", heading: "Corrector", kind: "link" },
+    { pred: "relator:ivr", heading: "Interviewer", kind: "link" },
+    { pred: "relator:edc", heading: "Editor of compilation", kind: "link" },
+    { pred: "relator:copr", heading: "Copyright holder", kind: "link" },
+    { pred: "relator:ver", heading: "Voice actor", kind: "link" },
+    { pred: "relator:dsr", heading: "Distributor", kind: "link" },
+    { pred: "iisg-relator:painter", heading: "Painter", kind: "link" },
+    { pred: "iisgv:dateOfPublication", heading: "Date published", kind: "literal" },
+    { pred: "sdo:datePublished", heading: "Date published", kind: "literal" },
+    { pred: "iisgv:placeOfPublication", heading: "Place of publication", kind: "literal" },
+    { pred: "iisgv:publisher", heading: "Publisher", kind: "literal" },
+    { pred: "iisgv:seriesTitle", heading: "Series", kind: "link" },
+    { pred: "iisgv:seriesVolume", heading: "Volume", kind: "literal" },
+    { pred: "iisgv:physicalDescription", heading: "Physical description", kind: "literal" },
+    { pred: "iisgv:numberOfPages", heading: "Pages", kind: "literal" },
+    { pred: "iisgv:size", heading: "Size", kind: "literal" },
+    { pred: "iisgv:manufacturer", heading: "Manufacturer", kind: "literal" },
+    { pred: "iisgv:placeOfManufacture", heading: "Place of manufacture", kind: "literal" },
+    { pred: "iisgv:dateOfManufacture", heading: "Date of manufacture", kind: "literal" },
+    { pred: "sdo:about", heading: "About", kind: "link" },
+    { pred: "iisgv:topic", heading: "Topic", kind: "link" },
+    { pred: "iisgv:form", heading: "Form / genre", kind: "link" },
+    { pred: "iisgv:period", heading: "Period", kind: "link" },
+    { pred: "sdo:alternateName", heading: "Also known as", kind: "literal" },
+    { pred: "sdo:inLanguage", heading: "Language", kind: "link" },
+    { pred: "owl:sameAs", heading: "Same as", kind: "extlink" }
+  ];
+
+  var ARCHIVE_FIELDS = [
+    { pred: "sdo:isPartOf", heading: "Part of", kind: "link" },
+    { pred: "sdo:position", heading: "Position in hierarchy", kind: "literal" },
+    { pred: "sdo:identifier", heading: "Identifier", kind: "literal" },
+    { pred: "marc:001---", heading: "Record ID", kind: "literal" },
+    { pred: "sdo:additionalType", heading: "Type", kind: "auto" },
+    { pred: "sdo:temporalCoverage", heading: "Dates", kind: "literal" },
+    { pred: "iisgv:physicalDescription", heading: "Physical description", kind: "literal" },
+    { pred: "iisgv:location", heading: "Location", kind: "literal" },
+    { pred: "sdo:itemLocation", heading: "Item location", kind: "literal" },
+    { pred: "iisgv:access", heading: "Access", kind: "literal" },
+    { pred: "iisgv:accessRestriction", heading: "Access restriction", kind: "literal" },
+    { pred: "sdo:usageInfo", heading: "Usage", kind: "literal" },
+    { pred: "iisgv:arrangement", heading: "Arrangement", kind: "literal" },
+    { pred: "iisgv:preferCite", heading: "Preferred citation", kind: "literal" },
+    { pred: "iisgv:publisher", heading: "Publisher", kind: "literal" },
+    { pred: "sdo:creator", heading: "Creator", kind: "link" },
+    { pred: "sdo:about", heading: "About", kind: "link" },
+    { pred: "iisgv:topicalTerm", heading: "Subject", kind: "literal" },
+    { pred: "iisgv:country", heading: "Country", kind: "literal" },
+    { pred: "iisgv:seeAlso", heading: "See also", kind: "auto" },
+    { pred: "iisgv:locationOfOriginals", heading: "Location of originals", kind: "literal" },
+    { pred: "sdo:inLanguage", heading: "Language", kind: "link" }
+  ];
+
+  var DATASET_FIELDS = [
+    { pred: "sdo:creator", heading: "Creator", kind: "link" },
+    { pred: "sdo:affiliation", heading: "Affiliation", kind: "link" },
+    { pred: "sdo:publisher", heading: "Publisher", kind: "link" },
+    { pred: "sdo:contactPoint", heading: "Contact", kind: "link" },
+    { pred: "sdo:datePublished", heading: "Published", kind: "literal" },
+    { pred: "sdo:dateCreated", heading: "Created", kind: "literal" },
+    { pred: "sdo:dateModified", heading: "Modified", kind: "literal" },
+    { pred: "sdo:identifier", heading: "Identifier", kind: "literal" },
+    { pred: "sdo:version", heading: "Version", kind: "literal" },
+    { pred: "sdo:license", heading: "License", kind: "auto" },
+    { pred: "sdo:isAccessibleForFree", heading: "Free access", kind: "literal" },
+    { pred: "sdo:temporalCoverage", heading: "Time period", kind: "literal" },
+    { pred: "sdo:spatialCoverage", heading: "Place", kind: "link" },
+    { pred: "discovery:kindOfData", heading: "Kind of data", kind: "literal" },
+    { pred: "discovery:subtitle", heading: "Subtitle", kind: "literal" },
+    { pred: "sdo:keywords", heading: "Keywords", kind: "literal" },
+    { pred: "sdo:citation", heading: "Citation", kind: "literal" },
+    { pred: "sdo:includedInDataCatalog", heading: "In catalog", kind: "link" },
+    { pred: "sdo:isPartOf", heading: "Part of", kind: "link" },
+    { pred: "sdo:inLanguage", heading: "Language", kind: "auto" }
+  ];
+
+  var FILE_FIELDS = [
+    { pred: "sdo:encodingFormat", heading: "Format", kind: "literal" },
+    { pred: "sdo:contentSize", heading: "Size", kind: "literal" },
+    { pred: "iisgv:checksumAlgorithm", heading: "Checksum algorithm", kind: "literal" },
+    { pred: "iisgv:checksumValue", heading: "Checksum", kind: "literal" },
+    { pred: "sdo:isPartOf", heading: "Part of dataset", kind: "link" }
+  ];
+
+  var CATALOG_FIELDS = [
+    { pred: "sdo:publisher", heading: "Publisher", kind: "auto" }
+  ];
+
+  var AUTHORITY_FIELDS = [
+    { pred: "sdo:alternateName", heading: "Also known as", kind: "literal" },
+    { pred: "owl:sameAs", heading: "Same as", kind: "extlink" },
+    { pred: "sdo:email", heading: "Email", kind: "literal" },
+    { pred: "sdo:telephone", heading: "Telephone", kind: "literal" }
+  ];
+
+  var DESC_FIELDS = [
+    { pred: "sdo:description", heading: "Description" },
+    { pred: "sdo:abstract", heading: "Abstract" },
+    { pred: "iisgv:biography", heading: "Biography / history" }
+  ];
+
+  var LINKOUT_FIELDS = ["iisgv:nativeViewer", "sdo:contentUrl"];
+
+  // type curie (after PREFIXES normalization) -> view definition.
+  // Checked in this order; the first matching type on the entity wins.
+  var VIEW_DISPATCH = [
+    { type: "sdo:Book", kind: "Book", fields: BOOK_FIELDS },
+    { type: "sdo:ImageObject", kind: "Image", fields: BOOK_FIELDS },
+    { type: "sdo:AudioObject", kind: "Audio", fields: BOOK_FIELDS },
+    { type: "sdo:VideoObject", kind: "Video", fields: BOOK_FIELDS },
+    { type: "sdo:MusicRecording", kind: "Music recording", fields: BOOK_FIELDS },
+    { type: "sdo:Article", kind: "Article", fields: BOOK_FIELDS },
+    { type: "dcmitype:PhysicalObject", kind: "Physical object", fields: BOOK_FIELDS },
+    { type: "sdo:ArchiveComponent", kind: "Archive", fields: ARCHIVE_FIELDS },
+    { type: "rico:RecordSet", kind: "Archive", fields: ARCHIVE_FIELDS },
+    { type: "sdo:DataDownload", kind: "File", fields: FILE_FIELDS, linkOutPrimary: true },
+    { type: "sdo:DataCatalog", kind: "Catalog", fields: CATALOG_FIELDS },
+    { type: "sdo:Dataset", kind: "Dataset", fields: DATASET_FIELDS },
+    { type: "sdo:Person", kind: "Person", fields: AUTHORITY_FIELDS },
+    { type: "sdo:Organization", kind: "Organization", fields: AUTHORITY_FIELDS },
+    { type: "sdo:Place", kind: "Place", fields: AUTHORITY_FIELDS },
+    { type: "sdo:Event", kind: "Event", fields: AUTHORITY_FIELDS },
+    { type: "sdo:DefinedTerm", kind: "Term", fields: AUTHORITY_FIELDS },
+    { type: "sdo:CreativeWorkSeries", kind: "Series", fields: AUTHORITY_FIELDS },
+    { type: "sdo:ContactPoint", kind: "Contact", fields: AUTHORITY_FIELDS }
+  ];
+
+  var TYPE_TO_VIEW = {};
+  VIEW_DISPATCH.forEach(function (v) { TYPE_TO_VIEW[v.type] = v; });
 
   // ---------- SPARQL plumbing ----------
 
@@ -682,7 +1149,7 @@
       },
       body: "query=" + encodeURIComponent(query)
     }).then(function (res) {
-      if (!res.ok) throw new Error("Query failed (HTTP " + res.status + ")");
+      if (!res.ok) return res.text().then(function (t) { throw new Error("Query failed (HTTP " + res.status + "): " + t.slice(0, 200)); });
       return res.json();
     }).then(function (json) {
       return json.results.bindings;
@@ -726,6 +1193,20 @@
     return /^https?:\/\//i.test(uri);
   }
 
+  var XSD_ANYURI = "http://www.w3.org/2001/XMLSchema#anyURI";
+
+  // Several MARC-derived predicates (nativeViewer above all -- 1.3M+ of its
+  // 1.33M values) are asserted as xsd:anyURI-typed *literals* rather than
+  // real RDF URI nodes, so a plain `o.type === "uri"` check misses almost
+  // all of them. Treat any literal that's URI-typed or simply looks like an
+  // absolute http(s) URL as a link too, just not a graph node to navigate()
+  // into -- there's nothing in this store to browse at that address.
+  function literalUrl(o) {
+    if (o.type !== "literal") return null;
+    if (o.datatype === XSD_ANYURI || isSafeHref(o.value)) return o.value;
+    return null;
+  }
+
   function el(tag, attrs, children) {
     var node = document.createElement(tag);
     if (attrs) for (var k in attrs) {
@@ -739,6 +1220,13 @@
 
   function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
 
+  function graphInfo(iri) {
+    for (var i = 0; i < GRAPHS.length; i++) if (GRAPHS[i].iri === iri) return GRAPHS[i];
+    return { iri: iri, label: shortLabel(iri), sub: "", color: "#758790" };
+  }
+
+  function fmtNum(n) { return Number(n).toLocaleString("en-US"); }
+
   // ---------- App state ----------
 
   var trail = [];
@@ -746,8 +1234,13 @@
 
   var mainEl = document.getElementById("main");
   var trailListEl = document.getElementById("trail-list");
+  var railGraphsEl = document.getElementById("rail-graphs");
   var searchInput = document.getElementById("search-input");
   var searchSpinner = document.getElementById("search-spinner");
+
+  document.getElementById("rail-endpoint-link").textContent = ENDPOINT;
+  document.getElementById("rail-endpoint-link").href = ENDPOINT.replace(/^http/, "http") + "/";
+  document.getElementById("brand-home").addEventListener("click", function () { navigateHome(); });
 
   function pushTrail(uri, label) {
     trail = trail.filter(function (t) { return t.uri !== uri; });
@@ -783,25 +1276,59 @@
     loadEntity(uri);
   }
 
+  function navigateHome() {
+    currentUri = null;
+    searchInput.value = "";
+    history.pushState({}, "", location.pathname);
+    renderTrail();
+    renderHome();
+  }
+
   function syncFromHash() {
     var hashUri = decodeURIComponent(location.hash.replace(/^#/, ""));
     if (hashUri === currentUri) return;
     if (hashUri && /^https?:\/\//i.test(hashUri)) { currentUri = hashUri; loadEntity(hashUri); }
-    else renderEmptyState();
+    else { currentUri = null; renderTrail(); renderHome(); }
   }
 
   window.addEventListener("popstate", syncFromHash);
   window.addEventListener("hashchange", syncFromHash);
 
-  // ---------- Rendering: empty / error ----------
+  // ---------- Rendering: rail graph list ----------
 
-  function renderEmptyState() {
-    currentUri = null;
-    renderTrail();
+  function loadRailGraphs() {
+    sparql("SELECT ?g (COUNT(*) AS ?c) WHERE { GRAPH ?g { ?s ?p ?o } } GROUP BY ?g ORDER BY DESC(?c)").then(function (rows) {
+      clear(railGraphsEl);
+      rows.forEach(function (r) {
+        var info = graphInfo(r.g.value);
+        var li = document.createElement("li");
+        var btn = el("button", { class: "rail-graph-btn", title: info.sub });
+        var left = document.createElement("span");
+        var dot = document.createElement("span");
+        dot.className = "dot";
+        dot.style.background = info.color;
+        left.appendChild(dot);
+        left.appendChild(document.createTextNode(info.label));
+        btn.appendChild(left);
+        btn.appendChild(el("span", { class: "n", text: fmtNum(r.c.value) }));
+        btn.addEventListener("click", function () { browseGraph(info); });
+        li.appendChild(btn);
+        railGraphsEl.appendChild(li);
+      });
+    }).catch(function () {
+      clear(railGraphsEl);
+      railGraphsEl.appendChild(el("li", { class: "rail-empty", text: "Store unreachable." }));
+    });
+  }
+
+  // ---------- Rendering: home dashboard ----------
+
+  function renderHome() {
     clear(mainEl);
-    var wrap = el("div", { class: "empty-state" });
+    var wrap = el("div", { class: "home-dash" });
     wrap.appendChild(el("h1", { text: "Trace a record through the graph." }));
-    wrap.appendChild(el("p", { text: "Search for a person, trade union, place, archive or publication. This explorer shows everything the graph says about it, and everything that points back — grouped by predicate and by the source graph it came from." }));
+    wrap.appendChild(el("p", { text: "Five pipelines feed this graph \u2014 biblio-etl, archive-etl, findingaid-etl, authorities-etl and dataverse-etl \u2014 each asserting into its own named graph, but sharing IRIs wherever their records describe the same person, place, archive or topic. Search for something, or browse by type below." }));
+
     var ex = el("div", { class: "empty-examples" });
     ["dockworkers", "Rotterdam", "International Institute of Social History", "Jan Lucassen"].forEach(function (term) {
       var b = el("button", { class: "chip-btn", text: term });
@@ -809,8 +1336,62 @@
       ex.appendChild(b);
     });
     wrap.appendChild(ex);
+
+    var typeSection = el("div", { class: "dash-section" });
+    typeSection.appendChild(el("div", { class: "dash-heading", text: "Browse by kind of item" }));
+    var typeGrid = el("div", { class: "stat-grid" });
+    typeSection.appendChild(el("div", { class: "dash-loading", text: "Loading type counts\u2026" }));
+    typeSection.appendChild(typeGrid);
+    wrap.appendChild(typeSection);
+
     mainEl.appendChild(wrap);
+
+    sparql(
+      "SELECT ?g ?type (COUNT(*) AS ?c) WHERE {\n" +
+      "  GRAPH ?g { ?s a ?type }\n" +
+      "} GROUP BY ?g ?type"
+    ).then(function (rows) {
+      typeSection.removeChild(typeSection.querySelector(".dash-loading"));
+      var byType = {};
+      rows.forEach(function (r) {
+        var key = curie(r.type.value) || shortLabel(r.type.value);
+        if (!byType[key]) byType[key] = { key: key, uri: r.type.value, total: 0, graphs: {} };
+        byType[key].total += parseInt(r.c.value, 10);
+        byType[key].graphs[r.g.value] = (byType[key].graphs[r.g.value] || 0) + parseInt(r.c.value, 10);
+      });
+      var list = Object.keys(byType).map(function (k) { return byType[k]; });
+      list.sort(function (a, b) { return b.total - a.total; });
+      list.slice(0, 16).forEach(function (t) {
+        var mainGraph = Object.keys(t.graphs).sort(function (a, b) { return t.graphs[b] - t.graphs[a]; })[0];
+        var info = graphInfo(mainGraph);
+        var tile = el("button", { class: "stat-tile" });
+        tile.appendChild(el("span", { class: "n", text: fmtNum(t.total) }));
+        var lbl = el("span", { class: "lbl" });
+        lbl.appendChild(iconSpan(t.key));
+        lbl.appendChild(document.createTextNode(pluralType(t.key)));
+        tile.appendChild(lbl);
+        var sub = el("span", { class: "sub" });
+        var dot = document.createElement("span"); dot.className = "dot"; dot.style.background = info.color;
+        sub.appendChild(dot);
+        sub.appendChild(document.createTextNode(Object.keys(t.graphs).length > 1 ? Object.keys(t.graphs).length + " graphs" : info.label));
+        tile.appendChild(sub);
+        tile.addEventListener("click", function () { browseType(t.uri, t.key); });
+        typeGrid.appendChild(tile);
+      });
+    }).catch(function (err) {
+      typeSection.removeChild(typeSection.querySelector(".dash-loading"));
+      typeSection.appendChild(el("div", { class: "column-empty", text: "Couldn\u2019t load type counts: " + err.message }));
+    });
   }
+
+  function pluralType(curieStr) {
+    var name = curieStr.split(":").pop().replace(/([a-z])([A-Z])/g, "$1 $2");
+    var lower = name.toLowerCase();
+    if (/s$/.test(lower)) return name;
+    return name + "s";
+  }
+
+  function renderEmptyState() { renderHome(); }
 
   function renderError(message, retry) {
     var banner = el("div", { class: "error-banner" });
@@ -823,6 +1404,151 @@
     mainEl.insertBefore(banner, mainEl.firstChild);
   }
 
+  // ---------- Browse by graph / by type ----------
+
+  function browseGraph(info) {
+    currentUri = null;
+    renderTrail();
+    clear(mainEl);
+    mainEl.appendChild(el("div", { class: "results-heading", text: "Loading \u201c" + info.label + "\u201d\u2026" }));
+    var q = "PREFIX sdo: <http://schema.org/>\n" +
+      "SELECT ?s (SAMPLE(?lbl) AS ?label) (SAMPLE(?t) AS ?type) WHERE {\n" +
+      "  GRAPH " + iriRef(info.iri) + " { ?s a ?t }\n" +
+      "  OPTIONAL { GRAPH " + iriRef(info.iri) + " { ?s sdo:name ?n1 } }\n" +
+      "  OPTIONAL { GRAPH " + iriRef(info.iri) + " { ?s <https://schema.org/name> ?n2 } }\n" +
+      "  OPTIONAL { GRAPH " + iriRef(info.iri) + " { ?s <http://www.w3.org/2000/01/rdf-schema#label> ?n3 } }\n" +
+      "  BIND(COALESCE(?n1, ?n2, ?n3) AS ?lbl)\n" +
+      "} GROUP BY ?s ORDER BY ?s";
+    sparql(q).then(function (rows) {
+      var items = rows.map(function (r) {
+        var tc = r.type ? (curie(r.type.value) || shortLabel(r.type.value)) : null;
+        return { uri: r.s.value, label: r.label ? r.label.value : shortLabel(r.s.value), typeCurie: tc, extraPills: [] };
+      });
+      renderResultList("Browsing " + info.label, items);
+    }).catch(function (err) {
+      clear(mainEl);
+      renderError("Couldn\u2019t load list: " + err.message, function () { browseGraph(info); });
+    });
+  }
+
+  function browseType(typeUri, typeKey) {
+    currentUri = null;
+    renderTrail();
+    clear(mainEl);
+    var label = pluralType(typeKey);
+    mainEl.appendChild(el("div", { class: "results-heading", text: "Loading " + label.toLowerCase() + "\u2026" }));
+    var q = "SELECT ?s (SAMPLE(?lbl) AS ?label) (SAMPLE(?g) AS ?graph) WHERE {\n" +
+      "  GRAPH ?g { ?s a " + iriRef(typeUri) + " }\n" +
+      "  OPTIONAL { ?s <http://schema.org/name> ?n1 }\n" +
+      "  OPTIONAL { ?s <https://schema.org/name> ?n2 }\n" +
+      "  OPTIONAL { ?s <http://www.w3.org/2000/01/rdf-schema#label> ?n3 }\n" +
+      "  BIND(COALESCE(?n1, ?n2, ?n3) AS ?lbl)\n" +
+      "} GROUP BY ?s ORDER BY ?s";
+    sparql(q).then(function (rows) {
+      var items = rows.map(function (r) {
+        var g = r.graph ? graphInfo(r.graph.value).label : null;
+        return { uri: r.s.value, label: r.label ? r.label.value : shortLabel(r.s.value), typeCurie: typeKey, extraPills: g ? [g] : [] };
+      });
+      renderResultList(label, items);
+    }).catch(function (err) {
+      clear(mainEl);
+      renderError("Couldn\u2019t load list: " + err.message, function () { browseType(typeUri, typeKey); });
+    });
+  }
+
+  // ---------- Shared result rendering: cluster by type when the list is mixed ----------
+
+  function renderResultList(heading, items) {
+    clear(mainEl);
+    if (!items.length) {
+      mainEl.appendChild(el("div", { class: "results-heading", text: heading + " \u2014 no results" }));
+      return;
+    }
+
+    var groups = {}, order = [];
+    items.forEach(function (it) {
+      var key = it.typeCurie || "other";
+      if (!groups[key]) { groups[key] = []; order.push(key); }
+      groups[key].push(it);
+    });
+
+    if (order.length <= 1) {
+      mainEl.appendChild(el("div", { class: "results-heading", text: heading + " \u2014 " + fmtNum(items.length) + " total" }));
+      var wrap = el("div", { class: "cards-wrap" });
+      mainEl.appendChild(wrap);
+      renderCardGroup(wrap, items, 0);
+      return;
+    }
+
+    order.sort(function (a, b) { return groups[b].length - groups[a].length; });
+    if (order.indexOf("other") !== -1) { order = order.filter(function (k) { return k !== "other"; }); order.push("other"); }
+    renderResultTiles(heading, items, groups, order);
+  }
+
+  // Mixed-type result set: show one compact tile per type (like the home
+  // dashboard), and only expand to an actual card list once a tile is
+  // picked -- a long list of everything, split into headed clusters, still
+  // reads as one long list when most matches are one type buried under a
+  // dozen others.
+  function renderResultTiles(heading, items, groups, order) {
+    clear(mainEl);
+    mainEl.appendChild(el("div", { class: "results-heading", text: heading + " \u2014 " + fmtNum(items.length) + " total, " + order.length + " kinds" }));
+    var grid = el("div", { class: "stat-grid" });
+    order.forEach(function (key) {
+      var tile = el("button", { class: "stat-tile" });
+      tile.appendChild(el("span", { class: "n", text: fmtNum(groups[key].length) }));
+      var lbl = el("span", { class: "lbl" });
+      lbl.appendChild(iconSpan(key === "other" ? null : key));
+      lbl.appendChild(document.createTextNode(key === "other" ? "Other" : pluralType(key)));
+      tile.appendChild(lbl);
+      tile.addEventListener("click", function () { renderResultTypeDetail(heading, items, groups, order, key); });
+      grid.appendChild(tile);
+    });
+    mainEl.appendChild(grid);
+  }
+
+  function renderResultTypeDetail(heading, items, groups, order, key) {
+    clear(mainEl);
+    var top = el("div", { class: "results-heading" });
+    var left = el("span", { style: "display:flex; align-items:center; gap:10px;" });
+    var back = el("button", { class: "pager-btn", text: "\u2190 All kinds" });
+    back.addEventListener("click", function () { renderResultTiles(heading, items, groups, order); });
+    left.appendChild(back);
+    var titleWrap = el("span", { style: "display:flex; align-items:center; gap:6px;" });
+    titleWrap.appendChild(iconSpan(key === "other" ? null : key));
+    titleWrap.appendChild(document.createTextNode((key === "other" ? "Other" : pluralType(key)) + " \u2014 " + fmtNum(groups[key].length)));
+    left.appendChild(titleWrap);
+    top.appendChild(left);
+    mainEl.appendChild(top);
+    var wrap = el("div", { class: "cards-wrap" });
+    mainEl.appendChild(wrap);
+    renderCardGroup(wrap, groups[key], 0);
+  }
+
+  function renderCardGroup(container, items, shown) {
+    while (container.children.length > 0) {
+      container.removeChild(container.lastChild);
+    }
+    var page = items.slice(0, shown + PAGE_SIZE);
+    page.forEach(function (it) {
+      var card = el("button", { class: "result-card" });
+      card.appendChild(el("div", { class: "result-label", text: it.label }));
+      var meta = el("div", { class: "result-meta" });
+      (it.extraPills || []).slice(0, 3).forEach(function (t) { meta.appendChild(el("span", { class: "type-pill", text: t })); });
+      meta.appendChild(el("span", { class: "uri-sub", text: shortLabel(it.uri) }));
+      card.appendChild(meta);
+      card.addEventListener("click", function () { navigate(it.uri, { label: it.label }); });
+      container.appendChild(card);
+    });
+    if (page.length < items.length) {
+      var pager = el("div", { class: "pager-row" });
+      var btn = el("button", { class: "pager-btn", text: "Show " + Math.min(PAGE_SIZE, items.length - page.length) + " more" });
+      btn.addEventListener("click", function () { renderCardGroup(container, items, shown + PAGE_SIZE); });
+      pager.appendChild(btn);
+      container.appendChild(pager);
+    }
+  }
+
   // ---------- Search ----------
 
   var searchDebounce = null;
@@ -830,12 +1556,12 @@
   searchInput.addEventListener("input", function () {
     var term = searchInput.value.trim();
     clearTimeout(searchDebounce);
-    if (term.length < 2) { if (!term) renderEmptyState(); return; }
+    if (term.length < 2) { if (!term) renderHome(); return; }
     searchDebounce = setTimeout(function () { runSearch(term); }, 380);
   });
 
   searchInput.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") { searchInput.value = ""; renderEmptyState(); }
+    if (e.key === "Escape") { searchInput.value = ""; renderHome(); }
     if (e.key === "Enter") { clearTimeout(searchDebounce); runSearch(searchInput.value.trim()); }
   });
 
@@ -848,13 +1574,14 @@
     mainEl.appendChild(el("div", { class: "results-heading", text: "Searching for \u201c" + term + "\u201d\u2026" }));
 
     var esc = escLiteral(term.toLowerCase());
-    var q = "PREFIX schema: <https://schema.org/>\n" +
-      "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+    var q = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
       "SELECT DISTINCT ?s ?label ?type WHERE {\n" +
-      "  { ?s schema:name ?label } UNION { ?s rdfs:label ?label }\n" +
+      "  { ?s <http://schema.org/name> ?label }\n" +
+      "  UNION { ?s <https://schema.org/name> ?label }\n" +
+      "  UNION { ?s rdfs:label ?label }\n" +
       "  FILTER(CONTAINS(LCASE(STR(?label)), \"" + esc + "\"))\n" +
       "  OPTIONAL { ?s a ?type }\n" +
-      "} LIMIT 150";
+      "} LIMIT 300";
 
     sparql(q).then(function (rows) {
       searchSpinner.classList.remove("active");
@@ -866,6 +1593,13 @@
     });
   }
 
+  function primaryTypeCurie(typeCuries) {
+    for (var i = 0; i < VIEW_DISPATCH.length; i++) {
+      if (typeCuries.indexOf(VIEW_DISPATCH[i].type) !== -1) return VIEW_DISPATCH[i].type;
+    }
+    return typeCuries[0] || null;
+  }
+
   function renderSearchResults(term, rows) {
     clear(mainEl);
     var byUri = {};
@@ -873,7 +1607,7 @@
       var uri = r.s.value;
       if (!byUri[uri]) byUri[uri] = { uri: uri, label: r.label ? r.label.value : uri, types: [] };
       if (r.type) {
-        var t = shortLabel(r.type.value);
+        var t = curie(r.type.value) || shortLabel(r.type.value);
         if (byUri[uri].types.indexOf(t) === -1) byUri[uri].types.push(t);
       }
     });
@@ -885,7 +1619,7 @@
       if (ea !== eb) return ea - eb;
       return a.label.length - b.label.length;
     });
-    list = list.slice(0, 60);
+    list = list.slice(0, 150);
 
     if (!list.length) {
       mainEl.appendChild(el("div", { class: "results-heading", text: "No matches for \u201c" + term + "\u201d" }));
@@ -893,17 +1627,12 @@
       return;
     }
 
-    mainEl.appendChild(el("div", { class: "results-heading", text: list.length + " match" + (list.length === 1 ? "" : "es") + " for \u201c" + term + "\u201d" }));
-    list.forEach(function (item) {
-      var card = el("button", { class: "result-card" });
-      card.appendChild(el("div", { class: "result-label", text: item.label }));
-      var meta = el("div", { class: "result-meta" });
-      item.types.slice(0, 3).forEach(function (t) { meta.appendChild(el("span", { class: "type-pill", text: t })); });
-      meta.appendChild(el("span", { class: "uri-sub", text: shortLabel(item.uri) }));
-      card.appendChild(meta);
-      card.addEventListener("click", function () { navigate(item.uri, { label: item.label }); });
-      mainEl.appendChild(card);
+    var items = list.map(function (item) {
+      var primary = primaryTypeCurie(item.types);
+      var extra = item.types.filter(function (t) { return t !== primary; });
+      return { uri: item.uri, label: item.label, typeCurie: primary, extraPills: extra };
     });
+    renderResultList("Matches for \u201c" + term + "\u201d", items);
   }
 
   // ---------- Entity record ----------
@@ -912,83 +1641,114 @@
     clear(mainEl);
     mainEl.appendChild(el("div", { class: "results-heading", text: "Loading record\u2026" }));
 
-    var metaQuery = "PREFIX schema: <https://schema.org/>\n" +
+    // Everything the entity itself asserts, fetched in one shot (bounded --
+    // this is the record's own fields, not its potentially huge fan-in).
+    var factsQuery = "PREFIX schema: <http://schema.org/>\n" +
       "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
-      "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
-      "SELECT ?p ?o WHERE {\n" +
-      "  VALUES ?p { schema:name rdfs:label rdf:type schema:description schema:alternateName }\n" +
-      "  " + iriRef(uri) + " ?p ?o\n" +
-      "}";
+      "SELECT ?p ?o (SAMPLE(?lbl) AS ?label) WHERE {\n" +
+      "  " + iriRef(uri) + " ?p ?o .\n" +
+      "  OPTIONAL { ?o <http://schema.org/name> ?n1 }\n" +
+      "  OPTIONAL { ?o <https://schema.org/name> ?n2 }\n" +
+      "  OPTIONAL { ?o rdfs:label ?n3 }\n" +
+      "  BIND(COALESCE(?n1, ?n2, ?n3) AS ?lbl)\n" +
+      "} GROUP BY ?p ?o LIMIT 3000";
 
     var sourcesQuery = "SELECT ?g (COUNT(*) AS ?c) WHERE {\n" +
       "  { GRAPH ?g { " + iriRef(uri) + " ?p1 ?o1 } } UNION { GRAPH ?g { ?s1 ?p2 " + iriRef(uri) + " } }\n" +
       "} GROUP BY ?g ORDER BY DESC(?c)";
-
-    var outCountsQuery = "SELECT ?p (COUNT(*) AS ?c) WHERE {\n" +
-      "  GRAPH ?g { " + iriRef(uri) + " ?p ?o }\n" +
-      "} GROUP BY ?p ORDER BY DESC(?c)";
 
     var inCountsQuery = "SELECT ?p (COUNT(*) AS ?c) WHERE {\n" +
       "  GRAPH ?g { ?s ?p " + iriRef(uri) + " }\n" +
       "} GROUP BY ?p ORDER BY DESC(?c)";
 
     Promise.all([
-      sparql(metaQuery),
+      sparql(factsQuery),
       sparql(sourcesQuery),
-      sparql(outCountsQuery),
       sparql(inCountsQuery)
     ]).then(function (results) {
-      renderRecord(uri, results[0], results[1], results[2], results[3]);
+      renderRecord(uri, results[0], results[1], results[2]);
     }).catch(function (err) {
       clear(mainEl);
       renderError("Couldn\u2019t load this record: " + err.message, function () { loadEntity(uri); });
     });
   }
 
-  function renderRecord(uri, metaRows, sourceRows, outCounts, inCounts) {
+  function buildOutIndex(factRows) {
+    var byPred = {}; // curie or raw pred -> array of row {value}
+    var byPredRaw = {};
+    factRows.forEach(function (r) {
+      var key = curie(r.p.value) || r.p.value;
+      if (!byPred[key]) byPred[key] = [];
+      byPred[key].push(r);
+      if (!byPredRaw[r.p.value]) byPredRaw[r.p.value] = [];
+      byPredRaw[r.p.value].push(r);
+    });
+    return byPred;
+  }
+
+  function pickView(typeCuries) {
+    for (var i = 0; i < VIEW_DISPATCH.length; i++) {
+      if (typeCuries.indexOf(VIEW_DISPATCH[i].type) !== -1) return VIEW_DISPATCH[i];
+    }
+    return null;
+  }
+
+  function renderRecord(uri, factRows, sourceRows, inCounts) {
     clear(mainEl);
 
-    var label = uri, types = [], description = null;
-    metaRows.forEach(function (r) {
-      if ((r.p.value === "https://schema.org/name" || r.p.value === "http://www.w3.org/2000/01/rdf-schema#label") && label === uri) label = r.o.value;
-      if (r.p.value === "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") types.push(r.o.value);
-      if (r.p.value === "https://schema.org/description" && !description) description = r.o.value;
+    var outByPred = buildOutIndex(factRows);
+    var label = null, types = [], typeCuries = [], description = null;
+    factRows.forEach(function (r) {
+      var pc = curie(r.p.value);
+      if ((pc === "sdo:name" || r.p.value === "http://www.w3.org/2000/01/rdf-schema#label") && !label && r.o.type === "literal") label = r.o.value;
+      if (pc === "rdf:type") { types.push(r.o.value); var tc = curie(r.o.value); typeCuries.push(tc || r.o.value); }
     });
+    if (!label) label = uri;
+
+    var view = pickView(typeCuries);
 
     pushTrail(uri, label);
 
     var header = el("div", { class: "record-header" });
     var eyebrow = el("div", { class: "record-eyebrow" });
-    types.slice(0, 4).forEach(function (t) { eyebrow.appendChild(el("span", { class: "type-pill", text: shortLabel(t) })); });
+    if (view) {
+      var kindPill = el("span", { class: "view-kind-pill" });
+      kindPill.appendChild(iconSpan(view.type));
+      kindPill.appendChild(document.createTextNode(view.kind));
+      eyebrow.appendChild(kindPill);
+    }
+    types.slice(0, 4).forEach(function (t) {
+      var tc = curie(t) || shortLabel(t);
+      if (view && tc === view.type) return;
+      eyebrow.appendChild(typePillEl(tc));
+    });
     header.appendChild(eyebrow);
     header.appendChild(el("h1", { class: "record-title", text: label }));
 
     var uriLine = el("div", { class: "record-uri" });
     if (isSafeHref(uri)) {
-      var a = el("a", { href: uri, target: "_blank", rel: "noopener", text: uri });
-      uriLine.appendChild(a);
+      uriLine.appendChild(el("a", { href: uri, target: "_blank", rel: "noopener", text: uri }));
     } else {
       uriLine.textContent = uri;
     }
     header.appendChild(uriLine);
 
-    if (description) header.appendChild(el("p", { class: "record-desc", text: description }));
-
     if (sourceRows.length) {
       var srcRow = el("div", { class: "source-row" });
       sourceRows.forEach(function (r) {
-        var name = shortLabel(r.g.value);
-        var chip = el("span", { class: "source-chip" });
+        var info = graphInfo(r.g.value);
+        var chip = el("span", { class: "source-chip", title: info.sub });
         var b = document.createElement("b");
-        b.textContent = name;
+        b.textContent = info.label;
         chip.appendChild(b);
         chip.appendChild(document.createTextNode(" \u00b7 " + r.c.value));
+        chip.addEventListener("click", function () { browseGraph(info); });
         srcRow.appendChild(chip);
       });
       header.appendChild(srcRow);
     }
 
-    var totalOut = outCounts.reduce(function (a, r) { return a + parseInt(r.c.value, 10); }, 0);
+    var totalOut = factRows.length;
     var totalIn = inCounts.reduce(function (a, r) { return a + parseInt(r.c.value, 10); }, 0);
     var stats = el("div", { class: "record-stats" });
     stats.appendChild(statLine(totalOut + " statements describing it"));
@@ -996,6 +1756,99 @@
     header.appendChild(stats);
 
     mainEl.appendChild(header);
+
+    // ---- Real thumbnail, when the file itself is an image (e.g. Dataverse
+    // DataDownload with an image/* encodingFormat) -- no sdo:image anywhere
+    // in the graph yet, but some files genuinely are pictures. Only ever
+    // fetched from iisg.amsterdam itself: hotlinking a third-party host
+    // (dataverse.nl, worldcat.org, ...) from every record view isn't ours to
+    // do, and dataverse.nl in particular currently sits behind a bot-challenge
+    // wall that would just return an HTML page instead of the image anyway.
+    if (view && view.type === "sdo:DataDownload") {
+      var fmtRows = outByPred["sdo:encodingFormat"];
+      var urlRows = outByPred["sdo:contentUrl"];
+      var fmt = fmtRows && fmtRows[0] && fmtRows[0].o.value;
+      if (fmt && /^image\//i.test(fmt) && urlRows && urlRows[0] && urlRows[0].o.type === "uri" && isLocalUri(urlRows[0].o.value)) {
+        var thumb = el("img", { class: "file-thumb", src: urlRows[0].o.value, alt: label, loading: "lazy" });
+        thumb.onerror = function () { thumb.remove(); };
+        mainEl.appendChild(thumb);
+      }
+    }
+
+    // ---- Primary download link, for file-like views (DataDownload) ----
+    if (view && view.linkOutPrimary) {
+      for (var li = 0; li < LINKOUT_FIELDS.length; li++) {
+        var rows = outByPred[LINKOUT_FIELDS[li]];
+        var linkoutUrl = rows && rows.length && (rows[0].o.type === "uri" ? rows[0].o.value : literalUrl(rows[0].o));
+        if (linkoutUrl) {
+          mainEl.appendChild(el("a", { class: "download-btn", href: linkoutUrl, target: "_blank", rel: "noopener", text: "\u2193 Open / download file" }));
+          break;
+        }
+      }
+    }
+
+    // ---- Type-specific hero facts ----
+    if (view) {
+      var grid = el("div", { class: "hero-grid" });
+      var any = false;
+      view.fields.forEach(function (f) {
+        var rows = outByPred[f.pred];
+        if (!rows || !rows.length) return;
+        any = true;
+        grid.appendChild(renderHeroGroup(f, rows));
+      });
+      if (any) mainEl.appendChild(grid);
+
+      if (!view.linkOutPrimary) {
+        for (var lo = 0; lo < LINKOUT_FIELDS.length; lo++) {
+          var lrows = outByPred[LINKOUT_FIELDS[lo]];
+          var origUrl = lrows && lrows.length && (lrows[0].o.type === "uri" ? lrows[0].o.value : literalUrl(lrows[0].o));
+          if (origUrl) {
+            var wrap = el("div", { style: "margin: 4px 0 4px;" });
+            wrap.appendChild(el("a", { class: "download-btn", href: origUrl, target: "_blank", rel: "noopener", text: "\u2197 View original / digitized copy" }));
+            mainEl.appendChild(wrap);
+            break;
+          }
+        }
+      }
+
+      // Special-cased list facts that don't fit the "one row per fact" shape.
+      if (view.type === "sdo:Dataset" && outByPred["sdo:distribution"]) {
+        mainEl.appendChild(renderFileListBlock("Files", outByPred["sdo:distribution"]));
+      }
+      if (view.type === "sdo:DataCatalog" && outByPred["sdo:dataset"]) {
+        mainEl.appendChild(renderLinkListBlock("Datasets in this catalog", outByPred["sdo:dataset"]));
+      }
+    }
+
+    // ---- Description / abstract / biography text blocks ----
+    var textWrap = el("div", { class: "hero-textblocks" });
+    var anyText = false;
+    DESC_FIELDS.forEach(function (f) {
+      var rows = outByPred[f.pred];
+      if (!rows || !rows.length) return;
+      anyText = true;
+      var block = el("div", { class: "hero-textblock" });
+      block.appendChild(el("h3", { text: f.heading }));
+      rows.forEach(function (r) {
+        // Some harvested literals (e.g. Dataverse descriptions) embed HTML
+        // markup as plain text. Never render it as HTML (stored-XSS risk from
+        // external metadata) -- just normalize <br> to newlines, which
+        // white-space:pre-wrap already displays.
+        var text = r.o.value.replace(/<br\s*\/?>/gi, "\n").replace(/<\/?[a-z][^>]*>/gi, "");
+        block.appendChild(el("p", { text: text }));
+      });
+      textWrap.appendChild(block);
+    });
+    if (anyText) mainEl.appendChild(textWrap);
+    else if (!view && description) {
+      mainEl.appendChild(el("p", { class: "record-desc", text: description }));
+    }
+
+    // ---- Full statement list, collapsible ----
+    var details = el("details", { class: "details-toggle" });
+    if (!view) details.setAttribute("open", "");
+    details.appendChild(el("summary", { text: "All statements" }));
 
     var columns = el("div", { class: "columns" });
     var outCol = el("div", {});
@@ -1006,10 +1859,11 @@
     inCol.appendChild(el("div", { class: "column-heading", text: "Referenced by" }));
     columns.appendChild(inCol);
 
-    mainEl.appendChild(columns);
+    details.appendChild(columns);
+    mainEl.appendChild(details);
 
-    renderColumn(outCol, uri, outCounts, "out");
-    renderColumn(inCol, uri, inCounts, "in");
+    renderOutColumnFromMemory(outCol, factRows);
+    renderInColumn(inCol, uri, inCounts);
   }
 
   function statLine(text) {
@@ -1022,9 +1876,151 @@
     return s;
   }
 
-  function renderColumn(colEl, uri, counts, direction) {
+  function heroValueNode(r, kind) {
+    if (kind === "extlink" || (kind === "auto" && r.o.type === "uri" && !isLocalUri(r.o.value))) {
+      var a = el("a", { class: "value-literal", href: r.o.value, target: "_blank", rel: "noopener", text: r.label ? r.label.value : shortLabel(r.o.value) });
+      return a;
+    }
+    if ((kind === "link" || kind === "auto") && r.o.type === "uri") {
+      var wrap = document.createDocumentFragment();
+      var btn = el("button", { class: "hero-link", text: r.label ? r.label.value : shortLabel(r.o.value) });
+      btn.addEventListener("click", function () { navigate(r.o.value, { label: r.label ? r.label.value : null }); });
+      wrap.appendChild(btn);
+      if (!isLocalUri(r.o.value) && isSafeHref(r.o.value)) {
+        wrap.appendChild(el("a", { class: "hero-ext", href: r.o.value, target: "_blank", rel: "noopener", text: "\u2197" }));
+      }
+      return wrap;
+    }
+    var asUrl = literalUrl(r.o);
+    if (asUrl) {
+      return el("a", { class: "value-literal", href: asUrl, target: "_blank", rel: "noopener", text: asUrl });
+    }
+
+    // literal (or a URI we're told to treat as text)
+    var val = r.o.value;
+    var tag = "";
+    if (r.o["xml:lang"]) tag = r.o["xml:lang"];
+    var span = el("span", { text: val });
+    if (tag) {
+      var t = document.createElement("span");
+      t.className = "lit-tag";
+      t.textContent = tag;
+      span.appendChild(t);
+    }
+    return span;
+  }
+
+  function renderHeroGroup(field, rows) {
+    var group = el("div", { class: "hero-group" });
+    group.appendChild(el("h3", { text: field.heading }));
+    rows.slice(0, 12).forEach(function (r) {
+      var row = el("div", { class: "hero-fact-val" });
+      row.appendChild(heroValueNode(r, field.kind));
+      group.appendChild(row);
+    });
+    if (rows.length > 12) group.appendChild(el("div", { class: "hero-fact-val", text: "+ " + (rows.length - 12) + " more" }));
+    return group;
+  }
+
+  function renderLinkListBlock(heading, rows) {
+    var wrap = el("div", { class: "dash-section" });
+    wrap.appendChild(el("div", { class: "dash-heading", text: heading + " (" + rows.length + ")" }));
+    var shown = rows.slice(0, 10);
+    shown.forEach(function (r) {
+      if (r.o.type !== "uri") return;
+      var card = el("button", { class: "result-card" });
+      card.appendChild(el("div", { class: "result-label", text: r.label ? r.label.value : shortLabel(r.o.value) }));
+      card.appendChild(el("div", { class: "uri-sub", text: shortLabel(r.o.value) }));
+      card.addEventListener("click", function () { navigate(r.o.value, { label: r.label ? r.label.value : null }); });
+      wrap.appendChild(card);
+    });
+    if (rows.length > shown.length) wrap.appendChild(el("div", { class: "column-empty", text: "+ " + (rows.length - shown.length) + " more \u2014 see \u201cAll statements\u201d below" }));
+    return wrap;
+  }
+
+  // Like renderLinkListBlock, but for a Dataset's own distribution: fires one
+  // small follow-up query for the shown files' format + URL so image/* files
+  // (Dataverse hosts plenty of real image/jpeg scans) get an actual <img>
+  // thumbnail instead of just a filename row.
+  function renderFileListBlock(heading, rows) {
+    var wrap = el("div", { class: "dash-section" });
+    wrap.appendChild(el("div", { class: "dash-heading", text: heading + " (" + rows.length + ")" }));
+    var shown = rows.filter(function (r) { return r.o.type === "uri"; }).slice(0, 10);
+    var rowEls = {};
+    shown.forEach(function (r) {
+      var uri = r.o.value;
+      var card = el("button", { class: "result-card result-card-row" });
+      var body = el("div", { class: "result-body" });
+      body.appendChild(el("div", { class: "result-label", text: r.label ? r.label.value : shortLabel(uri) }));
+      body.appendChild(el("div", { class: "uri-sub", text: shortLabel(uri) }));
+      card.appendChild(body);
+      card.addEventListener("click", function () { navigate(uri, { label: r.label ? r.label.value : null }); });
+      rowEls[uri] = card;
+      wrap.appendChild(card);
+    });
+    if (rows.length > shown.length) wrap.appendChild(el("div", { class: "column-empty", text: "+ " + (rows.length - shown.length) + " more \u2014 see \u201cAll statements\u201d below" }));
+
+    if (shown.length) {
+      var values = shown.map(function (r) { return iriRef(r.o.value); }).join(" ");
+      var q = "PREFIX schema: <https://schema.org/>\n" +
+        "SELECT ?f ?fmt ?url WHERE {\n" +
+        "  VALUES ?f { " + values + " }\n" +
+        "  ?f schema:encodingFormat ?fmt .\n" +
+        "  OPTIONAL { ?f schema:contentUrl ?url }\n" +
+        "}";
+      sparql(q).then(function (frows) {
+        frows.forEach(function (fr) {
+          var fmt = fr.fmt.value;
+          if (!/^image\//i.test(fmt) || !fr.url || !isLocalUri(fr.url.value)) return;
+          var card = rowEls[fr.f.value];
+          if (!card) return;
+          var img = el("img", { class: "result-thumb", src: fr.url.value, alt: "", loading: "lazy" });
+          img.onerror = function () { img.remove(); };
+          card.insertBefore(img, card.firstChild);
+        });
+      }).catch(function () { /* thumbnails are a nice-to-have; ignore failures */ });
+    }
+
+    return wrap;
+  }
+
+  // ---- Generic "Described as" column, rendered from already-fetched data ----
+
+  function renderOutColumnFromMemory(colEl, factRows) {
+    var byPred = {};
+    factRows.forEach(function (r) {
+      var key = r.p.value;
+      if (!byPred[key]) byPred[key] = [];
+      byPred[key].push(r);
+    });
+    var preds = Object.keys(byPred).sort(function (a, b) { return byPred[b].length - byPred[a].length; });
+    if (!preds.length) {
+      colEl.appendChild(el("div", { class: "column-empty", text: "No outgoing statements recorded." }));
+      return;
+    }
+    preds.forEach(function (pred) {
+      var rows = byPred[pred];
+      var group = el("div", { class: "pred-group" });
+      var labelWrap = el("div", { class: "pred-label" });
+      labelWrap.appendChild(document.createTextNode(shortLabel(pred)));
+      var countEl = document.createElement("span");
+      countEl.className = "pred-count";
+      countEl.textContent = rows.length;
+      labelWrap.appendChild(countEl);
+      group.appendChild(labelWrap);
+
+      var rowsWrap = el("div", { class: "pred-rows" });
+      rows.forEach(function (r) { rowsWrap.appendChild(buildValueRow({ item: r.o, label: r.label })); });
+      group.appendChild(rowsWrap);
+      colEl.appendChild(group);
+    });
+  }
+
+  // ---- Generic "Referenced by" column: paginated, since fan-in can be huge ----
+
+  function renderInColumn(colEl, uri, counts) {
     if (!counts.length) {
-      colEl.appendChild(el("div", { class: "column-empty", text: direction === "out" ? "No outgoing statements recorded." : "Nothing in the graph points to this record." }));
+      colEl.appendChild(el("div", { class: "column-empty", text: "Nothing in the graph points to this record." }));
       return;
     }
     counts.forEach(function (row) {
@@ -1044,21 +2040,21 @@
       group.appendChild(rowsWrap);
       colEl.appendChild(group);
 
-      loadGroupPage(uri, pred, direction, 0, total, rowsWrap, true);
+      loadGroupPage(uri, pred, 0, total, rowsWrap, true);
     });
   }
 
-  function loadGroupPage(uri, pred, direction, offset, total, rowsWrap, isFirst) {
-    var pattern = direction === "out"
-      ? iriRef(uri) + " " + iriRef(pred) + " ?item"
-      : "?item " + iriRef(pred) + " " + iriRef(uri);
+  function loadGroupPage(uri, pred, offset, total, rowsWrap, isFirst) {
+    var pattern = "?item " + iriRef(pred) + " " + iriRef(uri);
 
-    var q = "PREFIX schema: <https://schema.org/>\n" +
+    var q = "PREFIX schema: <http://schema.org/>\n" +
       "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
       "SELECT ?item (SAMPLE(?lbl) AS ?label) (SAMPLE(?g) AS ?graph) WHERE {\n" +
       "  GRAPH ?g { " + pattern + " }\n" +
-      "  OPTIONAL { ?item schema:name ?lbl }\n" +
-      "  OPTIONAL { ?item rdfs:label ?lbl }\n" +
+      "  OPTIONAL { ?item <http://schema.org/name> ?n1 }\n" +
+      "  OPTIONAL { ?item <https://schema.org/name> ?n2 }\n" +
+      "  OPTIONAL { ?item rdfs:label ?n3 }\n" +
+      "  BIND(COALESCE(?n1, ?n2, ?n3) AS ?lbl)\n" +
       "} GROUP BY ?item ORDER BY ?item LIMIT " + PAGE_SIZE + " OFFSET " + offset;
 
     sparql(q).then(function (rows) {
@@ -1075,7 +2071,7 @@
         btn.addEventListener("click", function () {
           btn.disabled = true;
           btn.textContent = "Loading\u2026";
-          loadGroupPage(uri, pred, direction, loadedSoFar, total, rowsWrap, false);
+          loadGroupPage(uri, pred, loadedSoFar, total, rowsWrap, false);
         });
         footer.appendChild(btn);
         rowsWrap.appendChild(footer);
@@ -1103,6 +2099,11 @@
         var ext = el("a", { class: "ext-link", href: uri, target: "_blank", rel: "noopener", title: "Open source", text: "\u2197" });
         row.appendChild(ext);
       }
+    } else if (literalUrl(r.item)) {
+      var lurl = literalUrl(r.item);
+      var linkEl = el("a", { class: "value-literal", href: lurl, target: "_blank", rel: "noopener", text: lurl });
+      main.appendChild(linkEl);
+      row.appendChild(main);
     } else {
       var val = r.item.value;
       var tag = "";
@@ -1119,11 +2120,13 @@
       row.appendChild(main);
     }
 
-    if (r.graph) row.appendChild(el("span", { class: "graph-tag", text: shortLabel(r.graph.value) }));
+    if (r.graph) row.appendChild(el("span", { class: "graph-tag", text: graphInfo(r.graph.value).label }));
     return row;
   }
 
   // ---------- Init ----------
+
+  loadRailGraphs();
 
   var initialHash = decodeURIComponent(location.hash.replace(/^#/, ""));
   if (initialHash && /^https?:\/\//i.test(initialHash)) {
@@ -1131,7 +2134,7 @@
     history.replaceState({ uri: initialHash }, "", "#" + encodeURIComponent(initialHash));
     loadEntity(initialHash);
   } else {
-    renderEmptyState();
+    renderHome();
   }
   searchInput.focus();
 })();
