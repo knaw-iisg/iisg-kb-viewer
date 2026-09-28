@@ -926,7 +926,8 @@
     { iri: "https://iisg.amsterdam/graph/archive", label: "Archives", sub: "archive-etl · archival collections", color: "#8c5b40" },
     { iri: "https://iisg.amsterdam/graph/findingaid", label: "Finding aids", sub: "findingaid-etl · EAD hierarchies", color: "#5b8c40" },
     { iri: "https://iisg.amsterdam/graph/authority", label: "Authorities", sub: "authorities-etl · people, places, terms", color: "#7c5ba0" },
-    { iri: "https://iisg.amsterdam/graph/dataverse", label: "Dataverse", sub: "dataverse-etl · research datasets", color: "#a06b3a" }
+    { iri: "https://iisg.amsterdam/graph/dataverse", label: "Dataverse", sub: "dataverse-etl · research datasets", color: "#a06b3a" },
+    { iri: "https://iisg.amsterdam/graph/orcid", label: "ORCID", sub: "orcid-etl · staff research output", color: "#3a7c6b" }
   ];
 
   var RELATOR_LABELS = {
@@ -963,7 +964,14 @@
     "sdo:Event": '<rect x="3" y="4" width="18" height="17" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
     "sdo:DefinedTerm": '<path d="M2 12 12 2h8v8L10 20a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8Z"/><circle cx="15.5" cy="7.5" r="1.6"/>',
     "sdo:CreativeWorkSeries": '<path d="M12 2 2 7l10 5 10-5Z"/><path d="M2 12l10 5 10-5"/><path d="M2 17l10 5 10-5"/>',
-    "sdo:ContactPoint": '<path d="M4 4h16v13H8l-4 4Z"/>'
+    "sdo:ContactPoint": '<path d="M4 4h16v13H8l-4 4Z"/>',
+    "sdo:ScholarlyArticle": '<path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>',
+    "sdo:Chapter": '<path d="M4 4.5C4 3.7 4.7 3 5.5 3H11V19H5.5C4.7 19 4 19.7 4 20.5V4.5Z"/><path d="M20 4.5C20 3.7 19.3 3 18.5 3H13V19H18.5C19.3 19 20 19.7 20 20.5V4.5Z"/>',
+    "sdo:Report": '<path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>',
+    "sdo:Thesis": '<path d="M4 4.5C4 3.7 4.7 3 5.5 3H11V19H5.5C4.7 19 4 19.7 4 20.5V4.5Z"/><path d="M20 4.5C20 3.7 19.3 3 18.5 3H13V19H18.5C19.3 19 20 19.7 20 20.5V4.5Z"/>',
+    "sdo:Periodical": '<path d="M12 2 2 7l10 5 10-5Z"/><path d="M2 12l10 5 10-5"/><path d="M2 17l10 5 10-5"/>',
+    "sdo:MonetaryGrant": '<circle cx="9" cy="9" r="6"/><circle cx="15" cy="15" r="6"/><path d="M9 7v4"/><path d="M7 9h4"/>',
+    "sdo:OrganizationRole": '<path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><rect x="3" y="7" width="18" height="13" rx="2"/><line x1="3" y1="13" x2="21" y2="13"/>'
   };
   var ICON_FALLBACK = '<circle cx="12" cy="12" r="8"/>';
 
@@ -1100,7 +1108,29 @@
     { pred: "sdo:alternateName", heading: "Also known as", kind: "literal" },
     { pred: "owl:sameAs", heading: "Same as", kind: "extlink" },
     { pred: "sdo:email", heading: "Email", kind: "literal" },
-    { pred: "sdo:telephone", heading: "Telephone", kind: "literal" }
+    { pred: "sdo:telephone", heading: "Telephone", kind: "literal" },
+    { pred: "sdo:worksFor", heading: "Works for", kind: "link" },
+    { pred: "sdo:isPartOf", heading: "Part of", kind: "link" }
+  ];
+
+  // orcid-etl: a colleague's publications, sourced live from ORCID.
+  var RESEARCH_WORK_FIELDS = [
+    { pred: "sdo:creator", heading: "Author", kind: "link" },
+    { pred: "sdo:datePublished", heading: "Published", kind: "literal" },
+    { pred: "sdo:isPartOf", heading: "In", kind: "link" }
+  ];
+
+  var GRANT_FIELDS = [
+    { pred: "sdo:fundedItem", heading: "Awarded to", kind: "link" },
+    { pred: "sdo:funder", heading: "Funder", kind: "link" },
+    { pred: "sdo:identifier", heading: "Grant number", kind: "literal" }
+  ];
+
+  var ROLE_FIELDS = [
+    { pred: "sdo:roleName", heading: "Role", kind: "literal" },
+    { pred: "sdo:worksFor", heading: "Organization", kind: "link" },
+    { pred: "sdo:startDate", heading: "Start date", kind: "literal" },
+    { pred: "sdo:endDate", heading: "End date", kind: "literal" }
   ];
 
   var DESC_FIELDS = [
@@ -1132,7 +1162,15 @@
     { type: "sdo:Event", kind: "Event", fields: AUTHORITY_FIELDS },
     { type: "sdo:DefinedTerm", kind: "Term", fields: AUTHORITY_FIELDS },
     { type: "sdo:CreativeWorkSeries", kind: "Series", fields: AUTHORITY_FIELDS },
-    { type: "sdo:ContactPoint", kind: "Contact", fields: AUTHORITY_FIELDS }
+    { type: "sdo:Periodical", kind: "Periodical", fields: AUTHORITY_FIELDS },
+    { type: "sdo:ContactPoint", kind: "Contact", fields: AUTHORITY_FIELDS },
+    { type: "sdo:ScholarlyArticle", kind: "Article", fields: RESEARCH_WORK_FIELDS },
+    { type: "sdo:Chapter", kind: "Chapter", fields: RESEARCH_WORK_FIELDS },
+    { type: "sdo:Report", kind: "Report", fields: RESEARCH_WORK_FIELDS },
+    { type: "sdo:Thesis", kind: "Thesis", fields: RESEARCH_WORK_FIELDS },
+    { type: "sdo:CreativeWork", kind: "Work", fields: RESEARCH_WORK_FIELDS },
+    { type: "sdo:MonetaryGrant", kind: "Grant", fields: GRANT_FIELDS },
+    { type: "sdo:OrganizationRole", kind: "Role", fields: ROLE_FIELDS }
   ];
 
   var TYPE_TO_VIEW = {};
@@ -1327,7 +1365,7 @@
     clear(mainEl);
     var wrap = el("div", { class: "home-dash" });
     wrap.appendChild(el("h1", { text: "Trace a record through the graph." }));
-    wrap.appendChild(el("p", { text: "Five pipelines feed this graph \u2014 biblio-etl, archive-etl, findingaid-etl, authorities-etl and dataverse-etl \u2014 each asserting into its own named graph, but sharing IRIs wherever their records describe the same person, place, archive or topic. Search for something, or browse by type below." }));
+    wrap.appendChild(el("p", { text: "Six pipelines feed this graph \u2014 biblio-etl, archive-etl, findingaid-etl, authorities-etl, dataverse-etl and orcid-etl \u2014 each asserting into its own named graph, but sharing IRIs wherever their records describe the same person, place, archive or topic. Search for something, or browse by type below." }));
 
     var ex = el("div", { class: "empty-examples" });
     ["dockworkers", "Rotterdam", "International Institute of Social History", "Jan Lucassen"].forEach(function (term) {
@@ -1417,7 +1455,9 @@
       "  OPTIONAL { GRAPH " + iriRef(info.iri) + " { ?s sdo:name ?n1 } }\n" +
       "  OPTIONAL { GRAPH " + iriRef(info.iri) + " { ?s <https://schema.org/name> ?n2 } }\n" +
       "  OPTIONAL { GRAPH " + iriRef(info.iri) + " { ?s <http://www.w3.org/2000/01/rdf-schema#label> ?n3 } }\n" +
-      "  BIND(COALESCE(?n1, ?n2, ?n3) AS ?lbl)\n" +
+      "  OPTIONAL { GRAPH " + iriRef(info.iri) + " { ?s sdo:roleName ?n4 } }\n" +
+      "  OPTIONAL { GRAPH " + iriRef(info.iri) + " { ?s <https://schema.org/roleName> ?n5 } }\n" +
+      "  BIND(COALESCE(?n1, ?n2, ?n3, ?n4, ?n5) AS ?lbl)\n" +
       "} GROUP BY ?s ORDER BY ?s";
     sparql(q).then(function (rows) {
       var items = rows.map(function (r) {
@@ -1442,7 +1482,9 @@
       "  OPTIONAL { ?s <http://schema.org/name> ?n1 }\n" +
       "  OPTIONAL { ?s <https://schema.org/name> ?n2 }\n" +
       "  OPTIONAL { ?s <http://www.w3.org/2000/01/rdf-schema#label> ?n3 }\n" +
-      "  BIND(COALESCE(?n1, ?n2, ?n3) AS ?lbl)\n" +
+      "  OPTIONAL { ?s <http://schema.org/roleName> ?n4 }\n" +
+      "  OPTIONAL { ?s <https://schema.org/roleName> ?n5 }\n" +
+      "  BIND(COALESCE(?n1, ?n2, ?n3, ?n4, ?n5) AS ?lbl)\n" +
       "} GROUP BY ?s ORDER BY ?s";
     sparql(q).then(function (rows) {
       var items = rows.map(function (r) {
@@ -1650,7 +1692,9 @@
       "  OPTIONAL { ?o <http://schema.org/name> ?n1 }\n" +
       "  OPTIONAL { ?o <https://schema.org/name> ?n2 }\n" +
       "  OPTIONAL { ?o rdfs:label ?n3 }\n" +
-      "  BIND(COALESCE(?n1, ?n2, ?n3) AS ?lbl)\n" +
+      "  OPTIONAL { ?o <http://schema.org/roleName> ?n4 }\n" +
+      "  OPTIONAL { ?o <https://schema.org/roleName> ?n5 }\n" +
+      "  BIND(COALESCE(?n1, ?n2, ?n3, ?n4, ?n5) AS ?lbl)\n" +
       "} GROUP BY ?p ?o LIMIT 3000";
 
     var sourcesQuery = "SELECT ?g (COUNT(*) AS ?c) WHERE {\n" +
@@ -1703,6 +1747,11 @@
       if ((pc === "sdo:name" || r.p.value === "http://www.w3.org/2000/01/rdf-schema#label") && !label && r.o.type === "literal") label = r.o.value;
       if (pc === "rdf:type") { types.push(r.o.value); var tc = curie(r.o.value); typeCuries.push(tc || r.o.value); }
     });
+    // sdo:OrganizationRole (orcid-etl) has no sdo:name of its own -- fall
+    // back to its roleName ("Researcher", "Fellow", ...) as a label.
+    if (!label && outByPred["sdo:roleName"] && outByPred["sdo:roleName"][0]) {
+      label = outByPred["sdo:roleName"][0].o.value;
+    }
     if (!label) label = uri;
 
     var view = pickView(typeCuries);
@@ -2054,7 +2103,9 @@
       "  OPTIONAL { ?item <http://schema.org/name> ?n1 }\n" +
       "  OPTIONAL { ?item <https://schema.org/name> ?n2 }\n" +
       "  OPTIONAL { ?item rdfs:label ?n3 }\n" +
-      "  BIND(COALESCE(?n1, ?n2, ?n3) AS ?lbl)\n" +
+      "  OPTIONAL { ?item <http://schema.org/roleName> ?n4 }\n" +
+      "  OPTIONAL { ?item <https://schema.org/roleName> ?n5 }\n" +
+      "  BIND(COALESCE(?n1, ?n2, ?n3, ?n4, ?n5) AS ?lbl)\n" +
       "} GROUP BY ?item ORDER BY ?item LIMIT " + PAGE_SIZE + " OFFSET " + offset;
 
     sparql(q).then(function (rows) {
