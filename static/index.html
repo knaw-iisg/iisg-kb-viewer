@@ -623,10 +623,10 @@
   }
   .stats-toggle:hover .stat { color: var(--accent-strong); }
   .stats-toggle-chevron {
-    margin-left: auto;
     color: var(--muted);
     font-size: 12px;
     transition: transform 0.15s;
+    flex-shrink: 0;
   }
   .stats-toggle[aria-expanded="true"] .stats-toggle-chevron { transform: rotate(90deg); }
 
@@ -1572,7 +1572,12 @@
       lbl.appendChild(iconSpan(key === "other" ? null : key));
       lbl.appendChild(document.createTextNode(key === "other" ? "Other" : pluralType(key)));
       tile.appendChild(lbl);
-      tile.addEventListener("click", function () { renderResultTypeDetail(heading, items, groups, order, key); });
+      tile.addEventListener("click", function () {
+        // Nothing to choose between when there's exactly one -- go straight
+        // to it instead of a list-of-one detour.
+        if (groups[key].length === 1) { navigate(groups[key][0].uri, { label: groups[key][0].label }); return; }
+        renderResultTypeDetail(heading, items, groups, order, key);
+      });
       grid.appendChild(tile);
     });
     mainEl.appendChild(grid);
@@ -1939,9 +1944,9 @@
     var totalIn = inCounts.reduce(function (a, r) { return a + parseInt(r.c.value, 10); }, 0);
     var statementsSection; // assigned below; the toggle button (built now) closes over it
     var statsToggle = el("button", { class: "stats-toggle", "aria-expanded": view ? "false" : "true" });
+    statsToggle.appendChild(el("span", { class: "stats-toggle-chevron", text: "▸" }));
     statsToggle.appendChild(statLine(totalOut + " statements describing it"));
     statsToggle.appendChild(statLine(totalIn + " statements pointing to it"));
-    statsToggle.appendChild(el("span", { class: "stats-toggle-chevron", text: "▸" }));
     statsToggle.addEventListener("click", function () {
       var expanded = statsToggle.getAttribute("aria-expanded") === "true";
       statsToggle.setAttribute("aria-expanded", expanded ? "false" : "true");
@@ -2046,11 +2051,15 @@
 
     var columns = el("div", { class: "columns" });
     var outCol = el("div", {});
-    outCol.appendChild(el("div", { class: "column-heading", text: "Described as" }));
+    var outHeading = el("div", { class: "column-heading", text: "↗ Described as" });
+    outHeading.appendChild(el("span", { text: "outgoing — what this asserts" }));
+    outCol.appendChild(outHeading);
     columns.appendChild(outCol);
 
     var inCol = el("div", {});
-    inCol.appendChild(el("div", { class: "column-heading", text: "Referenced by" }));
+    var inHeading = el("div", { class: "column-heading", text: "↙ Referenced by" });
+    inHeading.appendChild(el("span", { text: "incoming — what points here" }));
+    inCol.appendChild(inHeading);
     columns.appendChild(inCol);
 
     statementsSection.appendChild(columns);
