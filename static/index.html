@@ -605,13 +605,30 @@
   }
   .source-chip b { color: var(--ink); font-weight: 600; }
 
-  .record-stats {
+  .stats-toggle {
     display: flex;
+    align-items: center;
     gap: 18px;
     margin-top: 16px;
     padding-top: 14px;
     border-top: 1px solid var(--line);
+    background: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--font-body);
   }
+  .stats-toggle:hover .stat { color: var(--accent-strong); }
+  .stats-toggle-chevron {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 12px;
+    transition: transform 0.15s;
+  }
+  .stats-toggle[aria-expanded="true"] .stats-toggle-chevron { transform: rotate(90deg); }
 
   .stat {
     font-size: 13px;
@@ -692,22 +709,8 @@
   }
   .download-btn:hover { background: var(--accent-strong); }
 
-  .details-toggle {
-    margin-top: 6px;
-  }
-  .details-toggle > summary {
-    cursor: pointer;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--muted);
-    padding: 10px 0;
-    list-style: none;
-  }
-  .details-toggle > summary::-webkit-details-marker { display: none; }
-  .details-toggle > summary::before { content: "\25B8  "; }
-  .details-toggle[open] > summary::before { content: "\25BE  "; }
+  .statements-section { margin-top: 6px; }
+  .statements-section.collapsed { display: none; }
 
   .columns {
     display: grid;
@@ -1934,10 +1937,18 @@
 
     var totalOut = factRows.length;
     var totalIn = inCounts.reduce(function (a, r) { return a + parseInt(r.c.value, 10); }, 0);
-    var stats = el("div", { class: "record-stats" });
-    stats.appendChild(statLine(totalOut + " statements describing it"));
-    stats.appendChild(statLine(totalIn + " statements pointing to it"));
-    header.appendChild(stats);
+    var statementsSection; // assigned below; the toggle button (built now) closes over it
+    var statsToggle = el("button", { class: "stats-toggle", "aria-expanded": view ? "false" : "true" });
+    statsToggle.appendChild(statLine(totalOut + " statements describing it"));
+    statsToggle.appendChild(statLine(totalIn + " statements pointing to it"));
+    statsToggle.appendChild(el("span", { class: "stats-toggle-chevron", text: "▸" }));
+    statsToggle.addEventListener("click", function () {
+      var expanded = statsToggle.getAttribute("aria-expanded") === "true";
+      statsToggle.setAttribute("aria-expanded", expanded ? "false" : "true");
+      statementsSection.classList.toggle("collapsed", expanded);
+      if (!expanded) statementsSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+    header.appendChild(statsToggle);
 
     mainEl.appendChild(header);
 
@@ -2029,10 +2040,9 @@
       mainEl.appendChild(el("p", { class: "record-desc", text: description }));
     }
 
-    // ---- Full statement list, collapsible ----
-    var details = el("details", { class: "details-toggle" });
-    if (!view) details.setAttribute("open", "");
-    details.appendChild(el("summary", { text: "All statements" }));
+    // ---- Full statement list -- toggled by the stats line in the header
+    // above, not a separate control (see statsToggle).
+    statementsSection = el("div", { class: "statements-section" + (view ? " collapsed" : "") });
 
     var columns = el("div", { class: "columns" });
     var outCol = el("div", {});
@@ -2043,8 +2053,8 @@
     inCol.appendChild(el("div", { class: "column-heading", text: "Referenced by" }));
     columns.appendChild(inCol);
 
-    details.appendChild(columns);
-    mainEl.appendChild(details);
+    statementsSection.appendChild(columns);
+    mainEl.appendChild(statementsSection);
 
     renderOutColumnFromMemory(outCol, factRows);
     renderInColumn(inCol, uri, inCounts);
@@ -2118,7 +2128,7 @@
       card.addEventListener("click", function () { navigate(r.o.value, { label: r.label ? r.label.value : null }); });
       wrap.appendChild(card);
     });
-    if (rows.length > shown.length) wrap.appendChild(el("div", { class: "column-empty", text: "+ " + (rows.length - shown.length) + " more \u2014 see \u201cAll statements\u201d below" }));
+    if (rows.length > shown.length) wrap.appendChild(el("div", { class: "column-empty", text: "+ " + (rows.length - shown.length) + " more \u2014 see the statement counts above" }));
     return wrap;
   }
 
@@ -2142,7 +2152,7 @@
       rowEls[uri] = card;
       wrap.appendChild(card);
     });
-    if (rows.length > shown.length) wrap.appendChild(el("div", { class: "column-empty", text: "+ " + (rows.length - shown.length) + " more \u2014 see \u201cAll statements\u201d below" }));
+    if (rows.length > shown.length) wrap.appendChild(el("div", { class: "column-empty", text: "+ " + (rows.length - shown.length) + " more \u2014 see the statement counts above" }));
 
     if (shown.length) {
       var values = shown.map(function (r) { return iriRef(r.o.value); }).join(" ");
