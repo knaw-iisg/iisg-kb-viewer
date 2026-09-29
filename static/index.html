@@ -461,6 +461,8 @@
     align-items: center;
     gap: 4px;
   }
+  button.type-pill { border: none; cursor: pointer; }
+  button.type-pill:hover { background: var(--accent-strong); color: var(--surface); }
   .type-icon { display: inline-flex; flex-shrink: 0; }
 
   .file-thumb {
@@ -1138,8 +1140,11 @@
     { pred: "owl:sameAs", heading: "Same as", kind: "extlink" },
     { pred: "sdo:email", heading: "Email", kind: "literal" },
     { pred: "sdo:telephone", heading: "Telephone", kind: "literal" },
-    { pred: "sdo:worksFor", heading: "Works for", kind: "link" },
-    { pred: "sdo:isPartOf", heading: "Part of", kind: "link" }
+    { pred: "sdo:worksFor", heading: "Works for", kind: "link" }
+    // sdo:isPartOf deliberately not a hero field here -- shown as a compact
+    // "Part of: X" pill in the header eyebrow instead (see renderRecord),
+    // next to the type pills. One line of provenance doesn't need a full
+    // hero-grid card of its own.
   ];
 
   // orcid-etl: a colleague's publications, sourced live from ORCID.
@@ -1913,6 +1918,20 @@
       var tc = curie(t) || shortLabel(t);
       if (view && tc === view.type) return;
       eyebrow.appendChild(typePillEl(tc));
+    });
+    // Archive/Dataset/File/research-work views already give sdo:isPartOf its
+    // own hero card (often the more important "parent" relationship there);
+    // everywhere else (Person and the rest of the authority family, Books,
+    // the generic fallback) it's just one fact, so a compact eyebrow pill
+    // next to the type pills is enough -- no need for both.
+    var viewHandlesIsPartOf = view && view.fields.some(function (f) { return f.pred === "sdo:isPartOf"; });
+    (viewHandlesIsPartOf ? [] : (outByPred["sdo:isPartOf"] || [])).slice(0, 2).forEach(function (r) {
+      if (r.o.type !== "uri") return;
+      var partOfLabel = r.label ? r.label.value : shortLabel(r.o.value);
+      var pill = el("button", { class: "type-pill", title: "Part of " + partOfLabel });
+      pill.appendChild(document.createTextNode("Part of: " + partOfLabel));
+      pill.addEventListener("click", function () { navigate(r.o.value, { label: partOfLabel }); });
+      eyebrow.appendChild(pill);
     });
     header.appendChild(eyebrow);
     header.appendChild(el("h1", { class: "record-title", text: label }));
