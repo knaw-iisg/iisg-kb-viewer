@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "iisg-kb-viewer",
+      "runtimeExecutable": ".venv/bin/python",
+      "runtimeArgs": ["iisgBrowser.py"],
+      "port": 5000
+    }
+  ]
+}

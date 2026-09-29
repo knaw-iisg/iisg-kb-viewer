@@ -910,8 +910,9 @@
 
   // The endpoint defaults to the local QLever instance loaded by the
   // `triplestore` repo (biblio-etl, archive-etl, findingaid-etl,
-  // authorities-etl, dataverse-etl, each in its own named graph). Override
-  // with ?endpoint=http://host:port for a differently-hosted store.
+  // authorities-etl, dataverse-etl, orcid-etl, events-etl, each in its own
+  // named graph). Override with ?endpoint=http://host:port for a
+  // differently-hosted store.
   var params = new URLSearchParams(location.search);
   var ENDPOINT = params.get("endpoint") || "http://localhost:7878";
   var PAGE_SIZE = 20;
@@ -939,6 +940,8 @@
     "https://iisg.amsterdam/id/item/": "item",
     "https://iisg.amsterdam/id/dataset/": "dataset",
     "https://iisg.amsterdam/id/collection/": "collection",
+    "https://iisg.amsterdam/id/event/": "calEvent",
+    "https://iisg.amsterdam/id/place/": "venue",
     "https://iisg.amsterdam/graph/": "graph",
     "https://iisg.amsterdam/marc/": "marc",
     "https://iisg.amsterdam/relators/": "iisg-relator",
@@ -958,7 +961,8 @@
     { iri: "https://iisg.amsterdam/graph/findingaid", label: "Finding aids", sub: "findingaid-etl · EAD hierarchies", color: "#5b8c40" },
     { iri: "https://iisg.amsterdam/graph/authority", label: "Authorities", sub: "authorities-etl · people, places, terms", color: "#7c5ba0" },
     { iri: "https://iisg.amsterdam/graph/dataverse", label: "Dataverse", sub: "dataverse-etl · research datasets", color: "#a06b3a" },
-    { iri: "https://iisg.amsterdam/graph/orcid", label: "ORCID", sub: "orcid-etl · staff research output", color: "#3a7c6b" }
+    { iri: "https://iisg.amsterdam/graph/orcid", label: "ORCID", sub: "orcid-etl · staff research output", color: "#3a7c6b" },
+    { iri: "https://iisg.amsterdam/graph/events", label: "Events", sub: "events-etl · talks, exhibitions, conferences", color: "#a83e6c" }
   ];
 
   var RELATOR_LABELS = {
@@ -1147,6 +1151,24 @@
     // hero-grid card of its own.
   ];
 
+  // sdo:Event is asserted by two very different pipelines that happen to
+  // share the one rdf:type: authorities-etl's meeting-name subject headings
+  // (MARC 111 -- alternateName/sameAs, no dates) and events-etl's actual
+  // calendar events (startDate/location/image, no alternateName). One field
+  // list covering both, same reconciliation as ARCHIVE_FIELDS above -- a
+  // row with no data for a given entity is simply skipped.
+  var EVENT_FIELDS = [
+    { pred: "sdo:startDate", heading: "Start", kind: "literal" },
+    { pred: "sdo:endDate", heading: "End", kind: "literal" },
+    { pred: "sdo:location", heading: "Location", kind: "link" },
+    { pred: "sdo:organizer", heading: "Organizer", kind: "link" },
+    { pred: "sdo:inLanguage", heading: "Language", kind: "auto" },
+    { pred: "sdo:url", heading: "Event page", kind: "extlink" },
+    { pred: "sdo:dateModified", heading: "Last updated", kind: "literal" },
+    { pred: "sdo:alternateName", heading: "Also known as", kind: "literal" },
+    { pred: "owl:sameAs", heading: "Same as", kind: "extlink" }
+  ];
+
   // orcid-etl: a colleague's publications, sourced live from ORCID.
   var RESEARCH_WORK_FIELDS = [
     { pred: "sdo:creator", heading: "Author", kind: "link" },
@@ -1193,7 +1215,7 @@
     { type: "sdo:Person", kind: "Person", fields: AUTHORITY_FIELDS },
     { type: "sdo:Organization", kind: "Organization", fields: AUTHORITY_FIELDS },
     { type: "sdo:Place", kind: "Place", fields: AUTHORITY_FIELDS },
-    { type: "sdo:Event", kind: "Event", fields: AUTHORITY_FIELDS },
+    { type: "sdo:Event", kind: "Event", fields: EVENT_FIELDS },
     { type: "sdo:DefinedTerm", kind: "Term", fields: AUTHORITY_FIELDS },
     { type: "sdo:CreativeWorkSeries", kind: "Series", fields: AUTHORITY_FIELDS },
     { type: "sdo:Periodical", kind: "Periodical", fields: AUTHORITY_FIELDS },
@@ -1399,7 +1421,7 @@
     clear(mainEl);
     var wrap = el("div", { class: "home-dash" });
     wrap.appendChild(el("h1", { text: "Trace a record through the graph." }));
-    wrap.appendChild(el("p", { text: "Six pipelines feed this graph \u2014 biblio-etl, archive-etl, findingaid-etl, authorities-etl, dataverse-etl and orcid-etl \u2014 each asserting into its own named graph, but sharing IRIs wherever their records describe the same person, place, archive or topic. Search for something, or browse by type below." }));
+    wrap.appendChild(el("p", { text: "Seven pipelines feed this graph \u2014 biblio-etl, archive-etl, findingaid-etl, authorities-etl, dataverse-etl, orcid-etl and events-etl \u2014 each asserting into its own named graph, but sharing IRIs wherever their records describe the same person, place, archive or topic. Search for something, or browse by type below." }));
 
     var ex = el("div", { class: "empty-examples" });
     ["dockworkers", "Rotterdam", "International Institute of Social History", "Jan Lucassen"].forEach(function (term) {
@@ -1976,13 +1998,42 @@
 
     mainEl.appendChild(header);
 
+    // ---- sdo:image, when the entity has one (events-etl asserts an
+    // sdo:ImageObject, optionally with a smaller sdo:thumbnail nested under
+    // it -- see that repo's pipeline.py). The image/thumbnail nodes are
+    // blank, so their contentUrl isn't in factRows (those only cover this
+    // entity's own one-hop statements); fetched with one follow-up query
+    // scoped to this entity's own URI, same pattern as renderFileListBlock's
+    // format/url lookup below. Same iisg.amsterdam-only policy as the
+    // DataDownload thumbnail just below: never hotlink a third-party host.
+    var heroImageSlot = el("div", {});
+    mainEl.appendChild(heroImageSlot);
+    if (outByPred["sdo:image"]) {
+      var imageQuery = "PREFIX schema: <https://schema.org/>\n" +
+        "SELECT ?url ?thumbUrl WHERE {\n" +
+        "  " + iriRef(uri) + " schema:image ?img .\n" +
+        "  ?img schema:contentUrl ?url .\n" +
+        "  OPTIONAL { ?img schema:thumbnail ?t . ?t schema:contentUrl ?thumbUrl }\n" +
+        "} LIMIT 1";
+      sparql(imageQuery).then(function (rows) {
+        if (currentUri !== uri || !rows.length) return;
+        var row = rows[0];
+        var displayUrl = row.thumbUrl && isLocalUri(row.thumbUrl.value) ? row.thumbUrl.value
+          : (row.url && isLocalUri(row.url.value) ? row.url.value : null);
+        if (!displayUrl) return;
+        var img = el("img", { class: "file-thumb", src: displayUrl, alt: label, loading: "lazy" });
+        img.onerror = function () { img.remove(); };
+        heroImageSlot.appendChild(img);
+      }).catch(function () { /* thumbnails are a nice-to-have; ignore failures */ });
+    }
+
     // ---- Real thumbnail, when the file itself is an image (e.g. Dataverse
-    // DataDownload with an image/* encodingFormat) -- no sdo:image anywhere
-    // in the graph yet, but some files genuinely are pictures. Only ever
-    // fetched from iisg.amsterdam itself: hotlinking a third-party host
-    // (dataverse.nl, worldcat.org, ...) from every record view isn't ours to
-    // do, and dataverse.nl in particular currently sits behind a bot-challenge
-    // wall that would just return an HTML page instead of the image anyway.
+    // DataDownload with an image/* encodingFormat) -- some files genuinely
+    // are pictures. Only ever fetched from iisg.amsterdam itself: hotlinking
+    // a third-party host (dataverse.nl, worldcat.org, ...) from every record
+    // view isn't ours to do, and dataverse.nl in particular currently sits
+    // behind a bot-challenge wall that would just return an HTML page
+    // instead of the image anyway.
     if (view && view.type === "sdo:DataDownload") {
       var fmtRows = outByPred["sdo:encodingFormat"];
       var urlRows = outByPred["sdo:contentUrl"];

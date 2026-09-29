@@ -1,13 +1,14 @@
 # iisg-kb-viewer
 
-A browser-based viewer for the IISG knowledge graph: the merged output of six
-ETL pipelines --
+A browser-based viewer for the IISG knowledge graph: the merged output of
+seven ETL pipelines --
 [biblio-etl](https://github.com/knaw-iisg/biblio-etl),
 [archive-etl](https://github.com/knaw-iisg/archive-etl),
 [findingaid-etl](https://github.com/knaw-iisg/findingaid-etl),
 [authorities-etl](https://github.com/knaw-iisg/authorities-etl),
-[dataverse-etl](https://github.com/knaw-iisg/dataverse-etl) and
-[orcid-etl](https://github.com/knaw-iisg/orcid-etl) -- each loaded into its
+[dataverse-etl](https://github.com/knaw-iisg/dataverse-etl),
+[orcid-etl](https://github.com/knaw-iisg/orcid-etl) and
+[events-etl](https://github.com/knaw-iisg/events-etl) -- each loaded into its
 own named graph by [triplestore](https://github.com/knaw-iisg/triplestore).
 Lets you search the graph, browse it by pipeline or by kind of item, and
 trace a single record's connections across pipelines.
@@ -43,12 +44,18 @@ URL for a differently-hosted store.
   show as compact count-and-icon tiles (like the home dashboard) rather than
   one long list; a tile with exactly one match skips straight to it.
 - **Type-specific record views**: Book/media, Archive, Dataset, File
-  (`DataDownload`), DataCatalog, and the person/organization/place/etc
+  (`DataDownload`), DataCatalog, Event, and the person/organization/place/etc
   authority family each get a curated set of fields up top, rather than one
   generic property dump for everything. Anything not covered falls back to
   a fully generic view. The full statement list (everything asserted about
   a record, and everything pointing to it) is always one click away via the
   statement-count line in the header, whichever view is showing.
+  - The Event view reconciles two very different pipelines that both assert
+    `sdo:Event`: authorities-etl's meeting-name subject headings (no dates)
+    and events-etl's actual calendar events (`startDate`/`location`/`image`,
+    no `alternateName`) -- one field list, rows with no data just skipped,
+    same reconciliation `ARCHIVE_FIELDS` already does for archive-etl vs
+    findingaid-etl.
 - **Hierarchy breadcrumbs**: findingaid-etl's nested archive components
   (collection > series > ... > file, up to 12 levels via `sdo:isPartOf`) get
   a clickable trail on the record page and a read-only path on matching
@@ -74,6 +81,10 @@ URL for a differently-hosted store.
   links.
 - **Images**: only ever fetched from `iisg.amsterdam`-hosted URLs the graph
   itself asserts, never hotlinked from a third-party host referenced
-  incidentally (e.g. a Dataverse file's own storage) -- and there are none
-  yet, so no thumbnails render today. Wired up and ready for the day a
-  pipeline asserts one.
+  incidentally (e.g. a Dataverse file's own storage). Two independent
+  sources render as an actual `<img>`: a `DataDownload` whose own
+  `encodingFormat` is `image/*` (Dataverse hosts plenty of scans), and now
+  `sdo:image` on any entity (events-etl's `sdo:ImageObject`, preferring its
+  nested `sdo:thumbnail` when present) -- fetched with a small follow-up
+  query scoped to the record's own URI, since the image node is blank and
+  isn't part of the record's own one-hop statement list.
