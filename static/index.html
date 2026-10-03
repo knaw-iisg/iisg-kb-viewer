@@ -1853,10 +1853,13 @@
   // that part. One creator can have thousands of works (corporate creators
   // especially), so this is LIMITed, not a full count like the hierarchy
   // tree's sibling fetch.
-  function fetchMoreByCreator(creatorUri, excludeUri) {
+  // Shared by "creations" (creator), "more by this creator" (creator, minus
+  // the current work), and "written about" (about) -- same one-hop-inverse
+  // shape, just a different predicate and an optional self-exclusion.
+  function fetchWorksByInversePredicate(pred, targetUri, excludeUri) {
     var q = "SELECT ?work (SAMPLE(?lbl) AS ?label) (SAMPLE(?dateVal) AS ?date) WHERE {\n" +
-      "  { ?work <http://schema.org/creator> " + iriRef(creatorUri) + " } UNION { ?work <https://schema.org/creator> " + iriRef(creatorUri) + " }\n" +
-      "  FILTER(?work != " + iriRef(excludeUri) + ")\n" +
+      "  { ?work <http://schema.org/" + pred + "> " + iriRef(targetUri) + " } UNION { ?work <https://schema.org/" + pred + "> " + iriRef(targetUri) + " }\n" +
+      (excludeUri ? "  FILTER(?work != " + iriRef(excludeUri) + ")\n" : "") +
       "  OPTIONAL { ?work <http://schema.org/name> ?n1 }\n" +
       "  OPTIONAL { ?work <https://schema.org/name> ?n2 }\n" +
       "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
@@ -1871,9 +1874,20 @@
     }).catch(function () { return []; });
   }
 
-  function creatorWorksEl(creatorLabel, works) {
+  function fetchMoreByCreator(creatorUri, excludeUri) {
+    return fetchWorksByInversePredicate("creator", creatorUri, excludeUri);
+  }
+
+  function fetchSubjectOf(personUri) {
+    return fetchWorksByInversePredicate("about", personUri, null);
+  }
+
+  // Shared by every "heading + list of clickable (label, optional date)
+  // rows" widget -- creations, more-by-creator, written-about all share
+  // this exact shape, just with a different heading and query behind them.
+  function workListEl(heading, works) {
     var card = el("div", { class: "hierarchy-tree" });
-    card.appendChild(el("div", { class: "hierarchy-context", text: "More by " + creatorLabel }));
+    card.appendChild(el("div", { class: "hierarchy-context", text: heading }));
     works.forEach(function (w) {
       var row = el("div", { class: "hierarchy-row" });
       var btn = el("button", { class: "hierarchy-link", text: w.date ? w.label + " (" + w.date + ")" : w.label });
@@ -2255,17 +2269,30 @@
         var creatorLabel = r.label ? r.label.value : shortLabel(creatorUri);
         fetchMoreByCreator(creatorUri, uri).then(function (works) {
           if (currentUri !== uri || !works.length) return;
-          creatorWorksSlot.appendChild(creatorWorksEl(creatorLabel, works));
+          creatorWorksSlot.appendChild(workListEl("More by " + creatorLabel, works));
         });
       });
     }
 
-    // "Co-authored with" -- Person views only.
+    // Person views only: what they made, who they made it with, who wrote
+    // about them. Three independent one-hop-inverse queries, same pattern
+    // as the book/archive widgets above, just pointed at this person's own
+    // URI instead of a work's.
+    var creationsSlot = el("div", {});
     var coCreatorsSlot = el("div", {});
+    var subjectOfSlot = el("div", {});
     if (view && view.type === "sdo:Person") {
+      fetchMoreByCreator(uri, null).then(function (works) {
+        if (currentUri !== uri || !works.length) return;
+        creationsSlot.appendChild(workListEl("Creations", works));
+      });
       fetchCoCreators(uri).then(function (coCreators) {
         if (currentUri !== uri || !coCreators.length) return;
         coCreatorsSlot.appendChild(coCreatorsEl(coCreators));
+      });
+      fetchSubjectOf(uri).then(function (works) {
+        if (currentUri !== uri || !works.length) return;
+        subjectOfSlot.appendChild(workListEl("Written about", works));
       });
     }
     var eyebrow = el("div", { class: "record-eyebrow" });
@@ -2469,7 +2496,9 @@
     // list of its neighbors' names.
     mainEl.appendChild(hierarchyTreeSlot);
     mainEl.appendChild(creatorWorksSlot);
+    mainEl.appendChild(creationsSlot);
     mainEl.appendChild(coCreatorsSlot);
+    mainEl.appendChild(subjectOfSlot);
 
     // ---- Full statement list -- toggled by the stats line in the header
     // above, not a separate control (see statsToggle).
