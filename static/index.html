@@ -1797,6 +1797,48 @@
     }).catch(function () { return null; });
   }
 
+  // "More by this creator" -- inverse sdo:creator, same mechanism the
+  // hierarchy tree's sibling lookup uses, just pointed at a different
+  // predicate. sdo:creator is a safe generalization across the MARC
+  // relator sub-roles (author/editor/collector/...) BOOK_FIELDS also lists:
+  // confirmed on real data that every relator:aut triple has a matching
+  // sdo:creator triple on the same (work, person) pair, so reading
+  // outByPred["sdo:creator"] alone (already fetched for the current record)
+  // is enough to find the creator(s) to look up -- no new query needed for
+  // that part. One creator can have thousands of works (corporate creators
+  // especially), so this is LIMITed, not a full count like the hierarchy
+  // tree's sibling fetch.
+  function fetchMoreByCreator(creatorUri, excludeUri) {
+    var q = "SELECT ?work (SAMPLE(?lbl) AS ?label) (SAMPLE(?dateVal) AS ?date) WHERE {\n" +
+      "  { ?work <http://schema.org/creator> " + iriRef(creatorUri) + " } UNION { ?work <https://schema.org/creator> " + iriRef(creatorUri) + " }\n" +
+      "  FILTER(?work != " + iriRef(excludeUri) + ")\n" +
+      "  OPTIONAL { ?work <http://schema.org/name> ?n1 }\n" +
+      "  OPTIONAL { ?work <https://schema.org/name> ?n2 }\n" +
+      "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
+      "  OPTIONAL { ?work <http://schema.org/datePublished> ?d1 }\n" +
+      "  OPTIONAL { ?work <https://schema.org/datePublished> ?d2 }\n" +
+      "  BIND(COALESCE(?d1, ?d2) AS ?dateVal)\n" +
+      "} GROUP BY ?work ORDER BY DESC(?date) LIMIT 12";
+    return sparql(q).then(function (rows) {
+      return rows.map(function (r) {
+        return { uri: r.work.value, label: r.label ? r.label.value : shortLabel(r.work.value), date: r.date ? r.date.value : null };
+      });
+    }).catch(function () { return []; });
+  }
+
+  function creatorWorksEl(creatorLabel, works) {
+    var card = el("div", { class: "hierarchy-tree" });
+    card.appendChild(el("div", { class: "hierarchy-context", text: "More by " + creatorLabel }));
+    works.forEach(function (w) {
+      var row = el("div", { class: "hierarchy-row" });
+      var btn = el("button", { class: "hierarchy-link", text: w.date ? w.label + " (" + w.date + ")" : w.label });
+      btn.addEventListener("click", function () { navigate(w.uri, { label: w.label }); });
+      row.appendChild(btn);
+      card.appendChild(row);
+    });
+    return card;
+  }
+
   function hierarchyTreeEl(chain, currentUri, currentLabel, siblings, children, groupContext) {
     var innerRows = el("div", {});
     if (groupContext) {
@@ -2120,6 +2162,22 @@
         });
       });
     }
+
+    // "More by this creator" -- books/images/audio/video/articles only
+    // (whichever views share BOOK_FIELDS); at most 3 creators, skipping any
+    // creator asserted only as a literal string (nothing to look up by).
+    var creatorWorksSlot = el("div", {});
+    if (view && view.fields === BOOK_FIELDS) {
+      var creatorRows = (outByPred["sdo:creator"] || []).filter(function (r) { return r.o.type === "uri"; }).slice(0, 3);
+      creatorRows.forEach(function (r) {
+        var creatorUri = r.o.value;
+        var creatorLabel = r.label ? r.label.value : shortLabel(creatorUri);
+        fetchMoreByCreator(creatorUri, uri).then(function (works) {
+          if (currentUri !== uri || !works.length) return;
+          creatorWorksSlot.appendChild(creatorWorksEl(creatorLabel, works));
+        });
+      });
+    }
     var eyebrow = el("div", { class: "record-eyebrow" });
     if (view) {
       var kindPill = el("span", { class: "view-kind-pill" });
@@ -2312,6 +2370,7 @@
     // still leads with what it actually asserts about itself, not with a
     // list of its neighbors' names.
     mainEl.appendChild(hierarchyTreeSlot);
+    mainEl.appendChild(creatorWorksSlot);
 
     // ---- Full statement list -- toggled by the stats line in the header
     // above, not a separate control (see statsToggle).
