@@ -619,6 +619,51 @@
     text-wrap: balance;
   }
 
+  /* ---------- Person identity header ---------- */
+  .identity-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+  .identity-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .identity-row .record-title { margin: 0 0 4px; }
+  .identity-subtitle {
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .identity-facts {
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+    margin-bottom: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .identity-fact-row {
+    display: flex;
+    gap: 10px;
+    font-size: 13px;
+  }
+  .identity-fact-label {
+    color: var(--muted);
+    min-width: 90px;
+    flex-shrink: 0;
+  }
+  .identity-fact-value { min-width: 0; }
+
   .record-uri {
     font-family: var(--font-mono);
     font-size: 12px;
@@ -2250,7 +2295,13 @@
       eyebrow.appendChild(pill);
     });
     header.appendChild(eyebrow);
-    header.appendChild(el("h1", { class: "record-title", text: label }));
+    if (view && view.type === "sdo:Person") {
+      header.appendChild(personIdentityRowEl(label, outByPred));
+      var identityFacts = personIdentityFactsEl(outByPred);
+      if (identityFacts) header.appendChild(identityFacts);
+    } else {
+      header.appendChild(el("h1", { class: "record-title", text: label }));
+    }
 
     var uriLine = el("div", { class: "record-uri" });
     if (isSafeHref(uri)) {
@@ -2351,8 +2402,10 @@
       }
     }
 
-    // ---- Type-specific hero facts ----
-    if (view) {
+    // ---- Type-specific hero facts ---- (Person's own AUTHORITY_FIELDS
+    // already rendered above as the identity header -- skip the generic
+    // grid for it so nothing repeats.)
+    if (view && view.type !== "sdo:Person") {
       var grid = el("div", { class: "hero-grid" });
       var any = false;
       view.fields.forEach(function (f) {
@@ -2484,6 +2537,58 @@
       span.appendChild(t);
     }
     return span;
+  }
+
+  // "Donkers, J." (MARC/catalog surname-first convention, the common case
+  // here) -> "DJ"; falls back to first-two-words initials for anything not
+  // comma-formatted.
+  function personInitials(label) {
+    var parts = label.split(",");
+    var a = "", b = "";
+    if (parts.length > 1 && parts[0].trim() && parts[1].trim()) {
+      a = parts[0].trim()[0];
+      b = parts[1].trim()[0];
+    } else {
+      var words = label.trim().split(/\s+/).filter(function (w) { return w.length; });
+      a = words[0] ? words[0][0] : "";
+      b = words[1] ? words[1][0] : "";
+    }
+    return (a + b).toUpperCase() || "?";
+  }
+
+  function personIdentityRowEl(label, outByPred) {
+    var row = el("div", { class: "identity-row" });
+    row.appendChild(el("div", { class: "identity-avatar", text: personInitials(label) }));
+    var nameWrap = el("div", {});
+    nameWrap.appendChild(el("h1", { class: "record-title", text: label }));
+    var akaRows = outByPred["sdo:alternateName"];
+    if (akaRows && akaRows.length) {
+      var names = akaRows.slice(0, 4).map(function (r) { return r.o.value; }).join(" · ");
+      nameWrap.appendChild(el("div", { class: "identity-subtitle", text: "also known as " + names }));
+    }
+    row.appendChild(nameWrap);
+    return row;
+  }
+
+  // Everything AUTHORITY_FIELDS lists except alternateName (already used as
+  // the identity row's subtitle, not repeated down here).
+  function personIdentityFactsEl(outByPred) {
+    var fields = AUTHORITY_FIELDS.filter(function (f) { return f.pred !== "sdo:alternateName"; });
+    var present = fields.filter(function (f) { return outByPred[f.pred] && outByPred[f.pred].length; });
+    if (!present.length) return null;
+    var wrap = el("div", { class: "identity-facts" });
+    present.forEach(function (f) {
+      var row = el("div", { class: "identity-fact-row" });
+      row.appendChild(el("span", { class: "identity-fact-label", text: f.heading }));
+      var valueWrap = el("span", { class: "identity-fact-value" });
+      outByPred[f.pred].slice(0, 6).forEach(function (r, i) {
+        if (i > 0) valueWrap.appendChild(document.createTextNode(", "));
+        valueWrap.appendChild(heroValueNode(r, f.kind));
+      });
+      row.appendChild(valueWrap);
+      wrap.appendChild(row);
+    });
+    return wrap;
   }
 
   function renderHeroGroup(field, rows) {
