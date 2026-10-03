@@ -1103,8 +1103,39 @@
   };
   var ICON_FALLBACK = '<circle cx="12" cy="12" r="8"/>';
 
-  function iconSpan(typeCurie) {
-    var inner = ICONS[typeCurie] || ICON_FALLBACK;
+  // iisgv:form ("Poster", "Button", "Badge", "Small printed matter", ...)
+  // is a free-text-labelled authority term, not a fixed enum -- so this is
+  // keyword matching, not a lookup table. A stand-in for an actual
+  // depiction until a real image graph exists: covers the two highest-
+  // volume physical forms (poster, button/badge) plus pamphlets, and falls
+  // back to the record's rdf:type icon (ICONS, above) for anything else --
+  // deliberately not trying to hand-draw an icon for all ~2,900 distinct
+  // form values in the data, just the handful with real volume.
+  var FORM_ICONS = {
+    poster: '<rect x="4" y="2" width="16" height="20" rx="1"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/>',
+    button: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
+    pamphlet: '<path d="M4 4h11l5 5v11H4Z"/><path d="M15 4v5h5"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>'
+  };
+  var FORM_ICON_KEYWORDS = [
+    ["poster", "poster"],
+    ["button", "button"],
+    ["badge", "button"],
+    ["sticker", "button"],
+    ["small printed matter", "pamphlet"]
+  ];
+
+  function formIconKey(formName) {
+    if (!formName) return null;
+    var lower = formName.toLowerCase();
+    for (var i = 0; i < FORM_ICON_KEYWORDS.length; i++) {
+      if (lower.indexOf(FORM_ICON_KEYWORDS[i][0]) !== -1) return FORM_ICON_KEYWORDS[i][1];
+    }
+    return null;
+  }
+
+  function iconSpan(typeCurie, formName) {
+    var key = formIconKey(formName);
+    var inner = (key && FORM_ICONS[key]) || ICONS[typeCurie] || ICON_FALLBACK;
     var span = document.createElement("span");
     span.className = "type-icon";
     span.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
@@ -1785,6 +1816,18 @@
   // inside it" neighborhood a flat breadcrumb doesn't show. parentUri comes
   // from the ancestor chain already fetched for the breadcrumb above; when
   // null (a top-level node), only the "child" branch runs.
+  // Shared by fetchHierarchyNeighborhood and fetchWorksByInversePredicate --
+  // both want each row's iisgv:form label (for formIconKey, above) and
+  // nothing else needs it, so this is the one place the lookup is written.
+  function formLookupFragment(subjectVar) {
+    return "  OPTIONAL {\n" +
+      "    " + subjectVar + " <https://iisg.amsterdam/vocab/form> ?formNode .\n" +
+      "    OPTIONAL { ?formNode <http://schema.org/name> ?fn1 }\n" +
+      "    OPTIONAL { ?formNode <https://schema.org/name> ?fn2 }\n" +
+      "    BIND(COALESCE(?fn1, ?fn2) AS ?formNameLit)\n" +
+      "  }\n";
+  }
+
   function fetchHierarchyNeighborhood(uri, parentUri) {
     var selfBlock = "{ BIND(\"child\" AS ?scope)\n" +
       "  { ?node <http://schema.org/isPartOf> " + iriRef(uri) + " } UNION { ?node <https://schema.org/isPartOf> " + iriRef(uri) + " }\n" +
@@ -1795,19 +1838,20 @@
         "  { ?node <http://schema.org/isPartOf> " + iriRef(parentUri) + " } UNION { ?node <https://schema.org/isPartOf> " + iriRef(parentUri) + " }\n" +
         "}");
     }
-    var q = "SELECT ?scope ?node (SAMPLE(?lbl) AS ?label) (SAMPLE(?type) AS ?typeUri) WHERE {\n" +
+    var q = "SELECT ?scope ?node (SAMPLE(?lbl) AS ?label) (SAMPLE(?type) AS ?typeUri) (GROUP_CONCAT(?formNameLit; separator=\"|\") AS ?formName) WHERE {\n" +
       "  " + blocks.join(" UNION ") + "\n" +
       "  OPTIONAL { ?node <http://schema.org/name> ?n1 }\n" +
       "  OPTIONAL { ?node <https://schema.org/name> ?n2 }\n" +
       "  OPTIONAL { ?node <http://www.w3.org/2000/01/rdf-schema#label> ?n3 }\n" +
       "  BIND(COALESCE(?n1, ?n2, ?n3) AS ?lbl)\n" +
       "  OPTIONAL { ?node a ?type }\n" +
+      formLookupFragment("?node") +
       "} GROUP BY ?scope ?node ORDER BY ?scope ?label LIMIT 400";
 
     return sparql(q).then(function (rows) {
       var children = [], siblings = [];
       rows.forEach(function (r) {
-        var item = { uri: r.node.value, label: r.label ? r.label.value : shortLabel(r.node.value), typeCurie: r.typeUri ? curie(r.typeUri.value) : null };
+        var item = { uri: r.node.value, label: r.label ? r.label.value : shortLabel(r.node.value), typeCurie: r.typeUri ? curie(r.typeUri.value) : null, formName: r.formName ? r.formName.value : null };
         (r.scope.value === "child" ? children : siblings).push(item);
       });
       return { children: children, siblings: siblings };
@@ -1858,7 +1902,7 @@
   // the current work), and "written about" (about) -- same one-hop-inverse
   // shape, just a different predicate and an optional self-exclusion.
   function fetchWorksByInversePredicate(pred, targetUri, excludeUri) {
-    var q = "SELECT ?work (SAMPLE(?lbl) AS ?label) (SAMPLE(?dateVal) AS ?date) (SAMPLE(?type) AS ?typeUri) WHERE {\n" +
+    var q = "SELECT ?work (SAMPLE(?lbl) AS ?label) (SAMPLE(?dateVal) AS ?date) (SAMPLE(?type) AS ?typeUri) (GROUP_CONCAT(?formNameLit; separator=\"|\") AS ?formName) WHERE {\n" +
       "  { ?work <http://schema.org/" + pred + "> " + iriRef(targetUri) + " } UNION { ?work <https://schema.org/" + pred + "> " + iriRef(targetUri) + " }\n" +
       (excludeUri ? "  FILTER(?work != " + iriRef(excludeUri) + ")\n" : "") +
       "  OPTIONAL { ?work <http://schema.org/name> ?n1 }\n" +
@@ -1868,10 +1912,11 @@
       "  OPTIONAL { ?work <https://schema.org/datePublished> ?d2 }\n" +
       "  BIND(COALESCE(?d1, ?d2) AS ?dateVal)\n" +
       "  OPTIONAL { ?work a ?type }\n" +
+      formLookupFragment("?work") +
       "} GROUP BY ?work ORDER BY DESC(?date) LIMIT 12";
     return sparql(q).then(function (rows) {
       return rows.map(function (r) {
-        return { uri: r.work.value, label: r.label ? r.label.value : shortLabel(r.work.value), date: r.date ? r.date.value : null, typeCurie: r.typeUri ? curie(r.typeUri.value) : null };
+        return { uri: r.work.value, label: r.label ? r.label.value : shortLabel(r.work.value), date: r.date ? r.date.value : null, typeCurie: r.typeUri ? curie(r.typeUri.value) : null, formName: r.formName ? r.formName.value : null };
       });
     }).catch(function () { return []; });
   }
@@ -1892,7 +1937,7 @@
     card.appendChild(el("div", { class: "hierarchy-context", text: heading }));
     works.forEach(function (w) {
       var row = el("div", { class: "hierarchy-row" });
-      row.appendChild(iconSpan(w.typeCurie));
+      row.appendChild(iconSpan(w.typeCurie, w.formName));
       var btn = el("button", { class: "hierarchy-link", text: w.date ? w.label + " (" + w.date + ")" : w.label });
       btn.addEventListener("click", function () { navigate(w.uri, { label: w.label }); });
       row.appendChild(btn);
@@ -1948,7 +1993,7 @@
     rowsToShow.slice(0, PAGE_SIZE).forEach(function (item) {
       var isCurrent = item.uri === currentUri;
       var row = el("div", { class: "hierarchy-row" + (isCurrent ? " current" : "") });
-      row.appendChild(iconSpan(item.typeCurie));
+      row.appendChild(iconSpan(item.typeCurie, item.formName));
       if (isCurrent) {
         row.appendChild(el("span", { text: item.label }));
       } else {
@@ -1963,7 +2008,7 @@
         if (children.length) {
           children.slice(0, PAGE_SIZE).forEach(function (child) {
             var kidRow = el("div", { class: "hierarchy-row" });
-            kidRow.appendChild(iconSpan(child.typeCurie));
+            kidRow.appendChild(iconSpan(child.typeCurie, child.formName));
             var kidBtn = el("button", { class: "hierarchy-link", text: child.label });
             kidBtn.addEventListener("click", function () { navigate(child.uri, { label: child.label }); });
             kidRow.appendChild(kidBtn);
