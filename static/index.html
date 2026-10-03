@@ -1795,18 +1795,19 @@
         "  { ?node <http://schema.org/isPartOf> " + iriRef(parentUri) + " } UNION { ?node <https://schema.org/isPartOf> " + iriRef(parentUri) + " }\n" +
         "}");
     }
-    var q = "SELECT ?scope ?node (SAMPLE(?lbl) AS ?label) WHERE {\n" +
+    var q = "SELECT ?scope ?node (SAMPLE(?lbl) AS ?label) (SAMPLE(?type) AS ?typeUri) WHERE {\n" +
       "  " + blocks.join(" UNION ") + "\n" +
       "  OPTIONAL { ?node <http://schema.org/name> ?n1 }\n" +
       "  OPTIONAL { ?node <https://schema.org/name> ?n2 }\n" +
       "  OPTIONAL { ?node <http://www.w3.org/2000/01/rdf-schema#label> ?n3 }\n" +
       "  BIND(COALESCE(?n1, ?n2, ?n3) AS ?lbl)\n" +
+      "  OPTIONAL { ?node a ?type }\n" +
       "} GROUP BY ?scope ?node ORDER BY ?scope ?label LIMIT 400";
 
     return sparql(q).then(function (rows) {
       var children = [], siblings = [];
       rows.forEach(function (r) {
-        var item = { uri: r.node.value, label: r.label ? r.label.value : shortLabel(r.node.value) };
+        var item = { uri: r.node.value, label: r.label ? r.label.value : shortLabel(r.node.value), typeCurie: r.typeUri ? curie(r.typeUri.value) : null };
         (r.scope.value === "child" ? children : siblings).push(item);
       });
       return { children: children, siblings: siblings };
@@ -1857,7 +1858,7 @@
   // the current work), and "written about" (about) -- same one-hop-inverse
   // shape, just a different predicate and an optional self-exclusion.
   function fetchWorksByInversePredicate(pred, targetUri, excludeUri) {
-    var q = "SELECT ?work (SAMPLE(?lbl) AS ?label) (SAMPLE(?dateVal) AS ?date) WHERE {\n" +
+    var q = "SELECT ?work (SAMPLE(?lbl) AS ?label) (SAMPLE(?dateVal) AS ?date) (SAMPLE(?type) AS ?typeUri) WHERE {\n" +
       "  { ?work <http://schema.org/" + pred + "> " + iriRef(targetUri) + " } UNION { ?work <https://schema.org/" + pred + "> " + iriRef(targetUri) + " }\n" +
       (excludeUri ? "  FILTER(?work != " + iriRef(excludeUri) + ")\n" : "") +
       "  OPTIONAL { ?work <http://schema.org/name> ?n1 }\n" +
@@ -1866,10 +1867,11 @@
       "  OPTIONAL { ?work <http://schema.org/datePublished> ?d1 }\n" +
       "  OPTIONAL { ?work <https://schema.org/datePublished> ?d2 }\n" +
       "  BIND(COALESCE(?d1, ?d2) AS ?dateVal)\n" +
+      "  OPTIONAL { ?work a ?type }\n" +
       "} GROUP BY ?work ORDER BY DESC(?date) LIMIT 12";
     return sparql(q).then(function (rows) {
       return rows.map(function (r) {
-        return { uri: r.work.value, label: r.label ? r.label.value : shortLabel(r.work.value), date: r.date ? r.date.value : null };
+        return { uri: r.work.value, label: r.label ? r.label.value : shortLabel(r.work.value), date: r.date ? r.date.value : null, typeCurie: r.typeUri ? curie(r.typeUri.value) : null };
       });
     }).catch(function () { return []; });
   }
@@ -1890,6 +1892,7 @@
     card.appendChild(el("div", { class: "hierarchy-context", text: heading }));
     works.forEach(function (w) {
       var row = el("div", { class: "hierarchy-row" });
+      row.appendChild(iconSpan(w.typeCurie));
       var btn = el("button", { class: "hierarchy-link", text: w.date ? w.label + " (" + w.date + ")" : w.label });
       btn.addEventListener("click", function () { navigate(w.uri, { label: w.label }); });
       row.appendChild(btn);
@@ -1945,6 +1948,7 @@
     rowsToShow.slice(0, PAGE_SIZE).forEach(function (item) {
       var isCurrent = item.uri === currentUri;
       var row = el("div", { class: "hierarchy-row" + (isCurrent ? " current" : "") });
+      row.appendChild(iconSpan(item.typeCurie));
       if (isCurrent) {
         row.appendChild(el("span", { text: item.label }));
       } else {
@@ -1959,6 +1963,7 @@
         if (children.length) {
           children.slice(0, PAGE_SIZE).forEach(function (child) {
             var kidRow = el("div", { class: "hierarchy-row" });
+            kidRow.appendChild(iconSpan(child.typeCurie));
             var kidBtn = el("button", { class: "hierarchy-link", text: child.label });
             kidBtn.addEventListener("click", function () { navigate(child.uri, { label: child.label }); });
             kidRow.appendChild(kidBtn);
