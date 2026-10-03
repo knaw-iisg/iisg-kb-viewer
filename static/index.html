@@ -519,6 +519,54 @@
   .breadcrumb-link:hover { text-decoration: underline; }
   .breadcrumb-sep, .breadcrumb-ellipsis { color: var(--muted); }
 
+  .hierarchy-tree {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 22px;
+    font-size: 13px;
+  }
+  .hierarchy-context {
+    font-size: 12px;
+    color: var(--muted);
+    padding-bottom: 10px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--line);
+  }
+  .hierarchy-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+  }
+  .hierarchy-row.current {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 6px 10px;
+  }
+  .hierarchy-row.muted { color: var(--muted); }
+  .hierarchy-row.ancestor .hierarchy-link { color: var(--muted); }
+  .hierarchy-row.ancestor .hierarchy-link:hover { color: var(--accent-strong); }
+  .hierarchy-children {
+    margin-left: 10px;
+    padding-left: 14px;
+    border-left: 1px solid var(--line);
+  }
+  .hierarchy-link {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--font-body);
+    color: var(--ink);
+    font-size: 13px;
+    text-align: left;
+  }
+  .hierarchy-link:hover { color: var(--accent-strong); text-decoration: underline; }
+
   .pager-row { display: flex; gap: 8px; margin-top: 14px; }
   .pager-btn {
     font-family: var(--font-mono);
@@ -1687,6 +1735,138 @@
     return step(15);
   }
 
+  // Siblings (other children of the immediate parent) and this node's own
+  // children, in one round trip -- the "where am I in this box, and what's
+  // inside it" neighborhood a flat breadcrumb doesn't show. parentUri comes
+  // from the ancestor chain already fetched for the breadcrumb above; when
+  // null (a top-level node), only the "child" branch runs.
+  function fetchHierarchyNeighborhood(uri, parentUri) {
+    var selfBlock = "{ BIND(\"child\" AS ?scope)\n" +
+      "  { ?node <http://schema.org/isPartOf> " + iriRef(uri) + " } UNION { ?node <https://schema.org/isPartOf> " + iriRef(uri) + " }\n" +
+      "}";
+    var blocks = [selfBlock];
+    if (parentUri) {
+      blocks.push("{ BIND(\"sibling\" AS ?scope)\n" +
+        "  { ?node <http://schema.org/isPartOf> " + iriRef(parentUri) + " } UNION { ?node <https://schema.org/isPartOf> " + iriRef(parentUri) + " }\n" +
+        "}");
+    }
+    var q = "SELECT ?scope ?node (SAMPLE(?lbl) AS ?label) WHERE {\n" +
+      "  " + blocks.join(" UNION ") + "\n" +
+      "  OPTIONAL { ?node <http://schema.org/name> ?n1 }\n" +
+      "  OPTIONAL { ?node <https://schema.org/name> ?n2 }\n" +
+      "  OPTIONAL { ?node <http://www.w3.org/2000/01/rdf-schema#label> ?n3 }\n" +
+      "  BIND(COALESCE(?n1, ?n2, ?n3) AS ?lbl)\n" +
+      "} GROUP BY ?scope ?node ORDER BY ?scope ?label LIMIT 400";
+
+    return sparql(q).then(function (rows) {
+      var children = [], siblings = [];
+      rows.forEach(function (r) {
+        var item = { uri: r.node.value, label: r.label ? r.label.value : shortLabel(r.node.value) };
+        (r.scope.value === "child" ? children : siblings).push(item);
+      });
+      return { children: children, siblings: siblings };
+    }).catch(function () { return { children: [], siblings: [] }; });
+  }
+
+  // Why the siblings are grouped the way they are -- findingaid-etl records
+  // this on the *parent* (group) node, not on each child: physical extent
+  // ("5 Mappen"), the date range the group covers, and the arrangement rule
+  // ("Alphabetisch nach Namen der Korrespondenten") sometimes under
+  // iisgv:arrangement, sometimes under sdo:description depending on how the
+  // original EAD was authored -- coalesce both rather than picking one.
+  function fetchGroupContext(parentUri) {
+    var q = "SELECT ?arrangement ?physDesc ?dates WHERE {\n" +
+      "  OPTIONAL { " + iriRef(parentUri) + " <https://iisg.amsterdam/vocab/arrangement> ?a1 }\n" +
+      "  OPTIONAL { " + iriRef(parentUri) + " <http://schema.org/description> ?a2 }\n" +
+      "  OPTIONAL { " + iriRef(parentUri) + " <https://schema.org/description> ?a3 }\n" +
+      "  BIND(COALESCE(?a1, ?a2, ?a3) AS ?arrangement)\n" +
+      "  OPTIONAL { " + iriRef(parentUri) + " <https://iisg.amsterdam/vocab/physicalDescription> ?physDesc }\n" +
+      "  OPTIONAL { " + iriRef(parentUri) + " <http://schema.org/temporalCoverage> ?t1 }\n" +
+      "  OPTIONAL { " + iriRef(parentUri) + " <https://schema.org/temporalCoverage> ?t2 }\n" +
+      "  BIND(COALESCE(?t1, ?t2) AS ?dates)\n" +
+      "} LIMIT 1";
+    return sparql(q).then(function (rows) {
+      if (!rows.length) return null;
+      var r = rows[0];
+      var ctx = {
+        arrangement: r.arrangement ? r.arrangement.value : null,
+        physicalDescription: r.physDesc ? r.physDesc.value : null,
+        dates: r.dates ? r.dates.value : null
+      };
+      return (ctx.arrangement || ctx.physicalDescription || ctx.dates) ? ctx : null;
+    }).catch(function () { return null; });
+  }
+
+  function hierarchyTreeEl(chain, currentUri, currentLabel, siblings, children, groupContext) {
+    var innerRows = el("div", {});
+    if (groupContext) {
+      var parts = [groupContext.physicalDescription, groupContext.dates, groupContext.arrangement].filter(function (p) { return p; });
+      innerRows.appendChild(el("div", { class: "hierarchy-context", text: parts.join(" · ") }));
+    }
+    var rowsToShow = siblings.length ? siblings : [{ uri: currentUri, label: currentLabel }];
+
+    rowsToShow.slice(0, PAGE_SIZE).forEach(function (item) {
+      var isCurrent = item.uri === currentUri;
+      var row = el("div", { class: "hierarchy-row" + (isCurrent ? " current" : "") });
+      if (isCurrent) {
+        row.appendChild(el("span", { text: item.label }));
+      } else {
+        var btn = el("button", { class: "hierarchy-link", text: item.label });
+        btn.addEventListener("click", function () { navigate(item.uri, { label: item.label }); });
+        row.appendChild(btn);
+      }
+      innerRows.appendChild(row);
+
+      if (isCurrent) {
+        var kids = el("div", { class: "hierarchy-children" });
+        if (children.length) {
+          children.slice(0, PAGE_SIZE).forEach(function (child) {
+            var kidRow = el("div", { class: "hierarchy-row" });
+            var kidBtn = el("button", { class: "hierarchy-link", text: child.label });
+            kidBtn.addEventListener("click", function () { navigate(child.uri, { label: child.label }); });
+            kidRow.appendChild(kidBtn);
+            kids.appendChild(kidRow);
+          });
+          if (children.length > PAGE_SIZE) {
+            kids.appendChild(el("div", { class: "hierarchy-row muted", text: "+" + (children.length - PAGE_SIZE) + " more" }));
+          }
+        } else {
+          kids.appendChild(el("div", { class: "hierarchy-row muted", text: "Nothing catalogued below this level" }));
+        }
+        innerRows.appendChild(kids);
+      }
+    });
+    if (rowsToShow.length > PAGE_SIZE) {
+      innerRows.appendChild(el("div", { class: "hierarchy-row muted", text: "+" + (rowsToShow.length - PAGE_SIZE) + " more in this series" }));
+    }
+
+    // Nest under each ancestor, outermost first, so the full path down to
+    // "siblings around here" reads as one continuous tree instead of a flat
+    // breadcrumb disconnected from the sibling list below it. Deliberately
+    // NOT fanning out every ancestor's own siblings too (each ancestor is
+    // one plain row) -- this graph has single levels with thousands of
+    // children elsewhere, so a path that happened to pass through one of
+    // those would render unboundedly if every level fanned out.
+    var content = innerRows;
+    for (var i = chain.length - 1; i >= 0; i--) {
+      var ancestor = chain[i];
+      var wrap = el("div", {});
+      var ancestorRow = el("div", { class: "hierarchy-row ancestor" });
+      var aBtn = el("button", { class: "hierarchy-link", text: ancestor.label });
+      aBtn.addEventListener("click", (function (u, l) { return function () { navigate(u, { label: l }); }; })(ancestor.uri, ancestor.label));
+      ancestorRow.appendChild(aBtn);
+      wrap.appendChild(ancestorRow);
+      var nested = el("div", { class: "hierarchy-children" });
+      nested.appendChild(content);
+      wrap.appendChild(nested);
+      content = wrap;
+    }
+
+    var card = el("div", { class: "hierarchy-tree" });
+    card.appendChild(content);
+    return card;
+  }
+
   function truncateChain(chain) {
     if (chain.length <= 4) return chain;
     return [chain[0], { uri: null, label: "…" }, chain[chain.length - 2], chain[chain.length - 1]];
@@ -1922,11 +2102,22 @@
     var header = el("div", { class: "record-header" });
     var breadcrumbHolder = el("div", {});
     header.appendChild(breadcrumbHolder);
+    var hierarchyTreeSlot = el("div", {});
     if (view && HIERARCHICAL_TYPES[view.type]) {
       fetchAncestorChains([uri]).then(function (chains) {
         if (currentUri !== uri) return; // navigated elsewhere while this was in flight
-        var chain = chains[uri];
-        if (chain && chain.length) breadcrumbHolder.appendChild(breadcrumbEl(chain, "breadcrumb"));
+        var chain = chains[uri] || [];
+        if (chain.length) breadcrumbHolder.appendChild(breadcrumbEl(chain, "breadcrumb"));
+        var parentUri = chain.length ? chain[chain.length - 1].uri : null;
+        Promise.all([
+          fetchHierarchyNeighborhood(uri, parentUri),
+          parentUri ? fetchGroupContext(parentUri) : Promise.resolve(null)
+        ]).then(function (results) {
+          var nbhd = results[0], groupContext = results[1];
+          if (currentUri !== uri) return;
+          if (!chain.length && !nbhd.children.length) return; // nothing hierarchical to show
+          hierarchyTreeSlot.appendChild(hierarchyTreeEl(chain, uri, label, nbhd.siblings, nbhd.children, groupContext));
+        });
       });
     }
     var eyebrow = el("div", { class: "record-eyebrow" });
@@ -2114,6 +2305,13 @@
     else if (!view && description) {
       mainEl.appendChild(el("p", { class: "record-desc", text: description }));
     }
+
+    // ---- Where this sits in the hierarchy: siblings + children. Placed
+    // after the record's own facts/description (not before) so a sparse
+    // leaf -- which may have nothing but a name and a handful of siblings --
+    // still leads with what it actually asserts about itself, not with a
+    // list of its neighbors' names.
+    mainEl.appendChild(hierarchyTreeSlot);
 
     // ---- Full statement list -- toggled by the stats line in the header
     // above, not a separate control (see statsToggle).
