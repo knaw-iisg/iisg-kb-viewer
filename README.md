@@ -13,6 +13,15 @@ own named graph by [triplestore](https://github.com/knaw-iisg/triplestore).
 Lets you search the graph, browse it by pipeline or by kind of item, and
 trace a single record's connections across pipelines.
 
+## Public instance
+
+Live at **https://kb.zijdeman.nl**, querying **https://sparql.zijdeman.nl**
+(QLever's SPARQL endpoint) by default. For ad-hoc SPARQL querying outside
+this curated viewer, QLever's own autocomplete-y query UI is at
+**https://kg.zijdeman.nl**. Deployment details (Caddy, systemd, firewall)
+live in [triplestore](https://github.com/knaw-iisg/triplestore)'s
+[`deploy/`](https://github.com/knaw-iisg/triplestore/tree/main/deploy).
+
 ## Architecture
 
 A single static page (`static/index.html`, vanilla JS, no build step, no
