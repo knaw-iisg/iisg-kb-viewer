@@ -1839,6 +1839,42 @@
     return card;
   }
 
+  // "Co-authored with" -- people who share an sdo:creator edge to the same
+  // work(s) as this person. Same inverse-creator mechanism as "more by this
+  // creator" above, just joined on the work instead of the person. Mostly
+  // empty for biblio-etl's Persons (avg 1.0 creator per book -- most books
+  // have exactly one), but genuinely populated for orcid-etl's Persons,
+  // whose research output is multi-author by nature.
+  function fetchCoCreators(personUri) {
+    var q = "SELECT ?other (SAMPLE(?lbl) AS ?label) (COUNT(DISTINCT ?work) AS ?shared) WHERE {\n" +
+      "  { ?work <http://schema.org/creator> " + iriRef(personUri) + " } UNION { ?work <https://schema.org/creator> " + iriRef(personUri) + " }\n" +
+      "  { ?work <http://schema.org/creator> ?other } UNION { ?work <https://schema.org/creator> ?other }\n" +
+      "  FILTER(?other != " + iriRef(personUri) + ")\n" +
+      "  OPTIONAL { ?other <http://schema.org/name> ?n1 }\n" +
+      "  OPTIONAL { ?other <https://schema.org/name> ?n2 }\n" +
+      "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
+      "} GROUP BY ?other ORDER BY DESC(?shared) LIMIT 12";
+    return sparql(q).then(function (rows) {
+      return rows.map(function (r) {
+        return { uri: r.other.value, label: r.label ? r.label.value : shortLabel(r.other.value), shared: parseInt(r.shared.value, 10) };
+      });
+    }).catch(function () { return []; });
+  }
+
+  function coCreatorsEl(coCreators) {
+    var card = el("div", { class: "hierarchy-tree" });
+    card.appendChild(el("div", { class: "hierarchy-context", text: "Co-authored with" }));
+    coCreators.forEach(function (c) {
+      var row = el("div", { class: "hierarchy-row" });
+      var btn = el("button", { class: "hierarchy-link", text: c.label });
+      btn.addEventListener("click", function () { navigate(c.uri, { label: c.label }); });
+      row.appendChild(btn);
+      row.appendChild(el("span", { class: "pred-count", style: "margin-left: auto;", text: c.shared + (c.shared === 1 ? " shared work" : " shared works") }));
+      card.appendChild(row);
+    });
+    return card;
+  }
+
   function hierarchyTreeEl(chain, currentUri, currentLabel, siblings, children, groupContext) {
     var innerRows = el("div", {});
     if (groupContext) {
@@ -2178,6 +2214,15 @@
         });
       });
     }
+
+    // "Co-authored with" -- Person views only.
+    var coCreatorsSlot = el("div", {});
+    if (view && view.type === "sdo:Person") {
+      fetchCoCreators(uri).then(function (coCreators) {
+        if (currentUri !== uri || !coCreators.length) return;
+        coCreatorsSlot.appendChild(coCreatorsEl(coCreators));
+      });
+    }
     var eyebrow = el("div", { class: "record-eyebrow" });
     if (view) {
       var kindPill = el("span", { class: "view-kind-pill" });
@@ -2371,6 +2416,7 @@
     // list of its neighbors' names.
     mainEl.appendChild(hierarchyTreeSlot);
     mainEl.appendChild(creatorWorksSlot);
+    mainEl.appendChild(coCreatorsSlot);
 
     // ---- Full statement list -- toggled by the stats line in the header
     // above, not a separate control (see statsToggle).
