@@ -677,9 +677,6 @@
   }
   .explore-toggle:hover { border-color: var(--accent); background: var(--accent-soft); }
 
-  /* Hide everything except the header and the explore view once toggled on. */
-  #main.exploring > *:not(.record-header):not(.explore-wrap) { display: none; }
-
   .explore-wrap {
     background: var(--surface);
     border: 1px solid var(--line);
@@ -1567,22 +1564,6 @@
     return loadEntity(uri);
   }
 
-  // Clicking a station in the Explore map: make it the new hub and jump
-  // straight into its own Explore map, rather than landing on its flat
-  // record page and making the user click "Explore this person" again.
-  // Reuses the same navigate()+toggle-click sequence renderPersonLanding
-  // already relies on for its random landing, so history/trail/breadcrumbs
-  // stay correct for free. Harmless no-op for a non-Person target (a
-  // creation's work, or a ghost that turned out to be a place/term) --
-  // renderRecord only adds the .explore-toggle for sdo:Person.
-  function navigateAndExplore(uri, label) {
-    var p = navigate(uri, { label: label });
-    if (p) p.then(function () {
-      var toggle = mainEl.querySelector(".explore-toggle");
-      if (toggle) toggle.click();
-    });
-  }
-
   // Named landing pages (sidebar "Views") vs. the entity-URI hash format --
   // kept as a distinct "view:xxx" prefix so syncFromHash can tell them
   // apart from a real record URI without ambiguity.
@@ -1603,7 +1584,6 @@
   function renderView(viewName) {
     viewGeneration++;
     clear(mainEl);
-    mainEl.classList.remove("exploring"); // see loadEntity() for why
     if (viewName === "archive") renderArchiveLanding();
     else if (viewName === "books") renderBooksLanding();
     else if (viewName === "datascience") renderHome();
@@ -1672,12 +1652,11 @@
       history.replaceState({ uri: candidate.uri }, "", "#" + encodeURIComponent(candidate.uri));
       loadEntity(candidate.uri).then(function () {
         if (gen !== viewGeneration) return;
-        var toggle = mainEl.querySelector(".explore-toggle");
-        if (!toggle) return; // shouldn't happen for a Person, but don't break if it does
-        toggle.click();
+        var graphSlot = mainEl.querySelector(".graph-slot");
+        if (!graphSlot) return; // shouldn't happen for a Person, but don't break if it does
         var reroll = el("button", { class: "explore-toggle", text: "↻ Show me someone else" });
         reroll.addEventListener("click", function () { navigateToView("person"); });
-        toggle.parentNode.insertBefore(reroll, toggle.nextSibling);
+        graphSlot.insertBefore(reroll, graphSlot.firstChild);
       });
     });
   }
@@ -2397,7 +2376,7 @@
       t.setAttribute("class", "explore-ghost-label");
       t.textContent = truncateForStation(neighbor.label, 20);
       g.appendChild(t);
-      g.addEventListener("click", function (e) { e.stopPropagation(); navigateAndExplore(neighbor.uri, neighbor.label); });
+      g.addEventListener("click", function (e) { e.stopPropagation(); navigate(neighbor.uri, { label: neighbor.label }); });
       return g;
     }
 
@@ -2474,7 +2453,7 @@
       addLine(cx, cy, vx, vy, blueColor, 5);
       addLine(vx, vy, x, y, blueColor, 5);
       addStation(vx, vy, 5, blueColor, truncateForStation(cs.viaLabel, 20), null, false, null);
-      addStation(x, y, 11, blueColor, truncateForStation(cs.label, 22), cs.shared + " shared works", i % 2 === 1, (function (cs) { return function () { navigateAndExplore(cs.uri, cs.label); }; })(cs), "person", cs.uri);
+      addStation(x, y, 11, blueColor, truncateForStation(cs.label, 22), cs.shared + " shared works", i % 2 === 1, (function (cs) { return function () { navigate(cs.uri, { label: cs.label }); }; })(cs), "person", cs.uri);
     });
 
     var coralColor = "var(--crit)";
@@ -2747,13 +2726,6 @@
 
   function loadEntity(uri) {
     clear(mainEl);
-    // clear(mainEl) only empties its children -- #main's own "exploring"
-    // class (toggled by the Explore button) survives a re-render otherwise,
-    // so a fresh page can start already in the exploring state, and the
-    // *next* click on its (new) Explore toggle flips it back OFF instead
-    // of on. Confirmed via the Person landing's reroll button: the second
-    // random person landed on the flat detail view instead of Explore.
-    mainEl.classList.remove("exploring");
     mainEl.appendChild(el("div", { class: "results-heading", text: "Loading record\u2026" }));
 
     // Everything the entity itself asserts, fetched in one shot (bounded --
@@ -2870,14 +2842,16 @@
     }
 
     // Person views only: what they made, who they made it with, who wrote
-    // about them. Three independent one-hop-inverse queries, same pattern
-    // as the book/archive widgets above, just pointed at this person's own
-    // URI instead of a work's.
+    // about them -- plus the Explore graph itself, which needs the same
+    // "creations" data the list below it shows, so that fetch is shared
+    // (not re-issued) rather than paid for twice.
     var creationsSlot = el("div", {});
     var coCreatorsSlot = el("div", {});
     var subjectOfSlot = el("div", {});
+    var graphSlot = el("div", { class: "graph-slot" });
     if (view && view.type === "sdo:Person") {
-      fetchMoreByCreator(uri, null).then(function (works) {
+      var creationsPromise = fetchMoreByCreator(uri, null);
+      creationsPromise.then(function (works) {
         if (currentUri !== uri || !works.length) return;
         creationsSlot.appendChild(workListEl("Creations", works));
       });
@@ -2888,6 +2862,10 @@
       fetchSubjectOf(uri).then(function (works) {
         if (currentUri !== uri || !works.length) return;
         subjectOfSlot.appendChild(workListEl("Written about", works));
+      });
+      Promise.all([fetchCoSubjects(uri), creationsPromise]).then(function (results) {
+        if (currentUri !== uri) return;
+        graphSlot.appendChild(exploreSvgEl(label, results[0], results[1]));
       });
     }
     var eyebrow = el("div", { class: "record-eyebrow" });
@@ -2921,26 +2899,6 @@
       header.appendChild(personIdentityRowEl(label, outByPred));
       var identityFacts = personIdentityFactsEl(outByPred);
       if (identityFacts) header.appendChild(identityFacts);
-
-      // Explore toggle: lazy-builds the radial view on first switch (two
-      // extra queries nobody should pay for if they never click it), then
-      // just shows/hides via the "exploring" class on #main -- see the
-      // #main.exploring CSS rule, which hides every direct child except
-      // the header and the explore view itself.
-      var exploreBtn = el("button", { class: "explore-toggle", text: "Explore this person ↗" });
-      var exploreBuilt = false;
-      exploreBtn.addEventListener("click", function () {
-        var exploring = mainEl.classList.toggle("exploring");
-        exploreBtn.textContent = exploring ? "← Back to details" : "Explore this person ↗";
-        if (exploring && !exploreBuilt) {
-          exploreBuilt = true;
-          Promise.all([fetchCoSubjects(uri), fetchMoreByCreator(uri, null)]).then(function (results) {
-            if (currentUri !== uri) return;
-            mainEl.appendChild(exploreSvgEl(label, results[0], results[1]));
-          });
-        }
-      });
-      header.appendChild(exploreBtn);
     } else {
       header.appendChild(el("h1", { class: "record-title", text: label }));
     }
@@ -2984,6 +2942,7 @@
     header.appendChild(statsToggle);
 
     mainEl.appendChild(header);
+    mainEl.appendChild(graphSlot);
 
     // ---- sdo:image, when the entity has one (events-etl asserts an
     // sdo:ImageObject, optionally with a smaller sdo:thumbnail nested under
