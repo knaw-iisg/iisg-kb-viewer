@@ -2551,7 +2551,7 @@
       t.setAttribute("x", x2 + dx); t.setAttribute("y", y2 + 4);
       t.setAttribute("text-anchor", anchor);
       t.setAttribute("class", "explore-ghost-label");
-      t.textContent = truncateForStation(neighbor.label, 20);
+      t.textContent = truncateForStation(neighbor.label, 14);
       g.appendChild(t);
       g.addEventListener("click", function (e) { e.stopPropagation(); navigate(neighbor.uri, { label: neighbor.label }); });
       return g;
@@ -2634,11 +2634,11 @@
         var vx = cx + Math.cos(angle) * 110, vy = cy + Math.sin(angle) * 85;
         addLine(cx, cy, vx, vy, blueColor, 5);
         addLine(vx, vy, x, y, blueColor, 5);
-        addStation(vx, vy, 5, blueColor, truncateForStation(it.viaLabel, 20), null, false, null);
+        addStation(vx, vy, 5, blueColor, truncateForStation(it.viaLabel, 14), null, false, null);
       } else {
         addLine(cx, cy, x, y, blueColor, 5);
       }
-      addStation(x, y, 11, blueColor, truncateForStation(it.label, 22), it.subtitle, i % 2 === 1, (function (it) { return function () { navigate(it.uri, { label: it.label }); }; })(it), it.ghostKind, it.uri);
+      addStation(x, y, 11, blueColor, truncateForStation(it.label, 16), it.subtitle, i % 2 === 1, (function (it) { return function () { navigate(it.uri, { label: it.label }); }; })(it), it.ghostKind, it.uri);
     });
 
     var coralColor = "var(--crit)";
@@ -2647,7 +2647,7 @@
       var angle = (180 + (m === 1 ? 0 : (-60 + (120 * i / (m - 1))))) * Math.PI / 180;
       var x = cx + Math.cos(angle) * 230, y = cy + Math.sin(angle) * 175;
       addLine(cx, cy, x, y, coralColor, 5);
-      addStation(x, y, 8, coralColor, truncateForStation(it.label, 24), it.subtitle, i % 2 === 1, (function (it) { return function () { navigate(it.uri, { label: it.label }); }; })(it), it.ghostKind, it.uri);
+      addStation(x, y, 8, coralColor, truncateForStation(it.label, 16), it.subtitle, i % 2 === 1, (function (it) { return function () { navigate(it.uri, { label: it.label }); }; })(it), it.ghostKind, it.uri);
     });
 
     var hub = document.createElementNS(svgNS, "g");
@@ -2687,42 +2687,70 @@
     }
     var rowsToShow = siblings.length ? siblings : [{ uri: currentUri, label: currentLabel }];
 
-    rowsToShow.slice(0, PAGE_SIZE).forEach(function (item) {
-      var isCurrent = item.uri === currentUri;
-      var row = el("div", { class: "hierarchy-row" + (isCurrent ? " current" : "") });
-      row.appendChild(iconSpan(item.typeCurie, item.formName));
-      if (isCurrent) {
-        row.appendChild(el("span", { text: item.label }));
-      } else {
-        var btn = el("button", { class: "hierarchy-link", text: item.label });
-        btn.addEventListener("click", function () { navigate(item.uri, { label: item.label }); });
-        row.appendChild(btn);
+    // Both "+N more" rows below used to be inert text -- siblings and
+    // children are already fully in memory (just capped to PAGE_SIZE at
+    // render time), so a real "show more" needs no new query, just
+    // re-entering these with a larger slice and swapping the old button
+    // out for whatever's left.
+    function appendChildrenPage(kids, kidsShown) {
+      children.slice(kidsShown, kidsShown + PAGE_SIZE).forEach(function (child) {
+        var kidRow = el("div", { class: "hierarchy-row" });
+        kidRow.appendChild(iconSpan(child.typeCurie, child.formName));
+        var kidBtn = el("button", { class: "hierarchy-link", text: child.label });
+        kidBtn.addEventListener("click", function () { navigate(child.uri, { label: child.label }); });
+        kidRow.appendChild(kidBtn);
+        kids.appendChild(kidRow);
+      });
+      kidsShown += PAGE_SIZE;
+      if (kidsShown < children.length) {
+        var moreRow = el("div", { class: "hierarchy-row" });
+        var moreBtn = el("button", { class: "hierarchy-link", text: "+" + (children.length - kidsShown) + " more" });
+        moreBtn.addEventListener("click", function () {
+          kids.removeChild(moreRow);
+          appendChildrenPage(kids, kidsShown);
+        });
+        moreRow.appendChild(moreBtn);
+        kids.appendChild(moreRow);
       }
-      innerRows.appendChild(row);
-
-      if (isCurrent) {
-        var kids = el("div", { class: "hierarchy-children" });
-        if (children.length) {
-          children.slice(0, PAGE_SIZE).forEach(function (child) {
-            var kidRow = el("div", { class: "hierarchy-row" });
-            kidRow.appendChild(iconSpan(child.typeCurie, child.formName));
-            var kidBtn = el("button", { class: "hierarchy-link", text: child.label });
-            kidBtn.addEventListener("click", function () { navigate(child.uri, { label: child.label }); });
-            kidRow.appendChild(kidBtn);
-            kids.appendChild(kidRow);
-          });
-          if (children.length > PAGE_SIZE) {
-            kids.appendChild(el("div", { class: "hierarchy-row muted", text: "+" + (children.length - PAGE_SIZE) + " more" }));
-          }
-        } else {
-          kids.appendChild(el("div", { class: "hierarchy-row muted", text: "Nothing catalogued below this level" }));
-        }
-        innerRows.appendChild(kids);
-      }
-    });
-    if (rowsToShow.length > PAGE_SIZE) {
-      innerRows.appendChild(el("div", { class: "hierarchy-row muted", text: "+" + (rowsToShow.length - PAGE_SIZE) + " more in this series" }));
     }
+
+    function appendSiblingsPage(shown) {
+      rowsToShow.slice(shown, shown + PAGE_SIZE).forEach(function (item) {
+        var isCurrent = item.uri === currentUri;
+        var row = el("div", { class: "hierarchy-row" + (isCurrent ? " current" : "") });
+        row.appendChild(iconSpan(item.typeCurie, item.formName));
+        if (isCurrent) {
+          row.appendChild(el("span", { text: item.label }));
+        } else {
+          var btn = el("button", { class: "hierarchy-link", text: item.label });
+          btn.addEventListener("click", function () { navigate(item.uri, { label: item.label }); });
+          row.appendChild(btn);
+        }
+        innerRows.appendChild(row);
+
+        if (isCurrent) {
+          var kids = el("div", { class: "hierarchy-children" });
+          if (children.length) {
+            appendChildrenPage(kids, 0);
+          } else {
+            kids.appendChild(el("div", { class: "hierarchy-row muted", text: "Nothing catalogued below this level" }));
+          }
+          innerRows.appendChild(kids);
+        }
+      });
+      shown += PAGE_SIZE;
+      if (shown < rowsToShow.length) {
+        var moreRow = el("div", { class: "hierarchy-row" });
+        var moreBtn = el("button", { class: "hierarchy-link", text: "+" + (rowsToShow.length - shown) + " more in this series" });
+        moreBtn.addEventListener("click", function () {
+          innerRows.removeChild(moreRow);
+          appendSiblingsPage(shown);
+        });
+        moreRow.appendChild(moreBtn);
+        innerRows.appendChild(moreRow);
+      }
+    }
+    appendSiblingsPage(0);
 
     // Nest under each ancestor, outermost first, so the full path down to
     // "siblings around here" reads as one continuous tree instead of a flat
@@ -3147,6 +3175,11 @@
     mainEl.appendChild(header);
     mainEl.appendChild(graphSlot);
 
+    // Event records: title bar goes right under the graph, above the
+    // image/description row below it.
+    var isEventView = view && view.type === "sdo:Event";
+    if (isEventView) mainEl.appendChild(el("div", { class: "event-title-box", text: label }));
+
     // ---- sdo:image, when the entity has one (events-etl asserts an
     // sdo:ImageObject, optionally with a smaller sdo:thumbnail nested under
     // it -- see that repo's pipeline.py). The image/thumbnail nodes are
@@ -3156,7 +3189,6 @@
     // format/url lookup below. Same iisg.amsterdam-only policy as the
     // DataDownload thumbnail just below: never hotlink a third-party host.
     var heroImageSlot = el("div", {});
-    var isEventView = view && view.type === "sdo:Event";
     if (isEventView) {
       heroImageSlot.classList.add("event-hero-img");
       var eventHeroRow = el("div", { class: "event-hero-row" });
@@ -3173,7 +3205,6 @@
         eventHeroRow.appendChild(eventHeroDesc);
       }
       mainEl.appendChild(eventHeroRow);
-      mainEl.appendChild(el("div", { class: "event-title-box", text: label }));
     } else {
       mainEl.appendChild(heroImageSlot);
     }
