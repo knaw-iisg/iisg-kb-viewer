@@ -664,6 +664,39 @@
   }
   .identity-fact-value { min-width: 0; }
 
+  .explore-toggle {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--accent-strong);
+    padding: 5px 11px;
+    border-radius: 20px;
+    cursor: pointer;
+    margin: 4px 0 14px;
+  }
+  .explore-toggle:hover { border-color: var(--accent); background: var(--accent-soft); }
+
+  /* Hide everything except the header and the explore view once toggled on. */
+  #main.exploring > *:not(.record-header):not(.explore-wrap) { display: none; }
+
+  .explore-wrap {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 22px;
+  }
+  .explore-svg { width: 100%; height: auto; display: block; }
+  .explore-label { font-family: var(--font-body); font-size: 12px; fill: var(--ink); }
+  .explore-sublabel { font-family: var(--font-mono); font-size: 10px; fill: var(--muted); }
+  .explore-hub-label { font-family: var(--font-display); font-weight: 600; font-size: 17px; fill: var(--ink); }
+  .explore-station.clickable { cursor: pointer; }
+  .explore-station.clickable:hover .explore-label { fill: var(--accent-strong); }
+  .explore-legend { display: flex; gap: 18px; margin-top: 8px; font-size: 12px; color: var(--ink-soft); }
+  .explore-legend-item.accent { color: var(--accent-strong); }
+  .explore-legend-item.crit { color: var(--crit); }
+
   .record-uri {
     font-family: var(--font-mono);
     font-size: 12px;
@@ -1982,6 +2015,171 @@
     return card;
   }
 
+  // ---------- Explore view: a radial "metro map" for Person records ----------
+  // Two relationship types, chosen after checking data density on several
+  // candidates: "written about together" (two people covered by the same
+  // work -- a real two-hop path, person -about- work -about- person) and
+  // "creations" (a person's own one-hop sdo:creator output). Co-authorship
+  // was too sparse outside orcid-etl, Person<->Place has no connecting
+  // predicate in this graph at all, and a shared-topic hub query ran the
+  // server out of memory -- all rejected on evidence, not guessed away.
+  // Laid out radially (hub at center, spokes evenly spaced by angle) rather
+  // than as a general metro-line router: the data is honestly a star
+  // around whichever person you start from, not a connected loop, and a
+  // radial placement is the one layout tractable to hand-write without a
+  // real graph-drawing library.
+
+  function fetchCoSubjects(personUri) {
+    var q = "SELECT ?other (SAMPLE(?lbl) AS ?label) (COUNT(DISTINCT ?work) AS ?shared) (SAMPLE(?work) AS ?viaWork) WHERE {\n" +
+      "  { ?work <http://schema.org/about> " + iriRef(personUri) + " } UNION { ?work <https://schema.org/about> " + iriRef(personUri) + " }\n" +
+      "  { ?work <http://schema.org/about> ?other } UNION { ?work <https://schema.org/about> ?other }\n" +
+      "  FILTER(?other != " + iriRef(personUri) + ")\n" +
+      "  OPTIONAL { ?other <http://schema.org/name> ?n1 }\n" +
+      "  OPTIONAL { ?other <https://schema.org/name> ?n2 }\n" +
+      "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
+      "} GROUP BY ?other ORDER BY DESC(?shared) LIMIT 8";
+    return sparql(q).then(function (rows) {
+      var items = rows.map(function (r) {
+        return { uri: r.other.value, label: r.label ? r.label.value : shortLabel(r.other.value), shared: parseInt(r.shared.value, 10), viaUri: r.viaWork.value, viaLabel: null };
+      });
+      if (!items.length) return items;
+      // SAMPLE(?work) above picks one representative connecting work per
+      // co-subject, but a second SAMPLE(?label) in the same query isn't
+      // guaranteed to come from that same row -- so its label is fetched
+      // here, in a separate batched lookup, rather than risking a
+      // mismatched via-stop title.
+      var values = items.map(function (it) { return iriRef(it.viaUri); }).join(" ");
+      var q2 = "SELECT ?w (SAMPLE(?lbl) AS ?label) WHERE {\n" +
+        "  VALUES ?w { " + values + " }\n" +
+        "  OPTIONAL { ?w <http://schema.org/name> ?n1 }\n" +
+        "  OPTIONAL { ?w <https://schema.org/name> ?n2 }\n" +
+        "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
+        "} GROUP BY ?w";
+      return sparql(q2).then(function (rows2) {
+        var labelByUri = {};
+        rows2.forEach(function (r) { labelByUri[r.w.value] = r.label ? r.label.value : null; });
+        items.forEach(function (it) { it.viaLabel = labelByUri[it.viaUri] || shortLabel(it.viaUri); });
+        return items;
+      });
+    }).catch(function () { return []; });
+  }
+
+  function truncateForStation(label, max) {
+    if (!label) return "";
+    return label.length > max ? label.slice(0, max - 1) + "…" : label;
+  }
+
+  function exploreSvgEl(centerLabel, coSubjects, creations) {
+    var svgNS = "http://www.w3.org/2000/svg";
+    var cx = 370, cy = 250;
+    var svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("viewBox", "0 0 740 500");
+    svg.setAttribute("class", "explore-svg");
+    svg.setAttribute("role", "img");
+
+    function addLine(x1, y1, x2, y2, color, width) {
+      var ln = document.createElementNS(svgNS, "line");
+      ln.setAttribute("x1", x1); ln.setAttribute("y1", y1);
+      ln.setAttribute("x2", x2); ln.setAttribute("y2", y2);
+      ln.setAttribute("stroke", color);
+      ln.setAttribute("stroke-width", width);
+      ln.setAttribute("stroke-linecap", "round");
+      svg.appendChild(ln);
+    }
+
+    function addStation(x, y, r, color, title, subtitle, labelFar, onClick) {
+      var g = document.createElementNS(svgNS, "g");
+      g.setAttribute("class", "explore-station" + (onClick ? " clickable" : ""));
+      var circle = document.createElementNS(svgNS, "circle");
+      circle.setAttribute("cx", x); circle.setAttribute("cy", y); circle.setAttribute("r", r);
+      circle.setAttribute("fill", "var(--surface)");
+      circle.setAttribute("stroke", color);
+      circle.setAttribute("stroke-width", 3);
+      g.appendChild(circle);
+
+      var anchor = x > cx + 2 ? "start" : (x < cx - 2 ? "end" : "middle");
+      var dx = x > cx + 2 ? 9 : (x < cx - 2 ? -9 : 0);
+      // Title sits above the station, subtitle below -- kept on opposite
+      // sides so they never collide with each other. labelFar pushes the
+      // title further up on alternating stations (even/odd by index) so
+      // two spokes packed close in angle don't stack their titles on the
+      // same line.
+      var t1 = document.createElementNS(svgNS, "text");
+      t1.setAttribute("x", x + dx); t1.setAttribute("y", y - r - (labelFar ? 20 : 6));
+      t1.setAttribute("text-anchor", anchor);
+      t1.setAttribute("class", "explore-label");
+      t1.textContent = title;
+      g.appendChild(t1);
+
+      if (subtitle) {
+        var t2 = document.createElementNS(svgNS, "text");
+        t2.setAttribute("x", x + dx); t2.setAttribute("y", y + r + 15);
+        t2.setAttribute("text-anchor", anchor);
+        t2.setAttribute("class", "explore-sublabel");
+        t2.textContent = subtitle;
+        g.appendChild(t2);
+      }
+      if (onClick) g.addEventListener("click", onClick);
+      svg.appendChild(g);
+    }
+
+    // Capped to keep the map readable -- a station per connection would
+    // overwhelm the diagram well before it ran out of real data (Marx
+    // alone has dozens of co-subjects); these are the strongest ones,
+    // already sorted by shared-work count / most recent date.
+    coSubjects = coSubjects.slice(0, 5);
+    creations = creations.slice(0, 5);
+
+    var blueColor = "var(--accent)";
+    var n = coSubjects.length;
+    coSubjects.forEach(function (cs, i) {
+      var angle = (n === 1 ? 0 : (-80 + (160 * i / (n - 1)))) * Math.PI / 180;
+      var x = cx + Math.cos(angle) * 230, y = cy + Math.sin(angle) * 175;
+      var vx = cx + Math.cos(angle) * 110, vy = cy + Math.sin(angle) * 85;
+      addLine(cx, cy, vx, vy, blueColor, 5);
+      addLine(vx, vy, x, y, blueColor, 5);
+      addStation(vx, vy, 5, blueColor, truncateForStation(cs.viaLabel, 20), null, false, null);
+      addStation(x, y, 11, blueColor, truncateForStation(cs.label, 22), cs.shared + " shared works", i % 2 === 1, (function (cs) { return function () { navigate(cs.uri, { label: cs.label }); }; })(cs));
+    });
+
+    var coralColor = "var(--crit)";
+    var m = creations.length;
+    creations.forEach(function (w, i) {
+      var angle = (180 + (m === 1 ? 0 : (-60 + (120 * i / (m - 1))))) * Math.PI / 180;
+      var x = cx + Math.cos(angle) * 230, y = cy + Math.sin(angle) * 175;
+      addLine(cx, cy, x, y, coralColor, 5);
+      addStation(x, y, 8, coralColor, truncateForStation(w.label, 24), w.date, i % 2 === 1, (function (w) { return function () { navigate(w.uri, { label: w.label }); }; })(w));
+    });
+
+    var hub = document.createElementNS(svgNS, "g");
+    var outer = document.createElementNS(svgNS, "circle");
+    outer.setAttribute("cx", cx); outer.setAttribute("cy", cy); outer.setAttribute("r", 19);
+    outer.setAttribute("fill", "var(--surface)"); outer.setAttribute("stroke", blueColor); outer.setAttribute("stroke-width", 3);
+    hub.appendChild(outer);
+    var inner = document.createElementNS(svgNS, "circle");
+    inner.setAttribute("cx", cx); inner.setAttribute("cy", cy); inner.setAttribute("r", 10);
+    inner.setAttribute("fill", coralColor);
+    hub.appendChild(inner);
+    svg.appendChild(hub);
+    var hubText = document.createElementNS(svgNS, "text");
+    hubText.setAttribute("x", cx); hubText.setAttribute("y", cy - 32);
+    hubText.setAttribute("text-anchor", "middle");
+    hubText.setAttribute("class", "explore-hub-label");
+    hubText.textContent = centerLabel;
+    svg.appendChild(hubText);
+
+    var wrap = el("div", { class: "explore-wrap" });
+    wrap.appendChild(svg);
+    if (!n && !m) {
+      wrap.appendChild(el("div", { class: "hierarchy-row muted", text: "Nothing to explore from here yet" }));
+    }
+    var legend = el("div", { class: "explore-legend" });
+    legend.appendChild(el("span", { class: "explore-legend-item accent", text: "● written about together" }));
+    legend.appendChild(el("span", { class: "explore-legend-item crit", text: "● creations" }));
+    wrap.appendChild(legend);
+    return wrap;
+  }
+
   function hierarchyTreeEl(chain, currentUri, currentLabel, siblings, children, groupContext) {
     var innerRows = el("div", {});
     if (groupContext) {
@@ -2376,6 +2574,26 @@
       header.appendChild(personIdentityRowEl(label, outByPred));
       var identityFacts = personIdentityFactsEl(outByPred);
       if (identityFacts) header.appendChild(identityFacts);
+
+      // Explore toggle: lazy-builds the radial view on first switch (two
+      // extra queries nobody should pay for if they never click it), then
+      // just shows/hides via the "exploring" class on #main -- see the
+      // #main.exploring CSS rule, which hides every direct child except
+      // the header and the explore view itself.
+      var exploreBtn = el("button", { class: "explore-toggle", text: "Explore this person ↗" });
+      var exploreBuilt = false;
+      exploreBtn.addEventListener("click", function () {
+        var exploring = mainEl.classList.toggle("exploring");
+        exploreBtn.textContent = exploring ? "← Back to details" : "Explore this person ↗";
+        if (exploring && !exploreBuilt) {
+          exploreBuilt = true;
+          Promise.all([fetchCoSubjects(uri), fetchMoreByCreator(uri, null)]).then(function (results) {
+            if (currentUri !== uri) return;
+            mainEl.appendChild(exploreSvgEl(label, results[0], results[1]));
+          });
+        }
+      });
+      header.appendChild(exploreBtn);
     } else {
       header.appendChild(el("h1", { class: "record-title", text: label }));
     }
