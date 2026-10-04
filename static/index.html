@@ -1840,12 +1840,28 @@
     });
   }
 
+  // A type can have hundreds of thousands of instances (Books: ~786K) --
+  // fetching them all up front (as this used to) meant a single query
+  // joining in labels for every one of them before anything could render,
+  // ~7s for Books. Count first (cheap: no label joins), then page the
+  // actual rows with LIMIT/OFFSET, same lazy-load shape as loadGroupPage.
   function browseType(typeUri, typeKey) {
     currentUri = null;
     renderTrail();
     clear(mainEl);
     var label = pluralType(typeKey);
     mainEl.appendChild(el("div", { class: "results-heading", text: "Loading " + label.toLowerCase() + "\u2026" }));
+    var countQ = "SELECT (COUNT(DISTINCT ?s) AS ?c) WHERE { GRAPH ?g { ?s a " + iriRef(typeUri) + " } }";
+    sparql(countQ).then(function (rows) {
+      var total = rows.length ? parseInt(rows[0].c.value, 10) : 0;
+      renderPagedTypeList(label, typeUri, typeKey, total);
+    }).catch(function (err) {
+      clear(mainEl);
+      renderError("Couldn\u2019t load list: " + err.message, function () { browseType(typeUri, typeKey); });
+    });
+  }
+
+  function fetchTypePage(typeUri, typeKey, offset) {
     var q = "SELECT ?s (SAMPLE(?lbl) AS ?label) (SAMPLE(?g) AS ?graph) WHERE {\n" +
       "  GRAPH ?g { ?s a " + iriRef(typeUri) + " }\n" +
       "  OPTIONAL { ?s <http://schema.org/name> ?n1 }\n" +
@@ -1854,17 +1870,63 @@
       "  OPTIONAL { ?s <http://schema.org/roleName> ?n4 }\n" +
       "  OPTIONAL { ?s <https://schema.org/roleName> ?n5 }\n" +
       "  BIND(COALESCE(?n1, ?n2, ?n3, ?n4, ?n5) AS ?lbl)\n" +
-      "} GROUP BY ?s ORDER BY ?s";
-    sparql(q).then(function (rows) {
-      var items = rows.map(function (r) {
+      "} GROUP BY ?s ORDER BY ?s LIMIT " + PAGE_SIZE + " OFFSET " + offset;
+    return sparql(q).then(function (rows) {
+      return rows.map(function (r) {
         var g = r.graph ? graphInfo(r.graph.value).label : null;
         return { uri: r.s.value, label: r.label ? r.label.value : shortLabel(r.s.value), typeCurie: typeKey, extraPills: g ? [g] : [] };
       });
-      renderResultList(label, items);
-    }).catch(function (err) {
-      clear(mainEl);
-      renderError("Couldn\u2019t load list: " + err.message, function () { browseType(typeUri, typeKey); });
     });
+  }
+
+  function renderPagedTypeList(heading, typeUri, typeKey, total) {
+    clear(mainEl);
+    if (!total) {
+      mainEl.appendChild(el("div", { class: "results-heading", text: heading + " \u2014 no results" }));
+      return;
+    }
+    mainEl.appendChild(el("div", { class: "results-heading", text: heading + " \u2014 " + fmtNum(total) + " total" }));
+    var wrap = el("div", { class: "cards-wrap" });
+    mainEl.appendChild(wrap);
+    var loaded = 0;
+
+    function loadPage() {
+      fetchTypePage(typeUri, typeKey, loaded).then(function (items) {
+        var oldPager = wrap.querySelector(".pager-row");
+        if (oldPager) wrap.removeChild(oldPager);
+        var cardByUri = {};
+        items.forEach(function (it) {
+          var card = resultCardEl(it);
+          wrap.appendChild(card);
+          if (HIERARCHICAL_TYPES[it.typeCurie]) cardByUri[it.uri] = card;
+        });
+        var hierarchyUris = Object.keys(cardByUri);
+        if (hierarchyUris.length) {
+          fetchAncestorChains(hierarchyUris).then(function (chains) {
+            hierarchyUris.forEach(function (u) {
+              if (!chains[u] || !chains[u].length) return;
+              var card = cardByUri[u];
+              if (!card || !card.isConnected) return;
+              var lbl = card.querySelector(".result-label");
+              lbl.insertAdjacentElement("afterend", el("div", { class: "result-breadcrumb", text: textBreadcrumb(chains[u]) }));
+            });
+          });
+        }
+        loaded += items.length;
+        if (loaded < total && items.length) {
+          var pager = el("div", { class: "pager-row" });
+          var btn = el("button", { class: "pager-btn", text: "Show " + Math.min(PAGE_SIZE, total - loaded) + " more" });
+          btn.addEventListener("click", function () { btn.disabled = true; btn.textContent = "Loading\u2026"; loadPage(); });
+          pager.appendChild(btn);
+          wrap.appendChild(pager);
+        }
+      }).catch(function (err) {
+        var pager = el("div", { class: "pager-row" });
+        pager.appendChild(el("div", { class: "group-loading", text: "Couldn\u2019t load more: " + err.message }));
+        wrap.appendChild(pager);
+      });
+    }
+    loadPage();
   }
 
   // ---------- Shared result rendering: cluster by type when the list is mixed ----------
@@ -2429,6 +2491,17 @@
     return truncateChain(chain).map(function (n) { return n.label; }).join(" › ");
   }
 
+  function resultCardEl(it) {
+    var card = el("button", { class: "result-card" });
+    card.appendChild(el("div", { class: "result-label", text: it.label }));
+    var meta = el("div", { class: "result-meta" });
+    (it.extraPills || []).slice(0, 3).forEach(function (t) { meta.appendChild(el("span", { class: "type-pill", text: t })); });
+    meta.appendChild(el("span", { class: "uri-sub", text: shortLabel(it.uri) }));
+    card.appendChild(meta);
+    card.addEventListener("click", function () { navigate(it.uri, { label: it.label }); });
+    return card;
+  }
+
   function renderCardGroup(container, items, shown) {
     while (container.children.length > 0) {
       container.removeChild(container.lastChild);
@@ -2436,13 +2509,7 @@
     var page = items.slice(0, shown + PAGE_SIZE);
     var cardByUri = {};
     page.forEach(function (it) {
-      var card = el("button", { class: "result-card" });
-      card.appendChild(el("div", { class: "result-label", text: it.label }));
-      var meta = el("div", { class: "result-meta" });
-      (it.extraPills || []).slice(0, 3).forEach(function (t) { meta.appendChild(el("span", { class: "type-pill", text: t })); });
-      meta.appendChild(el("span", { class: "uri-sub", text: shortLabel(it.uri) }));
-      card.appendChild(meta);
-      card.addEventListener("click", function () { navigate(it.uri, { label: it.label }); });
+      var card = resultCardEl(it);
       container.appendChild(card);
       if (HIERARCHICAL_TYPES[it.typeCurie]) cardByUri[it.uri] = card;
     });
