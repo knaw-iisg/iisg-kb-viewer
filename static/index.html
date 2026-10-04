@@ -696,6 +696,10 @@
   .explore-legend { display: flex; gap: 18px; margin-top: 8px; font-size: 12px; color: var(--ink-soft); }
   .explore-legend-item.accent { color: var(--accent-strong); }
   .explore-legend-item.crit { color: var(--crit); }
+  .explore-ghost { opacity: 0; transition: opacity 150ms ease; cursor: pointer; }
+  .explore-ghost.show { opacity: 1; }
+  .explore-ghost:hover .explore-ghost-label { fill: var(--accent-strong); }
+  .explore-ghost-label { font-family: var(--font-body); font-size: 11px; fill: var(--ink-soft); }
 
   .record-uri {
     font-family: var(--font-mono);
@@ -2287,6 +2291,22 @@
     return label.length > max ? label.slice(0, max - 1) + "…" : label;
   }
 
+  // Hover-ghost's "work" branch: the one forward hop a creation station
+  // doesn't already carry (who/what it's about) -- deliberately not the
+  // work's own creator, since that's almost always the hub itself for a
+  // single-author book and would just redraw the center.
+  function fetchWorkAbout(workUri) {
+    var q = "SELECT ?about (SAMPLE(?lbl) AS ?label) WHERE {\n" +
+      "  { " + iriRef(workUri) + " <http://schema.org/about> ?about } UNION { " + iriRef(workUri) + " <https://schema.org/about> ?about }\n" +
+      "  OPTIONAL { ?about <http://schema.org/name> ?n1 }\n" +
+      "  OPTIONAL { ?about <https://schema.org/name> ?n2 }\n" +
+      "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
+      "} GROUP BY ?about LIMIT 3";
+    return sparql(q).then(function (rows) {
+      return rows.map(function (r) { return { uri: r.about.value, label: r.label ? r.label.value : shortLabel(r.about.value) }; });
+    }).catch(function () { return []; });
+  }
+
   function exploreSvgEl(centerLabel, coSubjects, creations) {
     var svgNS = "http://www.w3.org/2000/svg";
     var cx = 370, cy = 250;
@@ -2305,7 +2325,84 @@
       svg.appendChild(ln);
     }
 
-    function addStation(x, y, r, color, title, subtitle, labelFar, onClick) {
+    // Hover-ghost: previews one extra hop off a station without touching
+    // the rest of the layout -- a single dashed node sprouting further out
+    // along the same spoke, fetched lazily (and cached per uri, so
+    // re-hovering the same station is free) and torn down on mouseleave.
+    // ghostToken invalidates any fetch still in flight once the pointer has
+    // moved elsewhere, so a slow response can't pop in over a station the
+    // user already left.
+    var ghostToken = 0;
+    var ghostGroup = null;
+    var ghostHoverTimer = null;
+    var ghostCache = {};
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    function clearGhost() {
+      ghostToken++;
+      if (ghostHoverTimer) { clearTimeout(ghostHoverTimer); ghostHoverTimer = null; }
+      if (ghostGroup && ghostGroup.parentNode) ghostGroup.parentNode.removeChild(ghostGroup);
+      ghostGroup = null;
+    }
+
+    function fetchGhostNeighbor(kind, uri) {
+      var key = kind + ":" + uri;
+      if (!ghostCache[key]) {
+        ghostCache[key] = (kind === "person" ? fetchCoSubjects(uri) : fetchWorkAbout(uri)).then(function (items) {
+          return items && items.length ? items[0] : null;
+        });
+      }
+      return ghostCache[key];
+    }
+
+    function buildGhostGroup(x1, y1, x2, y2, color, neighbor) {
+      var g = document.createElementNS(svgNS, "g");
+      g.setAttribute("class", "explore-ghost");
+      var ln = document.createElementNS(svgNS, "line");
+      ln.setAttribute("x1", x1); ln.setAttribute("y1", y1);
+      ln.setAttribute("x2", x2); ln.setAttribute("y2", y2);
+      ln.setAttribute("stroke", color);
+      ln.setAttribute("stroke-width", 3);
+      ln.setAttribute("stroke-dasharray", "3 4");
+      g.appendChild(ln);
+      var circle = document.createElementNS(svgNS, "circle");
+      circle.setAttribute("cx", x2); circle.setAttribute("cy", y2); circle.setAttribute("r", 7);
+      circle.setAttribute("fill", "var(--surface)");
+      circle.setAttribute("stroke", color);
+      circle.setAttribute("stroke-width", 2);
+      circle.setAttribute("stroke-dasharray", "2 3");
+      g.appendChild(circle);
+      var anchor = x2 > x1 + 2 ? "start" : (x2 < x1 - 2 ? "end" : "middle");
+      var dx = x2 > x1 + 2 ? 8 : (x2 < x1 - 2 ? -8 : 0);
+      var t = document.createElementNS(svgNS, "text");
+      t.setAttribute("x", x2 + dx); t.setAttribute("y", y2 + 4);
+      t.setAttribute("text-anchor", anchor);
+      t.setAttribute("class", "explore-ghost-label");
+      t.textContent = truncateForStation(neighbor.label, 20);
+      g.appendChild(t);
+      g.addEventListener("click", function (e) { e.stopPropagation(); navigate(neighbor.uri, { label: neighbor.label }); });
+      return g;
+    }
+
+    function scheduleGhost(x, y, color, ghostKind, ghostUri) {
+      clearGhost();
+      var token = ghostToken;
+      ghostHoverTimer = setTimeout(function () {
+        fetchGhostNeighbor(ghostKind, ghostUri).then(function (neighbor) {
+          if (token !== ghostToken || !neighbor) return;
+          var dx = x - cx, dy = y - cy;
+          var len = Math.sqrt(dx * dx + dy * dy) || 1;
+          var gx = clamp(x + (dx / len) * 55, 24, 716);
+          var gy = clamp(y + (dy / len) * 55, 24, 476);
+          ghostGroup = buildGhostGroup(x, y, gx, gy, color, neighbor);
+          svg.appendChild(ghostGroup);
+          requestAnimationFrame(function () { if (ghostGroup) ghostGroup.classList.add("show"); });
+        });
+      }, 150);
+    }
+
+    function addStation(x, y, r, color, title, subtitle, labelFar, onClick, ghostKind, ghostUri) {
       var g = document.createElementNS(svgNS, "g");
       g.setAttribute("class", "explore-station" + (onClick ? " clickable" : ""));
       var circle = document.createElementNS(svgNS, "circle");
@@ -2338,6 +2435,10 @@
         g.appendChild(t2);
       }
       if (onClick) g.addEventListener("click", onClick);
+      if (ghostKind && ghostUri) {
+        g.addEventListener("mouseenter", function () { scheduleGhost(x, y, color, ghostKind, ghostUri); });
+        g.addEventListener("mouseleave", clearGhost);
+      }
       svg.appendChild(g);
     }
 
@@ -2357,7 +2458,7 @@
       addLine(cx, cy, vx, vy, blueColor, 5);
       addLine(vx, vy, x, y, blueColor, 5);
       addStation(vx, vy, 5, blueColor, truncateForStation(cs.viaLabel, 20), null, false, null);
-      addStation(x, y, 11, blueColor, truncateForStation(cs.label, 22), cs.shared + " shared works", i % 2 === 1, (function (cs) { return function () { navigate(cs.uri, { label: cs.label }); }; })(cs));
+      addStation(x, y, 11, blueColor, truncateForStation(cs.label, 22), cs.shared + " shared works", i % 2 === 1, (function (cs) { return function () { navigate(cs.uri, { label: cs.label }); }; })(cs), "person", cs.uri);
     });
 
     var coralColor = "var(--crit)";
@@ -2366,7 +2467,7 @@
       var angle = (180 + (m === 1 ? 0 : (-60 + (120 * i / (m - 1))))) * Math.PI / 180;
       var x = cx + Math.cos(angle) * 230, y = cy + Math.sin(angle) * 175;
       addLine(cx, cy, x, y, coralColor, 5);
-      addStation(x, y, 8, coralColor, truncateForStation(w.label, 24), w.date, i % 2 === 1, (function (w) { return function () { navigate(w.uri, { label: w.label }); }; })(w));
+      addStation(x, y, 8, coralColor, truncateForStation(w.label, 24), w.date, i % 2 === 1, (function (w) { return function () { navigate(w.uri, { label: w.label }); }; })(w), "work", w.uri);
     });
 
     var hub = document.createElementNS(svgNS, "g");
