@@ -856,6 +856,28 @@
     max-width: 74ch;
   }
 
+  /* Event records only: image left, description directly to its right,
+     full-width title bar below the pair -- see renderRecord's Event
+     branch, which builds this instead of the generic stacked
+     image-then-facts-then-description layout every other type gets. */
+  .event-hero-row { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; margin-bottom: 16px; }
+  .event-hero-img { flex: 0 0 auto; }
+  .event-hero-desc { flex: 1 1 260px; min-width: 0; }
+  .event-hero-desc p { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin: 0 0 10px; white-space: pre-wrap; }
+  .event-title-box {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 20px;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+
   .download-btn {
     display: inline-block;
     font-family: var(--font-mono);
@@ -1048,9 +1070,9 @@
       <ul class="rail-graphs" id="rail-views">
         <li><button class="rail-graph-btn" data-view="archive"><span>Archive</span></button></li>
         <li><button class="rail-graph-btn" data-view="books"><span>Books</span></button></li>
-        <li><button class="rail-graph-btn" data-view="events"><span>Events</span></button></li>
         <li><button class="rail-graph-btn" data-view="person"><span>Person</span></button></li>
         <li><button class="rail-graph-btn" data-view="datascience"><span>Data science</span></button></li>
+        <li><button class="rail-graph-btn" data-view="events"><span>Events@IISG</span></button></li>
       </ul>
     </div>
 
@@ -3134,7 +3156,27 @@
     // format/url lookup below. Same iisg.amsterdam-only policy as the
     // DataDownload thumbnail just below: never hotlink a third-party host.
     var heroImageSlot = el("div", {});
-    mainEl.appendChild(heroImageSlot);
+    var isEventView = view && view.type === "sdo:Event";
+    if (isEventView) {
+      heroImageSlot.classList.add("event-hero-img");
+      var eventHeroRow = el("div", { class: "event-hero-row" });
+      eventHeroRow.appendChild(heroImageSlot);
+      var eventDescRows = outByPred["sdo:description"];
+      if (eventDescRows && eventDescRows.length) {
+        var eventHeroDesc = el("div", { class: "event-hero-desc" });
+        eventDescRows.forEach(function (r) {
+          // Same HTML-stripping as the generic DESC_FIELDS loop below --
+          // never render harvested literals as HTML (stored-XSS risk).
+          var text = r.o.value.replace(/<br\s*\/?>/gi, "\n").replace(/<\/?[a-z][^>]*>/gi, "");
+          eventHeroDesc.appendChild(el("p", { text: text }));
+        });
+        eventHeroRow.appendChild(eventHeroDesc);
+      }
+      mainEl.appendChild(eventHeroRow);
+      mainEl.appendChild(el("div", { class: "event-title-box", text: label }));
+    } else {
+      mainEl.appendChild(heroImageSlot);
+    }
     if (outByPred["sdo:image"]) {
       var imageQuery = "PREFIX schema: <https://schema.org/>\n" +
         "SELECT ?url ?thumbUrl WHERE {\n" +
@@ -3224,6 +3266,7 @@
     var textWrap = el("div", { class: "hero-textblocks" });
     var anyText = false;
     DESC_FIELDS.forEach(function (f) {
+      if (isEventView && f.pred === "sdo:description") return; // already shown beside the hero image above
       var rows = outByPred[f.pred];
       if (!rows || !rows.length) return;
       anyText = true;
