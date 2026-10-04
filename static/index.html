@@ -1012,8 +1012,13 @@
     </div>
 
     <div class="rail-section">
-      <div class="rail-heading"><span>Pipelines</span></div>
-      <ul class="rail-graphs" id="rail-graphs"><li class="rail-empty">Loading…</li></ul>
+      <div class="rail-heading"><span>Views</span></div>
+      <ul class="rail-graphs" id="rail-views">
+        <li><button class="rail-graph-btn" data-view="archive"><span>Archive</span></button></li>
+        <li><button class="rail-graph-btn" data-view="books"><span>Books</span></button></li>
+        <li><button class="rail-graph-btn" data-view="person"><span>Person</span></button></li>
+        <li><button class="rail-graph-btn" data-view="datascience"><span>Data science</span></button></li>
+      </ul>
     </div>
 
     <div class="rail-section" style="flex: 1;">
@@ -1517,7 +1522,6 @@
 
   var mainEl = document.getElementById("main");
   var trailListEl = document.getElementById("trail-list");
-  var railGraphsEl = document.getElementById("rail-graphs");
   var searchInput = document.getElementById("search-input");
   var searchSpinner = document.getElementById("search-spinner");
 
@@ -1556,52 +1560,171 @@
     if (!/^https?:\/\//i.test(uri)) { renderError("Not a browsable URI: " + uri); return; }
     currentUri = uri;
     history.pushState({ uri: uri }, "", "#" + encodeURIComponent(uri));
-    loadEntity(uri);
+    return loadEntity(uri);
   }
 
-  function navigateHome() {
+  // Named landing pages (sidebar "Views") vs. the entity-URI hash format --
+  // kept as a distinct "view:xxx" prefix so syncFromHash can tell them
+  // apart from a real record URI without ambiguity.
+  function navigateToView(viewName) {
     currentUri = null;
     searchInput.value = "";
-    history.pushState({}, "", location.pathname);
+    history.pushState({ view: viewName }, "", "#view:" + viewName);
     renderTrail();
-    renderHome();
+    renderView(viewName);
   }
 
+  // Bumped on every navigation (named view or entity URI); async callbacks
+  // from the Person landing's random pick capture this at start and bail
+  // if it's moved on by the time they resolve, instead of clobbering
+  // whatever the user navigated to in the meantime.
+  var viewGeneration = 0;
+
+  function renderView(viewName) {
+    viewGeneration++;
+    clear(mainEl);
+    mainEl.classList.remove("exploring"); // see loadEntity() for why
+    if (viewName === "archive") renderArchiveLanding();
+    else if (viewName === "books") renderBooksLanding();
+    else if (viewName === "datascience") renderHome();
+    else renderPersonLanding(); // "person", and the fallback default
+  }
+
+  // ---------- Person view: randomly-centered Explore landing ----------
+  // The new default experience (see init, below, and navigateHome()).
+  // Picks a real person weighted toward being reasonably well-connected
+  // (sampling from sdo:about edges, not a uniform pick over all Persons,
+  // most of whom have zero "written about together" connections) and
+  // jumps straight into their Explore map rather than the flat record
+  // page -- reuses loadEntity()/renderRecord() as-is, then simulates a
+  // click on the Explore toggle those already build, instead of
+  // duplicating that rendering path.
+
+  var aboutPersonTripleCount = null;
+
+  function fetchAboutPersonTripleCount() {
+    if (aboutPersonTripleCount !== null) return Promise.resolve(aboutPersonTripleCount);
+    var q = "SELECT (COUNT(*) AS ?n) WHERE {\n" +
+      "  { ?w <http://schema.org/about> ?p } UNION { ?w <https://schema.org/about> ?p }\n" +
+      "  ?p a <https://schema.org/Person> .\n" +
+      "}";
+    return sparql(q).then(function (rows) {
+      aboutPersonTripleCount = rows.length ? parseInt(rows[0].n.value, 10) : 50000;
+      return aboutPersonTripleCount;
+    }).catch(function () { return 50000; });
+  }
+
+  function fetchRandomPersonCandidate() {
+    return fetchAboutPersonTripleCount().then(function (total) {
+      var offset = Math.floor(Math.random() * Math.max(total - 1, 1));
+      // No GROUP BY, deliberately: this samples raw (work, person) rows,
+      // not distinct persons, so someone asserted as sdo:about on many
+      // works is proportionally more likely to come up -- a cheap stand-in
+      // for "pick someone well-connected" without a separate degree
+      // computation. Each row already resolves to at most one ?lbl via
+      // COALESCE, so no aggregate is needed to make this valid SPARQL.
+      var q = "SELECT ?p ?lbl WHERE {\n" +
+        "  { ?w <http://schema.org/about> ?p } UNION { ?w <https://schema.org/about> ?p }\n" +
+        "  ?p a <https://schema.org/Person> .\n" +
+        "  OPTIONAL { ?p <http://schema.org/name> ?n1 }\n" +
+        "  OPTIONAL { ?p <https://schema.org/name> ?n2 }\n" +
+        "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
+        "} LIMIT 1 OFFSET " + offset;
+      return sparql(q);
+    }).then(function (rows) {
+      if (!rows.length) return null;
+      return { uri: rows[0].p.value, label: rows[0].lbl ? rows[0].lbl.value : shortLabel(rows[0].p.value) };
+    }).catch(function () { return null; });
+  }
+
+  function renderPersonLanding() {
+    var gen = viewGeneration;
+    clear(mainEl);
+    mainEl.appendChild(el("div", { class: "results-heading", text: "Finding someone to explore…" }));
+    fetchRandomPersonCandidate().then(function (candidate) {
+      if (gen !== viewGeneration) return;
+      if (!candidate) {
+        clear(mainEl);
+        renderError("Couldn’t find a starting point.", renderPersonLanding);
+        return;
+      }
+      currentUri = candidate.uri;
+      history.replaceState({ uri: candidate.uri }, "", "#" + encodeURIComponent(candidate.uri));
+      loadEntity(candidate.uri).then(function () {
+        if (gen !== viewGeneration) return;
+        var toggle = mainEl.querySelector(".explore-toggle");
+        if (!toggle) return; // shouldn't happen for a Person, but don't break if it does
+        toggle.click();
+        var reroll = el("button", { class: "explore-toggle", text: "↻ Show me someone else" });
+        reroll.addEventListener("click", function () { navigateToView("person"); });
+        toggle.parentNode.insertBefore(reroll, toggle.nextSibling);
+      });
+    });
+  }
+
+  // ---------- Archive / Books views: curated entry points ----------
+  // v1: the existing "browse by type" list, same as the home dashboard's
+  // tiles already offer -- a real, working landing page, not a dead end,
+  // with a more deliberately designed entry (e.g. starting from a specific
+  // top-level collection, or a notable book) as a follow-up.
+
+  function renderArchiveLanding() {
+    browseType("https://schema.org/ArchiveComponent", "sdo:ArchiveComponent");
+  }
+
+  function renderBooksLanding() {
+    browseType("https://schema.org/Book", "sdo:Book");
+  }
+
+  // Brand/logo click -- goes to the new default experience (Person,
+  // randomly centered), same as landing on the bare site with no hash.
+  function navigateHome() { navigateToView("person"); }
+
   function syncFromHash() {
-    var hashUri = decodeURIComponent(location.hash.replace(/^#/, ""));
-    if (hashUri === currentUri) return;
-    if (hashUri && /^https?:\/\//i.test(hashUri)) { currentUri = hashUri; loadEntity(hashUri); }
-    else { currentUri = null; renderTrail(); renderHome(); }
+    var raw = decodeURIComponent(location.hash.replace(/^#/, ""));
+    if (raw === currentUri) return;
+    if (raw.indexOf("view:") === 0) { currentUri = null; renderTrail(); renderView(raw.slice(5)); return; }
+    if (raw && /^https?:\/\//i.test(raw)) { currentUri = raw; loadEntity(raw); }
+    else { currentUri = null; renderTrail(); renderView("person"); }
   }
 
   window.addEventListener("popstate", syncFromHash);
   window.addEventListener("hashchange", syncFromHash);
 
-  // ---------- Rendering: rail graph list ----------
+  Array.prototype.forEach.call(document.querySelectorAll("#rail-views [data-view]"), function (btn) {
+    btn.addEventListener("click", function () { navigateToView(btn.getAttribute("data-view")); });
+  });
 
-  function loadRailGraphs() {
+  // ---------- Rendering: pipelines section (now part of the "Data
+  // science" view's dashboard, not a permanent sidebar fixture) ----------
+
+  function pipelinesDashSection() {
+    var section = el("div", { class: "dash-section" });
+    section.appendChild(el("div", { class: "dash-heading", text: "Pipelines" }));
+    var grid = el("div", { class: "stat-grid" });
+    var loading = el("div", { class: "dash-loading", text: "Loading pipeline counts…" });
+    section.appendChild(loading);
+    section.appendChild(grid);
     sparql("SELECT ?g (COUNT(*) AS ?c) WHERE { GRAPH ?g { ?s ?p ?o } } GROUP BY ?g ORDER BY DESC(?c)").then(function (rows) {
-      clear(railGraphsEl);
+      section.removeChild(loading);
       rows.forEach(function (r) {
         var info = graphInfo(r.g.value);
-        var li = document.createElement("li");
-        var btn = el("button", { class: "rail-graph-btn", title: info.sub });
-        var left = document.createElement("span");
-        var dot = document.createElement("span");
-        dot.className = "dot";
-        dot.style.background = info.color;
-        left.appendChild(dot);
-        left.appendChild(document.createTextNode(info.label));
-        btn.appendChild(left);
-        btn.appendChild(el("span", { class: "n", text: fmtNum(r.c.value) }));
-        btn.addEventListener("click", function () { browseGraph(info); });
-        li.appendChild(btn);
-        railGraphsEl.appendChild(li);
+        var tile = el("button", { class: "stat-tile" });
+        tile.appendChild(el("span", { class: "n", text: fmtNum(r.c.value) }));
+        tile.appendChild(el("span", { class: "lbl", text: info.label }));
+        var sub = el("span", { class: "sub" });
+        var dot = document.createElement("span"); dot.className = "dot"; dot.style.background = info.color;
+        sub.appendChild(dot);
+        sub.appendChild(document.createTextNode(info.sub));
+        tile.appendChild(sub);
+        tile.addEventListener("click", function () { browseGraph(info); });
+        grid.appendChild(tile);
       });
     }).catch(function () {
-      clear(railGraphsEl);
-      railGraphsEl.appendChild(el("li", { class: "rail-empty", text: "Store unreachable." }));
+      section.removeChild(loading);
+      grid.appendChild(el("div", { class: "column-empty", text: "Store unreachable." }));
     });
+    return section;
   }
 
   // ---------- Rendering: home dashboard ----------
@@ -1626,6 +1749,7 @@
     typeSection.appendChild(el("div", { class: "dash-loading", text: "Loading type counts\u2026" }));
     typeSection.appendChild(typeGrid);
     wrap.appendChild(typeSection);
+    wrap.appendChild(pipelinesDashSection());
 
     mainEl.appendChild(wrap);
 
@@ -2439,6 +2563,13 @@
 
   function loadEntity(uri) {
     clear(mainEl);
+    // clear(mainEl) only empties its children -- #main's own "exploring"
+    // class (toggled by the Explore button) survives a re-render otherwise,
+    // so a fresh page can start already in the exploring state, and the
+    // *next* click on its (new) Explore toggle flips it back OFF instead
+    // of on. Confirmed via the Person landing's reroll button: the second
+    // random person landed on the flat detail view instead of Explore.
+    mainEl.classList.remove("exploring");
     mainEl.appendChild(el("div", { class: "results-heading", text: "Loading record\u2026" }));
 
     // Everything the entity itself asserts, fetched in one shot (bounded --
@@ -2463,7 +2594,7 @@
       "  GRAPH ?g { ?s ?p " + iriRef(uri) + " }\n" +
       "} GROUP BY ?p ORDER BY DESC(?c)";
 
-    Promise.all([
+    return Promise.all([
       sparql(factsQuery),
       sparql(sourcesQuery),
       sparql(inCountsQuery)
@@ -3138,15 +3269,18 @@
 
   // ---------- Init ----------
 
-  loadRailGraphs();
-
   var initialHash = decodeURIComponent(location.hash.replace(/^#/, ""));
   if (initialHash && /^https?:\/\//i.test(initialHash)) {
     currentUri = initialHash;
     history.replaceState({ uri: initialHash }, "", "#" + encodeURIComponent(initialHash));
     loadEntity(initialHash);
+  } else if (initialHash.indexOf("view:") === 0) {
+    history.replaceState({ view: initialHash.slice(5) }, "", "#" + initialHash);
+    renderView(initialHash.slice(5));
   } else {
-    renderHome();
+    // Default landing, no hash at all: the Person view (randomly centered
+    // Explore map), not the old pipeline dashboard -- see renderView().
+    renderView("person");
   }
   searchInput.focus();
 })();
