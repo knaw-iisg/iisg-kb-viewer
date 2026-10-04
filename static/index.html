@@ -718,7 +718,14 @@
   .explore-svg { width: 100%; height: auto; display: block; }
   .explore-label { font-family: var(--font-body); font-size: 12px; fill: var(--ink); }
   .explore-sublabel { font-family: var(--font-mono); font-size: 10px; fill: var(--muted); }
-  .explore-hub-label { font-family: var(--font-display); font-weight: 600; font-size: 17px; fill: var(--ink); }
+  .explore-hub-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--ink);
+    text-align: center;
+    margin: 0 0 10px;
+  }
   .explore-station.clickable { cursor: pointer; }
   .explore-station.clickable:hover .explore-label { fill: var(--accent-strong); }
   .explore-legend { display: flex; gap: 18px; margin-top: 8px; font-size: 12px; color: var(--ink-soft); }
@@ -2660,14 +2667,15 @@
     inner.setAttribute("fill", coralColor);
     hub.appendChild(inner);
     svg.appendChild(hub);
-    var hubText = document.createElementNS(svgNS, "text");
-    hubText.setAttribute("x", cx); hubText.setAttribute("y", cy - 32);
-    hubText.setAttribute("text-anchor", "middle");
-    hubText.setAttribute("class", "explore-hub-label");
-    hubText.textContent = centerLabel;
-    svg.appendChild(hubText);
 
     var wrap = el("div", { class: "explore-wrap" });
+    // The hub's own name used to be SVG text centered over the circle --
+    // fine for a short one, but a long title (a book, an event) doesn't
+    // wrap in SVG, so it just ran on as one line straight across the
+    // diagram, overlapping whatever stations happened to sit under it. A
+    // normal HTML heading above the graph wraps properly and never
+    // competes with the stations for space.
+    wrap.appendChild(el("div", { class: "explore-hub-title", text: centerLabel }));
     wrap.appendChild(svg);
     if (!n && !m) {
       wrap.appendChild(el("div", { class: "hierarchy-row muted", text: "Nothing to explore from here yet" }));
