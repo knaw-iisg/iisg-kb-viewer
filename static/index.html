@@ -712,12 +712,12 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 22px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
   }
   .explore-svg { width: 100%; height: auto; display: block; }
-  .explore-label { font-family: var(--font-body); font-size: 12px; fill: var(--ink); }
-  .explore-sublabel { font-family: var(--font-mono); font-size: 10px; fill: var(--muted); }
+  .explore-label { font-family: var(--font-body); font-size: 12px; font-weight: 700; fill: var(--ink); }
+  .explore-sublabel { font-family: var(--font-mono); font-size: 10px; fill: var(--ink-soft); }
   .explore-hub-title {
     font-family: var(--font-display);
     font-weight: 600;
@@ -2488,9 +2488,9 @@
 
   function exploreSvgEl(centerLabel, incoming, outgoing, incomingLegend, outgoingLegend) {
     var svgNS = "http://www.w3.org/2000/svg";
-    var cx = 370, cy = 250;
+    var cx = 370, cy = 170;
     var svg = document.createElementNS(svgNS, "svg");
-    svg.setAttribute("viewBox", "0 0 740 500");
+    svg.setAttribute("viewBox", "0 0 740 340");
     svg.setAttribute("class", "explore-svg");
     svg.setAttribute("role", "img");
 
@@ -2542,14 +2542,14 @@
       ln.setAttribute("x1", x1); ln.setAttribute("y1", y1);
       ln.setAttribute("x2", x2); ln.setAttribute("y2", y2);
       ln.setAttribute("stroke", color);
-      ln.setAttribute("stroke-width", 3);
+      ln.setAttribute("stroke-width", 2);
       ln.setAttribute("stroke-dasharray", "3 4");
       g.appendChild(ln);
       var circle = document.createElementNS(svgNS, "circle");
-      circle.setAttribute("cx", x2); circle.setAttribute("cy", y2); circle.setAttribute("r", 7);
+      circle.setAttribute("cx", x2); circle.setAttribute("cy", y2); circle.setAttribute("r", 6);
       circle.setAttribute("fill", "var(--surface)");
       circle.setAttribute("stroke", color);
-      circle.setAttribute("stroke-width", 2);
+      circle.setAttribute("stroke-width", 1.5);
       circle.setAttribute("stroke-dasharray", "2 3");
       g.appendChild(circle);
       var anchor = x2 > x1 + 2 ? "start" : (x2 < x1 - 2 ? "end" : "middle");
@@ -2572,8 +2572,8 @@
           if (token !== ghostToken || !neighbor) return;
           var dx = x - cx, dy = y - cy;
           var len = Math.sqrt(dx * dx + dy * dy) || 1;
-          var gx = clamp(x + (dx / len) * 55, 24, 716);
-          var gy = clamp(y + (dy / len) * 55, 24, 476);
+          var gx = clamp(x + (dx / len) * 40, 24, 716);
+          var gy = clamp(y + (dy / len) * 40, 24, 316);
           ghostGroup = buildGhostGroup(x, y, gx, gy, color, neighbor);
           svg.appendChild(ghostGroup);
           requestAnimationFrame(function () { if (ghostGroup) ghostGroup.classList.add("show"); });
@@ -2588,7 +2588,7 @@
       circle.setAttribute("cx", x); circle.setAttribute("cy", y); circle.setAttribute("r", r);
       circle.setAttribute("fill", "var(--surface)");
       circle.setAttribute("stroke", color);
-      circle.setAttribute("stroke-width", 3);
+      circle.setAttribute("stroke-width", 2);
       g.appendChild(circle);
 
       var anchor = x > cx + 2 ? "start" : (x < cx - 2 ? "end" : "middle");
@@ -2632,38 +2632,38 @@
     var n = incoming.length;
     incoming.forEach(function (it, i) {
       var angle = (n === 1 ? 0 : (-80 + (160 * i / (n - 1)))) * Math.PI / 180;
-      var x = cx + Math.cos(angle) * 230, y = cy + Math.sin(angle) * 175;
+      var x = cx + Math.cos(angle) * 230, y = cy + Math.sin(angle) * 110;
       // Person's co-subjects route through a small via-stop (the shared
       // work); the generic 1-hop neighbor graph has no such intermediate
       // node, so it's a direct spoke -- same drawing code either way, via
       // just an optional extra hop.
       if (it.viaUri || it.viaLabel) {
-        var vx = cx + Math.cos(angle) * 110, vy = cy + Math.sin(angle) * 85;
-        addLine(cx, cy, vx, vy, blueColor, 5);
-        addLine(vx, vy, x, y, blueColor, 5);
-        addStation(vx, vy, 5, blueColor, truncateForStation(it.viaLabel, 14), null, false, null);
+        var vx = cx + Math.cos(angle) * 110, vy = cy + Math.sin(angle) * 53;
+        addLine(cx, cy, vx, vy, blueColor, 3);
+        addLine(vx, vy, x, y, blueColor, 3);
+        addStation(vx, vy, 4, blueColor, truncateForStation(it.viaLabel, 14), null, false, null);
       } else {
-        addLine(cx, cy, x, y, blueColor, 5);
+        addLine(cx, cy, x, y, blueColor, 3);
       }
-      addStation(x, y, 11, blueColor, truncateForStation(it.label, 16), it.subtitle, i % 2 === 1, (function (it) { return function () { navigate(it.uri, { label: it.label }); }; })(it), it.ghostKind, it.uri);
+      addStation(x, y, 9, blueColor, truncateForStation(it.label, 16), it.subtitle, i % 2 === 1, (function (it) { return function () { navigate(it.uri, { label: it.label }); }; })(it), it.ghostKind, it.uri);
     });
 
     var coralColor = "var(--crit)";
     var m = outgoing.length;
     outgoing.forEach(function (it, i) {
       var angle = (180 + (m === 1 ? 0 : (-60 + (120 * i / (m - 1))))) * Math.PI / 180;
-      var x = cx + Math.cos(angle) * 230, y = cy + Math.sin(angle) * 175;
-      addLine(cx, cy, x, y, coralColor, 5);
-      addStation(x, y, 8, coralColor, truncateForStation(it.label, 16), it.subtitle, i % 2 === 1, (function (it) { return function () { navigate(it.uri, { label: it.label }); }; })(it), it.ghostKind, it.uri);
+      var x = cx + Math.cos(angle) * 230, y = cy + Math.sin(angle) * 110;
+      addLine(cx, cy, x, y, coralColor, 3);
+      addStation(x, y, 7, coralColor, truncateForStation(it.label, 16), it.subtitle, i % 2 === 1, (function (it) { return function () { navigate(it.uri, { label: it.label }); }; })(it), it.ghostKind, it.uri);
     });
 
     var hub = document.createElementNS(svgNS, "g");
     var outer = document.createElementNS(svgNS, "circle");
-    outer.setAttribute("cx", cx); outer.setAttribute("cy", cy); outer.setAttribute("r", 19);
-    outer.setAttribute("fill", "var(--surface)"); outer.setAttribute("stroke", blueColor); outer.setAttribute("stroke-width", 3);
+    outer.setAttribute("cx", cx); outer.setAttribute("cy", cy); outer.setAttribute("r", 15);
+    outer.setAttribute("fill", "var(--surface)"); outer.setAttribute("stroke", blueColor); outer.setAttribute("stroke-width", 2);
     hub.appendChild(outer);
     var inner = document.createElementNS(svgNS, "circle");
-    inner.setAttribute("cx", cx); inner.setAttribute("cy", cy); inner.setAttribute("r", 10);
+    inner.setAttribute("cx", cx); inner.setAttribute("cy", cy); inner.setAttribute("r", 8);
     inner.setAttribute("fill", coralColor);
     hub.appendChild(inner);
     svg.appendChild(hub);
