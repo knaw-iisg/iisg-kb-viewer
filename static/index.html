@@ -2302,7 +2302,46 @@
     }).catch(function () { return []; });
   }
 
-  function exploreSvgEl(centerLabel, coSubjects, creations) {
+  // Generic graph for any non-Person record, so clicking a creation/work
+  // station never lands on a page with nothing further to explore --
+  // every record gets a (possibly sparse) neighborhood instead of only
+  // Persons. Outgoing comes free from factRows (already fetched for the
+  // record itself, same one-hop data the statement list renders from);
+  // incoming needs one more query, since factRows only covers this
+  // entity's own outgoing triples, not who points at it. Subtitle is the
+  // predicate's curie -- same shortLabel() the "Described as"/"Referenced
+  // by" statement columns already use for arbitrary predicates, so the
+  // vocabulary matches the rest of the page instead of inventing new
+  // wording per predicate.
+  function genericOutgoingNeighbors(uri, factRows) {
+    var seen = {}, out = [];
+    for (var i = 0; i < factRows.length && out.length < 5; i++) {
+      var r = factRows[i];
+      if (r.o.type !== "uri" || r.o.value === uri) continue;
+      if (curie(r.p.value) === "rdf:type") continue;
+      if (seen[r.o.value]) continue;
+      seen[r.o.value] = true;
+      out.push({ uri: r.o.value, label: r.label ? r.label.value : shortLabel(r.o.value), subtitle: shortLabel(r.p.value) });
+    }
+    return out;
+  }
+
+  function fetchGenericIncomingNeighbors(uri) {
+    var q = "PREFIX schema: <http://schema.org/>\n" +
+      "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+      "SELECT ?s ?p (SAMPLE(?lbl) AS ?label) WHERE {\n" +
+      "  GRAPH ?g { ?s ?p " + iriRef(uri) + " }\n" +
+      "  FILTER(?s != " + iriRef(uri) + ")\n" +
+      "  OPTIONAL { ?s schema:name ?n1 }\n" +
+      "  OPTIONAL { ?s rdfs:label ?n2 }\n" +
+      "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
+      "} GROUP BY ?s ?p LIMIT 5";
+    return sparql(q).then(function (rows) {
+      return rows.map(function (r) { return { uri: r.s.value, label: r.label ? r.label.value : shortLabel(r.s.value), subtitle: shortLabel(r.p.value) }; });
+    }).catch(function () { return []; });
+  }
+
+  function exploreSvgEl(centerLabel, incoming, outgoing, incomingLegend, outgoingLegend) {
     var svgNS = "http://www.w3.org/2000/svg";
     var cx = 370, cy = 250;
     var svg = document.createElementNS(svgNS, "svg");
@@ -2440,29 +2479,37 @@
     // Capped to keep the map readable -- a station per connection would
     // overwhelm the diagram well before it ran out of real data (Marx
     // alone has dozens of co-subjects); these are the strongest ones,
-    // already sorted by shared-work count / most recent date.
-    coSubjects = coSubjects.slice(0, 5);
-    creations = creations.slice(0, 5);
+    // already sorted by shared-work count / most recent date / query LIMIT.
+    incoming = incoming.slice(0, 5);
+    outgoing = outgoing.slice(0, 5);
 
     var blueColor = "var(--accent)";
-    var n = coSubjects.length;
-    coSubjects.forEach(function (cs, i) {
+    var n = incoming.length;
+    incoming.forEach(function (it, i) {
       var angle = (n === 1 ? 0 : (-80 + (160 * i / (n - 1)))) * Math.PI / 180;
       var x = cx + Math.cos(angle) * 230, y = cy + Math.sin(angle) * 175;
-      var vx = cx + Math.cos(angle) * 110, vy = cy + Math.sin(angle) * 85;
-      addLine(cx, cy, vx, vy, blueColor, 5);
-      addLine(vx, vy, x, y, blueColor, 5);
-      addStation(vx, vy, 5, blueColor, truncateForStation(cs.viaLabel, 20), null, false, null);
-      addStation(x, y, 11, blueColor, truncateForStation(cs.label, 22), cs.shared + " shared works", i % 2 === 1, (function (cs) { return function () { navigate(cs.uri, { label: cs.label }); }; })(cs), "person", cs.uri);
+      // Person's co-subjects route through a small via-stop (the shared
+      // work); the generic 1-hop neighbor graph has no such intermediate
+      // node, so it's a direct spoke -- same drawing code either way, via
+      // just an optional extra hop.
+      if (it.viaUri || it.viaLabel) {
+        var vx = cx + Math.cos(angle) * 110, vy = cy + Math.sin(angle) * 85;
+        addLine(cx, cy, vx, vy, blueColor, 5);
+        addLine(vx, vy, x, y, blueColor, 5);
+        addStation(vx, vy, 5, blueColor, truncateForStation(it.viaLabel, 20), null, false, null);
+      } else {
+        addLine(cx, cy, x, y, blueColor, 5);
+      }
+      addStation(x, y, 11, blueColor, truncateForStation(it.label, 22), it.subtitle, i % 2 === 1, (function (it) { return function () { navigate(it.uri, { label: it.label }); }; })(it), it.ghostKind, it.uri);
     });
 
     var coralColor = "var(--crit)";
-    var m = creations.length;
-    creations.forEach(function (w, i) {
+    var m = outgoing.length;
+    outgoing.forEach(function (it, i) {
       var angle = (180 + (m === 1 ? 0 : (-60 + (120 * i / (m - 1))))) * Math.PI / 180;
       var x = cx + Math.cos(angle) * 230, y = cy + Math.sin(angle) * 175;
       addLine(cx, cy, x, y, coralColor, 5);
-      addStation(x, y, 8, coralColor, truncateForStation(w.label, 24), w.date, i % 2 === 1, (function (w) { return function () { navigate(w.uri, { label: w.label }); }; })(w), "work", w.uri);
+      addStation(x, y, 8, coralColor, truncateForStation(it.label, 24), it.subtitle, i % 2 === 1, (function (it) { return function () { navigate(it.uri, { label: it.label }); }; })(it), it.ghostKind, it.uri);
     });
 
     var hub = document.createElementNS(svgNS, "g");
@@ -2488,8 +2535,8 @@
       wrap.appendChild(el("div", { class: "hierarchy-row muted", text: "Nothing to explore from here yet" }));
     }
     var legend = el("div", { class: "explore-legend" });
-    legend.appendChild(el("span", { class: "explore-legend-item accent", text: "● written about together" }));
-    legend.appendChild(el("span", { class: "explore-legend-item crit", text: "● creations" }));
+    legend.appendChild(el("span", { class: "explore-legend-item accent", text: "● " + incomingLegend }));
+    legend.appendChild(el("span", { class: "explore-legend-item crit", text: "● " + outgoingLegend }));
     wrap.appendChild(legend);
     return wrap;
   }
@@ -2841,10 +2888,12 @@
       });
     }
 
-    // Person views only: what they made, who they made it with, who wrote
-    // about them -- plus the Explore graph itself, which needs the same
-    // "creations" data the list below it shows, so that fetch is shared
-    // (not re-issued) rather than paid for twice.
+    // Person views get the rich Explore graph (co-subjects/creations, with
+    // shared-work counts and hover-ghost previews) plus the Creations/
+    // Co-authored/Written-about lists below it -- the graph and the
+    // Creations list need the same data, so that fetch is shared (not
+    // re-issued) rather than paid for twice. Every other type still gets a
+    // graph (see the else branch below), just the generic 1-hop version.
     var creationsSlot = el("div", {});
     var coCreatorsSlot = el("div", {});
     var subjectOfSlot = el("div", {});
@@ -2865,7 +2914,23 @@
       });
       Promise.all([fetchCoSubjects(uri), creationsPromise]).then(function (results) {
         if (currentUri !== uri) return;
-        graphSlot.appendChild(exploreSvgEl(label, results[0], results[1]));
+        var incoming = results[0].map(function (cs) {
+          return { uri: cs.uri, label: cs.label, subtitle: cs.shared + (cs.shared === 1 ? " shared work" : " shared works"), viaUri: cs.viaUri, viaLabel: cs.viaLabel, ghostKind: "person" };
+        });
+        var outgoing = results[1].map(function (w) {
+          return { uri: w.uri, label: w.label, subtitle: w.date, ghostKind: "work" };
+        });
+        graphSlot.appendChild(exploreSvgEl(label, incoming, outgoing, "written about together", "creations"));
+      });
+    } else {
+      // Every other type: no "written about together"/"creations" concept,
+      // but still a graph -- otherwise clicking a creation/work station
+      // from a Person's map lands on a page with nothing further to
+      // explore. See genericOutgoingNeighbors/fetchGenericIncomingNeighbors.
+      var genericOutgoing = genericOutgoingNeighbors(uri, factRows);
+      fetchGenericIncomingNeighbors(uri).then(function (genericIncoming) {
+        if (currentUri !== uri) return;
+        graphSlot.appendChild(exploreSvgEl(label, genericIncoming, genericOutgoing, "links here", "links to"));
       });
     }
     var eyebrow = el("div", { class: "record-eyebrow" });
