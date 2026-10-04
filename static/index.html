@@ -753,6 +753,31 @@
     max-width: 68ch;
   }
 
+  .identifiers-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .identifiers-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-right: 2px;
+  }
+  .identifier-chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--surface-alt);
+    border: 1px solid var(--line);
+    color: var(--accent-strong);
+    padding: 3px 9px;
+    border-radius: 20px;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .identifier-chip:hover { border-color: var(--accent); }
+
   .source-row {
     display: flex;
     flex-wrap: wrap;
@@ -2335,6 +2360,57 @@
     return "VALUES " + varName + " { " + uris.map(iriRef).join(" ") + " }\n";
   }
 
+  // Same recognition identity-etl itself uses (URI_SCHEME_FIELDS in that
+  // repo) to label a cluster member by external system, checked in order.
+  var IDENTIFIER_SCHEMES = [
+    { test: /^https:\/\/orcid\.org\//, label: "ORCID" },
+    { test: /^https:\/\/ror\.org\//, label: "ROR" },
+    { test: /^https:\/\/viaf\.org\//, label: "VIAF" },
+    { test: /^https:\/\/isni\.org\//, label: "ISNI" },
+    { test: /^https:\/\/d-nb\.info\/gnd\//, label: "GND" },
+    { test: /^https:\/\/id\.loc\.gov\//, label: "Library of Congress" },
+    { test: /^https:\/\/www\.wikidata\.org\//, label: "Wikidata" },
+    { test: /^https:\/\/iisg\.amsterdam\/authority\/(person|organization)\//, label: "IISG Authority" }
+  ];
+  var IDENTITY_HUB_RE = /^https:\/\/iisg\.amsterdam\/id\/[0-9]+$/;
+
+  function classifyIdentifier(uri) {
+    for (var i = 0; i < IDENTIFIER_SCHEMES.length; i++) {
+      if (IDENTIFIER_SCHEMES[i].test.test(uri)) return IDENTIFIER_SCHEMES[i].label;
+    }
+    return null;
+  }
+
+  // "Known as" row: every other URI in this record's identity-etl cluster
+  // (see fetchIdentityCluster above), labeled by external system where
+  // recognized. The hub itself (bare id/<n>) is left out -- pure plumbing,
+  // nothing a visitor would want to click through to (its own page is just
+  // this same list again). Anything identity-etl hasn't classified still
+  // gets a generic chip via shortLabel rather than silently vanishing.
+  // Same local-vs-external link pattern as heroValueNode: an in-app
+  // navigate() for our own URIs (the authority record, the hub), a plain
+  // new-tab link for everything else.
+  function identifiersRowEl(uri, cluster) {
+    var others = (cluster || []).filter(function (u) { return u !== uri && !IDENTITY_HUB_RE.test(u); });
+    if (!others.length) return null;
+    var wrap = el("div", { class: "identifiers-row" });
+    wrap.appendChild(el("span", { class: "identifiers-label", text: "Also known as:" }));
+    others.forEach(function (u) {
+      var schemeLabel = classifyIdentifier(u);
+      var text = schemeLabel || shortLabel(u);
+      if (isLocalUri(u)) {
+        var btn = el("button", { class: "identifier-chip", title: u, text: text });
+        btn.addEventListener("click", function () { navigate(u, { label: null }); });
+        wrap.appendChild(btn);
+      } else if (isSafeHref(u)) {
+        wrap.appendChild(el("a", { class: "identifier-chip", href: u, target: "_blank", rel: "noopener", title: u, text: text }));
+      } else {
+        wrap.appendChild(el("span", { class: "identifier-chip", title: u, text: text }));
+      }
+    });
+    return wrap;
+  }
+
   // "More by this creator" -- inverse sdo:creator, same mechanism the
   // hierarchy tree's sibling lookup uses, just pointed at a different
   // predicate. sdo:creator is a safe generalization across the MARC
@@ -3063,7 +3139,7 @@
         sparql(sourcesQuery),
         sparql(inCountsQuery)
       ]).then(function (results2) {
-        renderRecord(uri, factRows, results2[0], results2[1]);
+        renderRecord(uri, factRows, results2[0], results2[1], cluster);
       });
     }).catch(function (err) {
       clear(mainEl);
@@ -3091,7 +3167,7 @@
     return null;
   }
 
-  function renderRecord(uri, factRows, sourceRows, inCounts) {
+  function renderRecord(uri, factRows, sourceRows, inCounts, cluster) {
     clear(mainEl);
 
     var outByPred = buildOutIndex(factRows);
@@ -3237,6 +3313,9 @@
       uriLine.textContent = uri;
     }
     header.appendChild(uriLine);
+
+    var idRow = identifiersRowEl(uri, cluster);
+    if (idRow) header.appendChild(idRow);
 
     if (sourceRows.length) {
       var srcRow = el("div", { class: "source-row" });
