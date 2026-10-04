@@ -1155,8 +1155,17 @@
     { iri: "https://iisg.amsterdam/graph/authority", label: "Authorities", sub: "authorities-etl · people, places, terms", color: "#7c5ba0" },
     { iri: "https://iisg.amsterdam/graph/dataverse", label: "Dataverse", sub: "dataverse-etl · research datasets", color: "#a06b3a" },
     { iri: "https://iisg.amsterdam/graph/orcid", label: "ORCID", sub: "orcid-etl · staff research output", color: "#3a7c6b" },
-    { iri: "https://iisg.amsterdam/graph/events", label: "Events", sub: "events-etl · talks, exhibitions, conferences", color: "#a83e6c" }
+    { iri: "https://iisg.amsterdam/graph/events", label: "Events", sub: "events-etl · talks, exhibitions, conferences", color: "#a83e6c" },
+    { iri: "https://iisg.amsterdam/graph/identity", label: "Identity", sub: "identity-etl · cross-system identifier crosswalk", color: "#6b7280" }
   ];
+
+  // The one graph that's pure plumbing (hub nodes + sameAs links), not
+  // browsable content -- excluded from type-browsing and search so its
+  // 555k+ stub records (one per real entity across every other graph,
+  // mostly with nothing but an id and a name) don't swamp real results.
+  // Still fully queried for identity-cluster expansion (fetchIdentityCluster)
+  // and still shown in the per-pipeline Sources breakdown.
+  var IDENTITY_GRAPH = "https://iisg.amsterdam/graph/identity";
 
   var RELATOR_LABELS = {
     cre: "Creator", aut: "Author", edt: "Editor", col: "Collector",
@@ -1879,7 +1888,7 @@
     clear(mainEl);
     var wrap = el("div", { class: "home-dash" });
     wrap.appendChild(el("h1", { text: "Trace a record through the graph." }));
-    wrap.appendChild(el("p", { text: "Seven pipelines feed this graph \u2014 biblio-etl, archive-etl, findingaid-etl, authorities-etl, dataverse-etl, orcid-etl and events-etl \u2014 each asserting into its own named graph, but sharing IRIs wherever their records describe the same person, place, archive or topic. Search for something, or browse by type below." }));
+    wrap.appendChild(el("p", { text: "Eight pipelines feed this graph \u2014 biblio-etl, archive-etl, findingaid-etl, authorities-etl, dataverse-etl, orcid-etl, events-etl and identity-etl \u2014 each asserting into its own named graph, but sharing IRIs (or, where they can't, linked by identity-etl's sdo:sameAs crosswalk) wherever their records describe the same person, place, archive or topic. Search for something, or browse by type below." }));
 
     var ex = el("div", { class: "empty-examples" });
     ["dockworkers", "Rotterdam", "International Institute of Social History", "Jan Lucassen"].forEach(function (term) {
@@ -1902,6 +1911,7 @@
     sparql(
       "SELECT ?g ?type (COUNT(*) AS ?c) WHERE {\n" +
       "  GRAPH ?g { ?s a ?type }\n" +
+      "  FILTER(?g != " + iriRef(IDENTITY_GRAPH) + ")\n" +
       "} GROUP BY ?g ?type"
     ).then(function (rows) {
       typeSection.removeChild(typeSection.querySelector(".dash-loading"));
@@ -1997,7 +2007,7 @@
     clear(mainEl);
     var label = pluralType(typeKey);
     mainEl.appendChild(el("div", { class: "results-heading", text: "Loading " + label.toLowerCase() + "\u2026" }));
-    var countQ = "SELECT (COUNT(DISTINCT ?s) AS ?c) WHERE { GRAPH ?g { ?s a " + iriRef(typeUri) + " } }";
+    var countQ = "SELECT (COUNT(DISTINCT ?s) AS ?c) WHERE { GRAPH ?g { ?s a " + iriRef(typeUri) + " } FILTER(?g != " + iriRef(IDENTITY_GRAPH) + ") }";
     sparql(countQ).then(function (rows) {
       var total = rows.length ? parseInt(rows[0].c.value, 10) : 0;
       renderPagedTypeList(label, typeUri, typeKey, total);
@@ -2010,6 +2020,7 @@
   function fetchTypePage(typeUri, typeKey, offset) {
     var q = "SELECT ?s (SAMPLE(?lbl) AS ?label) (SAMPLE(?g) AS ?graph) WHERE {\n" +
       "  GRAPH ?g { ?s a " + iriRef(typeUri) + " }\n" +
+      "  FILTER(?g != " + iriRef(IDENTITY_GRAPH) + ")\n" +
       "  OPTIONAL { ?s <http://schema.org/name> ?n1 }\n" +
       "  OPTIONAL { ?s <https://schema.org/name> ?n2 }\n" +
       "  OPTIONAL { ?s <http://www.w3.org/2000/01/rdf-schema#label> ?n3 }\n" +
@@ -2284,6 +2295,46 @@
     }).catch(function () { return null; });
   }
 
+  // Cross-system identity expansion: identity-etl mints one hub
+  // (https://iisg.amsterdam/id/<n>) per real person/organization and links
+  // every external identifier (an authority URI, an ORCID URI, a ROR, ...)
+  // to it with sdo:sameAs, in both directions. From any one of those URIs,
+  // one hop to the hub then one hop back out reaches every sibling -- "the
+  // cluster". The second UNION branch covers landing on the hub URI
+  // itself, which has no outgoing sameAs to hop through first. Cached per
+  // uri (a record page fires this once; several downstream queries below
+  // share the result) and degrades to just [uri] on any failure or when
+  // identity-etl simply hasn't linked this entity -- every consumer below
+  // already treats a single-element cluster identically to the
+  // pre-identity-etl behavior.
+  var identityClusterCache = {};
+  function fetchIdentityCluster(uri) {
+    if (identityClusterCache[uri]) return identityClusterCache[uri];
+    var q = "PREFIX sdo: <https://schema.org/>\n" +
+      "SELECT DISTINCT ?equiv WHERE {\n" +
+      "  GRAPH " + iriRef(IDENTITY_GRAPH) + " {\n" +
+      "    { " + iriRef(uri) + " sdo:sameAs ?hub . ?hub sdo:sameAs ?equiv . }\n" +
+      "    UNION\n" +
+      "    { BIND(" + iriRef(uri) + " AS ?hub) . ?hub sdo:sameAs ?equiv . }\n" +
+      "  }\n" +
+      "}";
+    var p = sparql(q).then(function (rows) {
+      var set = {};
+      set[uri] = true;
+      rows.forEach(function (r) { set[r.equiv.value] = true; });
+      return Object.keys(set);
+    }).catch(function () { return [uri]; });
+    identityClusterCache[uri] = p;
+    return p;
+  }
+
+  // Shared VALUES-clause fragment for matching any member of an identity
+  // cluster -- callers interpolate the same variable into their own triple
+  // patterns.
+  function valuesClause(varName, uris) {
+    return "VALUES " + varName + " { " + uris.map(iriRef).join(" ") + " }\n";
+  }
+
   // "More by this creator" -- inverse sdo:creator, same mechanism the
   // hierarchy tree's sibling lookup uses, just pointed at a different
   // predicate. sdo:creator is a safe generalization across the MARC
@@ -2298,9 +2349,10 @@
   // Shared by "creations" (creator), "more by this creator" (creator, minus
   // the current work), and "written about" (about) -- same one-hop-inverse
   // shape, just a different predicate and an optional self-exclusion.
-  function fetchWorksByInversePredicate(pred, targetUri, excludeUri) {
+  function fetchWorksByInversePredicate(pred, targetUris, excludeUri) {
     var q = "SELECT ?work (SAMPLE(?lbl) AS ?label) (SAMPLE(?dateVal) AS ?date) (SAMPLE(?type) AS ?typeUri) (GROUP_CONCAT(?formNameLit; separator=\"|\") AS ?formName) WHERE {\n" +
-      "  { ?work <http://schema.org/" + pred + "> " + iriRef(targetUri) + " } UNION { ?work <https://schema.org/" + pred + "> " + iriRef(targetUri) + " }\n" +
+      valuesClause("?target", targetUris) +
+      "  { ?work <http://schema.org/" + pred + "> ?target } UNION { ?work <https://schema.org/" + pred + "> ?target }\n" +
       (excludeUri ? "  FILTER(?work != " + iriRef(excludeUri) + ")\n" : "") +
       "  OPTIONAL { ?work <http://schema.org/name> ?n1 }\n" +
       "  OPTIONAL { ?work <https://schema.org/name> ?n2 }\n" +
@@ -2319,11 +2371,15 @@
   }
 
   function fetchMoreByCreator(creatorUri, excludeUri) {
-    return fetchWorksByInversePredicate("creator", creatorUri, excludeUri);
+    return fetchIdentityCluster(creatorUri).then(function (cluster) {
+      return fetchWorksByInversePredicate("creator", cluster, excludeUri);
+    });
   }
 
   function fetchSubjectOf(personUri) {
-    return fetchWorksByInversePredicate("about", personUri, null);
+    return fetchIdentityCluster(personUri).then(function (cluster) {
+      return fetchWorksByInversePredicate("about", cluster, null);
+    });
   }
 
   // Shared by every "heading + list of clickable (label, optional date)
@@ -2350,17 +2406,20 @@
   // have exactly one), but genuinely populated for orcid-etl's Persons,
   // whose research output is multi-author by nature.
   function fetchCoCreators(personUri) {
-    var q = "SELECT ?other (SAMPLE(?lbl) AS ?label) (COUNT(DISTINCT ?work) AS ?shared) WHERE {\n" +
-      "  { ?work <http://schema.org/creator> " + iriRef(personUri) + " } UNION { ?work <https://schema.org/creator> " + iriRef(personUri) + " }\n" +
-      "  { ?work <http://schema.org/creator> ?other } UNION { ?work <https://schema.org/creator> ?other }\n" +
-      "  FILTER(?other != " + iriRef(personUri) + ")\n" +
-      "  OPTIONAL { ?other <http://schema.org/name> ?n1 }\n" +
-      "  OPTIONAL { ?other <https://schema.org/name> ?n2 }\n" +
-      "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
-      "} GROUP BY ?other ORDER BY DESC(?shared) LIMIT 12";
-    return sparql(q).then(function (rows) {
-      return rows.map(function (r) {
-        return { uri: r.other.value, label: r.label ? r.label.value : shortLabel(r.other.value), shared: parseInt(r.shared.value, 10) };
+    return fetchIdentityCluster(personUri).then(function (cluster) {
+      var q = "SELECT ?other (SAMPLE(?lbl) AS ?label) (COUNT(DISTINCT ?work) AS ?shared) WHERE {\n" +
+        valuesClause("?target", cluster) +
+        "  { ?work <http://schema.org/creator> ?target } UNION { ?work <https://schema.org/creator> ?target }\n" +
+        "  { ?work <http://schema.org/creator> ?other } UNION { ?work <https://schema.org/creator> ?other }\n" +
+        "  FILTER(?other NOT IN (" + cluster.map(iriRef).join(", ") + "))\n" +
+        "  OPTIONAL { ?other <http://schema.org/name> ?n1 }\n" +
+        "  OPTIONAL { ?other <https://schema.org/name> ?n2 }\n" +
+        "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
+        "} GROUP BY ?other ORDER BY DESC(?shared) LIMIT 12";
+      return sparql(q).then(function (rows) {
+        return rows.map(function (r) {
+          return { uri: r.other.value, label: r.label ? r.label.value : shortLabel(r.other.value), shared: parseInt(r.shared.value, 10) };
+        });
       });
     }).catch(function () { return []; });
   }
@@ -2394,36 +2453,39 @@
   // real graph-drawing library.
 
   function fetchCoSubjects(personUri) {
-    var q = "SELECT ?other (SAMPLE(?lbl) AS ?label) (COUNT(DISTINCT ?work) AS ?shared) (SAMPLE(?work) AS ?viaWork) WHERE {\n" +
-      "  { ?work <http://schema.org/about> " + iriRef(personUri) + " } UNION { ?work <https://schema.org/about> " + iriRef(personUri) + " }\n" +
-      "  { ?work <http://schema.org/about> ?other } UNION { ?work <https://schema.org/about> ?other }\n" +
-      "  FILTER(?other != " + iriRef(personUri) + ")\n" +
-      "  OPTIONAL { ?other <http://schema.org/name> ?n1 }\n" +
-      "  OPTIONAL { ?other <https://schema.org/name> ?n2 }\n" +
-      "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
-      "} GROUP BY ?other ORDER BY DESC(?shared) LIMIT 8";
-    return sparql(q).then(function (rows) {
-      var items = rows.map(function (r) {
-        return { uri: r.other.value, label: r.label ? r.label.value : shortLabel(r.other.value), shared: parseInt(r.shared.value, 10), viaUri: r.viaWork.value, viaLabel: null };
-      });
-      if (!items.length) return items;
-      // SAMPLE(?work) above picks one representative connecting work per
-      // co-subject, but a second SAMPLE(?label) in the same query isn't
-      // guaranteed to come from that same row -- so its label is fetched
-      // here, in a separate batched lookup, rather than risking a
-      // mismatched via-stop title.
-      var values = items.map(function (it) { return iriRef(it.viaUri); }).join(" ");
-      var q2 = "SELECT ?w (SAMPLE(?lbl) AS ?label) WHERE {\n" +
-        "  VALUES ?w { " + values + " }\n" +
-        "  OPTIONAL { ?w <http://schema.org/name> ?n1 }\n" +
-        "  OPTIONAL { ?w <https://schema.org/name> ?n2 }\n" +
+    return fetchIdentityCluster(personUri).then(function (cluster) {
+      var q = "SELECT ?other (SAMPLE(?lbl) AS ?label) (COUNT(DISTINCT ?work) AS ?shared) (SAMPLE(?work) AS ?viaWork) WHERE {\n" +
+        valuesClause("?target", cluster) +
+        "  { ?work <http://schema.org/about> ?target } UNION { ?work <https://schema.org/about> ?target }\n" +
+        "  { ?work <http://schema.org/about> ?other } UNION { ?work <https://schema.org/about> ?other }\n" +
+        "  FILTER(?other NOT IN (" + cluster.map(iriRef).join(", ") + "))\n" +
+        "  OPTIONAL { ?other <http://schema.org/name> ?n1 }\n" +
+        "  OPTIONAL { ?other <https://schema.org/name> ?n2 }\n" +
         "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
-        "} GROUP BY ?w";
-      return sparql(q2).then(function (rows2) {
-        var labelByUri = {};
-        rows2.forEach(function (r) { labelByUri[r.w.value] = r.label ? r.label.value : null; });
-        items.forEach(function (it) { it.viaLabel = labelByUri[it.viaUri] || shortLabel(it.viaUri); });
-        return items;
+        "} GROUP BY ?other ORDER BY DESC(?shared) LIMIT 8";
+      return sparql(q).then(function (rows) {
+        var items = rows.map(function (r) {
+          return { uri: r.other.value, label: r.label ? r.label.value : shortLabel(r.other.value), shared: parseInt(r.shared.value, 10), viaUri: r.viaWork.value, viaLabel: null };
+        });
+        if (!items.length) return items;
+        // SAMPLE(?work) above picks one representative connecting work per
+        // co-subject, but a second SAMPLE(?label) in the same query isn't
+        // guaranteed to come from that same row -- so its label is fetched
+        // here, in a separate batched lookup, rather than risking a
+        // mismatched via-stop title.
+        var values = items.map(function (it) { return iriRef(it.viaUri); }).join(" ");
+        var q2 = "SELECT ?w (SAMPLE(?lbl) AS ?label) WHERE {\n" +
+          "  VALUES ?w { " + values + " }\n" +
+          "  OPTIONAL { ?w <http://schema.org/name> ?n1 }\n" +
+          "  OPTIONAL { ?w <https://schema.org/name> ?n2 }\n" +
+          "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
+          "} GROUP BY ?w";
+        return sparql(q2).then(function (rows2) {
+          var labelByUri = {};
+          rows2.forEach(function (r) { labelByUri[r.w.value] = r.label ? r.label.value : null; });
+          items.forEach(function (it) { it.viaLabel = labelByUri[it.viaUri] || shortLabel(it.viaUri); });
+          return items;
+        });
       });
     }).catch(function () { return []; });
   }
@@ -2474,17 +2536,20 @@
   }
 
   function fetchGenericIncomingNeighbors(uri) {
-    var q = "PREFIX schema: <http://schema.org/>\n" +
-      "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
-      "SELECT ?s ?p (SAMPLE(?lbl) AS ?label) WHERE {\n" +
-      "  GRAPH ?g { ?s ?p " + iriRef(uri) + " }\n" +
-      "  FILTER(?s != " + iriRef(uri) + ")\n" +
-      "  OPTIONAL { ?s schema:name ?n1 }\n" +
-      "  OPTIONAL { ?s rdfs:label ?n2 }\n" +
-      "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
-      "} GROUP BY ?s ?p LIMIT 5";
-    return sparql(q).then(function (rows) {
-      return rows.map(function (r) { return { uri: r.s.value, label: r.label ? r.label.value : shortLabel(r.s.value), subtitle: shortLabel(r.p.value) }; });
+    return fetchIdentityCluster(uri).then(function (cluster) {
+      var q = "PREFIX schema: <http://schema.org/>\n" +
+        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+        "SELECT ?s ?p (SAMPLE(?lbl) AS ?label) WHERE {\n" +
+        valuesClause("?target", cluster) +
+        "  GRAPH ?g { ?s ?p ?target }\n" +
+        "  FILTER(?s NOT IN (" + cluster.map(iriRef).join(", ") + "))\n" +
+        "  OPTIONAL { ?s schema:name ?n1 }\n" +
+        "  OPTIONAL { ?s rdfs:label ?n2 }\n" +
+        "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
+        "} GROUP BY ?s ?p LIMIT 5";
+      return sparql(q).then(function (rows) {
+        return rows.map(function (r) { return { uri: r.s.value, label: r.label ? r.label.value : shortLabel(r.s.value), subtitle: shortLabel(r.p.value) }; });
+      });
     }).catch(function () { return []; });
   }
 
@@ -2884,12 +2949,18 @@
     mainEl.appendChild(el("div", { class: "results-heading", text: "Searching for \u201c" + term + "\u201d\u2026" }));
 
     var esc = escLiteral(term.toLowerCase());
+    // Excludes identity-etl's bare hub IRIs (https://iisg.amsterdam/id/<n>,
+    // no type segment, unlike id/dataset/, id/collection/, ... elsewhere in
+    // this graph) -- every one of its 555k+ hubs carries the same sdo:name
+    // as the real record(s) it links, so without this every search would
+    // surface a redundant, content-free hub hit alongside the real one.
     var q = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
       "SELECT DISTINCT ?s ?label ?type WHERE {\n" +
       "  { ?s <http://schema.org/name> ?label }\n" +
       "  UNION { ?s <https://schema.org/name> ?label }\n" +
       "  UNION { ?s rdfs:label ?label }\n" +
       "  FILTER(CONTAINS(LCASE(STR(?label)), \"" + esc + "\"))\n" +
+      "  FILTER(!REGEX(STR(?s), \"^https://iisg\\\\.amsterdam/id/[0-9]+$\"))\n" +
       "  OPTIONAL { ?s a ?type }\n" +
       "} LIMIT 300";
 
@@ -2965,20 +3036,35 @@
       "  BIND(COALESCE(?n1, ?n2, ?n3, ?n4, ?n5) AS ?lbl)\n" +
       "} GROUP BY ?p ?o LIMIT 3000";
 
-    var sourcesQuery = "SELECT ?g (COUNT(*) AS ?c) WHERE {\n" +
-      "  { GRAPH ?g { " + iriRef(uri) + " ?p1 ?o1 } } UNION { GRAPH ?g { ?s1 ?p2 " + iriRef(uri) + " } }\n" +
-      "} GROUP BY ?g ORDER BY DESC(?c)";
-
-    var inCountsQuery = "SELECT ?p (COUNT(*) AS ?c) WHERE {\n" +
-      "  GRAPH ?g { ?s ?p " + iriRef(uri) + " }\n" +
-      "} GROUP BY ?p ORDER BY DESC(?c)";
-
+    // "Incoming" (sources breakdown + per-predicate counts) merges across
+    // this entity's whole identity cluster -- a work pointing at this
+    // person's ORCID URI should count as incoming even while looking at
+    // their library-authority URI. "Outgoing" (this record's own facts,
+    // ?p1 ?o1 above) deliberately stays single-URI: that's this specific
+    // node's own asserted data, not something sdo:sameAs should merge.
     return Promise.all([
       sparql(factsQuery),
-      sparql(sourcesQuery),
-      sparql(inCountsQuery)
+      fetchIdentityCluster(uri)
     ]).then(function (results) {
-      renderRecord(uri, results[0], results[1], results[2]);
+      var factRows = results[0], cluster = results[1];
+      var valuesFrag = valuesClause("?target", cluster);
+
+      var sourcesQuery = "SELECT ?g (COUNT(*) AS ?c) WHERE {\n" +
+        "  { GRAPH ?g { " + iriRef(uri) + " ?p1 ?o1 } }\n" +
+        "  UNION { " + valuesFrag + "    GRAPH ?g { ?s1 ?p2 ?target } }\n" +
+        "} GROUP BY ?g ORDER BY DESC(?c)";
+
+      var inCountsQuery = "SELECT ?p (COUNT(*) AS ?c) WHERE {\n" +
+        valuesFrag +
+        "  GRAPH ?g { ?s ?p ?target }\n" +
+        "} GROUP BY ?p ORDER BY DESC(?c)";
+
+      return Promise.all([
+        sparql(sourcesQuery),
+        sparql(inCountsQuery)
+      ]).then(function (results2) {
+        renderRecord(uri, factRows, results2[0], results2[1]);
+      });
     }).catch(function (err) {
       clear(mainEl);
       renderError("Couldn\u2019t load this record: " + err.message, function () { loadEntity(uri); });
