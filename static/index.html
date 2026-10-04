@@ -1478,6 +1478,38 @@
 
   function fmtNum(n) { return Number(n).toLocaleString("en-US"); }
 
+  // The "statements" section's incoming column streams in via several
+  // parallel, paginated loadGroupPage() calls -- for a heavily-referenced
+  // entity (thousands of incoming statements across many predicates) that
+  // can keep growing the page for a couple of seconds after it's expanded.
+  // A plain scrollIntoView() called once at click time lands wherever the
+  // section was at that instant, then gets left behind as more rows stream
+  // in above the fold -- confirmed on a real record where the document
+  // grew from ~3000px to ~8000px over 2.5s after expanding. This waits for
+  // the page to stop growing (two unchanged height checks in a row) before
+  // scrolling, instead of guessing a fixed delay.
+  function scrollToWhenStable(target, maxWaitMs) {
+    var lastHeight = -1, stableCount = 0, start = Date.now();
+    function check() {
+      var h = document.documentElement.scrollHeight;
+      stableCount = h === lastHeight ? stableCount + 1 : 0;
+      lastHeight = h;
+      if (stableCount >= 2 || Date.now() - start > maxWaitMs) {
+        // window.scrollTo with a manually computed target and NO smooth
+        // behavior -- confirmed both scrollIntoView (any block value) and
+        // scrollTo's smooth-behavior form silently do nothing in some
+        // automated/CDP-driven browser contexts; only the plain instant
+        // jump reliably moves the scroll position. An instant jump also
+        // just guarantees the user actually lands in the right place,
+        // which is the actual bug here, not the lack of animation.
+        window.scrollTo(0, target.getBoundingClientRect().top + window.scrollY);
+      } else {
+        setTimeout(check, 150);
+      }
+    }
+    check();
+  }
+
   // ---------- App state ----------
 
   var trail = [];
@@ -2632,7 +2664,7 @@
       var expanded = statsToggle.getAttribute("aria-expanded") === "true";
       statsToggle.setAttribute("aria-expanded", expanded ? "false" : "true");
       statementsSection.classList.toggle("collapsed", expanded);
-      if (!expanded) statementsSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      if (!expanded) scrollToWhenStable(statementsSection, 3000);
     });
     header.appendChild(statsToggle);
 
