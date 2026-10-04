@@ -486,6 +486,37 @@
   .result-card-row { display: flex; gap: 12px; align-items: center; }
   .result-card-row .result-body { min-width: 0; flex: 1; }
 
+  .event-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .event-card {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--font-body);
+    color: var(--ink);
+  }
+  .event-card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+  .event-card-img {
+    width: 100%;
+    aspect-ratio: 12 / 7;
+    object-fit: cover;
+    display: block;
+    background: var(--surface-alt);
+  }
+  .event-card-body { padding: 12px 14px 14px; }
+  .event-card-title { font-weight: 500; font-size: 14px; line-height: 1.35; }
+  .event-card-date { margin-top: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
   .uri-sub {
     font-family: var(--font-mono);
     font-size: 11.5px;
@@ -1017,6 +1048,7 @@
       <ul class="rail-graphs" id="rail-views">
         <li><button class="rail-graph-btn" data-view="archive"><span>Archive</span></button></li>
         <li><button class="rail-graph-btn" data-view="books"><span>Books</span></button></li>
+        <li><button class="rail-graph-btn" data-view="events"><span>Events</span></button></li>
         <li><button class="rail-graph-btn" data-view="person"><span>Person</span></button></li>
         <li><button class="rail-graph-btn" data-view="datascience"><span>Data science</span></button></li>
       </ul>
@@ -1586,6 +1618,7 @@
     clear(mainEl);
     if (viewName === "archive") renderArchiveLanding();
     else if (viewName === "books") renderBooksLanding();
+    else if (viewName === "events") renderEventsLanding();
     else if (viewName === "datascience") renderHome();
     else renderPersonLanding(); // "person", and the fallback default
   }
@@ -1673,6 +1706,89 @@
 
   function renderBooksLanding() {
     browseType("https://schema.org/Book", "sdo:Book");
+  }
+
+  // ---------- Events view: image-forward showcase, not a plain list ----------
+  // sdo:Event is also asserted by authorities-etl's meeting-name headings
+  // (see EVENT_FIELDS above) -- scoped to events-etl's own named graph so
+  // this only ever shows real calendar events (the ones with a startDate
+  // and usually a poster image), not those unrelated subject headings.
+  // Only ~170 of them, so one query fetches everything; no COUNT+LIMIT/
+  // OFFSET paging like browseType's huge single-type lists need.
+  function fmtEventDate(iso) {
+    if (!iso) return null;
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  function renderEventsLanding() {
+    currentUri = null;
+    renderTrail();
+    clear(mainEl);
+    mainEl.appendChild(el("div", { class: "results-heading", text: "Loading events…" }));
+    var q = "PREFIX schema: <https://schema.org/>\n" +
+      "SELECT ?e (SAMPLE(?nm) AS ?name) (SAMPLE(?start) AS ?startDate) (SAMPLE(?url) AS ?imgUrl) WHERE {\n" +
+      "  GRAPH <https://iisg.amsterdam/graph/events> { ?e a schema:Event }\n" +
+      "  OPTIONAL { ?e schema:name ?nm }\n" +
+      "  OPTIONAL { ?e schema:startDate ?start }\n" +
+      "  OPTIONAL { ?e schema:image ?img . ?img schema:contentUrl ?url }\n" +
+      "} GROUP BY ?e ORDER BY DESC(?startDate)";
+    sparql(q).then(function (rows) {
+      var items = rows.map(function (r) {
+        return {
+          uri: r.e.value,
+          label: r.name ? r.name.value : shortLabel(r.e.value),
+          startDate: r.startDate ? r.startDate.value : null,
+          imgUrl: r.imgUrl && isLocalUri(r.imgUrl.value) ? r.imgUrl.value : null
+        };
+      });
+      renderEventsGrid(items);
+    }).catch(function (err) {
+      clear(mainEl);
+      renderError("Couldn’t load events: " + err.message, renderEventsLanding);
+    });
+  }
+
+  function renderEventsGrid(items) {
+    clear(mainEl);
+    if (!items.length) {
+      mainEl.appendChild(el("div", { class: "results-heading", text: "Events — no results" }));
+      return;
+    }
+    mainEl.appendChild(el("div", { class: "results-heading", text: "Events — " + fmtNum(items.length) + " total" }));
+    var grid = el("div", { class: "event-grid" });
+    mainEl.appendChild(grid);
+    var shown = 0;
+
+    function renderPage() {
+      items.slice(shown, shown + PAGE_SIZE).forEach(function (it) {
+        var card = el("button", { class: "event-card" });
+        if (it.imgUrl) {
+          var img = el("img", { class: "event-card-img", src: it.imgUrl, alt: it.label, loading: "lazy" });
+          img.onerror = function () { img.remove(); };
+          card.appendChild(img);
+        }
+        var body = el("div", { class: "event-card-body" });
+        body.appendChild(el("div", { class: "event-card-title", text: it.label }));
+        var dateText = fmtEventDate(it.startDate);
+        if (dateText) body.appendChild(el("div", { class: "event-card-date", text: dateText }));
+        card.appendChild(body);
+        card.addEventListener("click", function () { navigate(it.uri, { label: it.label }); });
+        grid.appendChild(card);
+      });
+      shown += PAGE_SIZE;
+      var oldPager = mainEl.querySelector(".pager-row");
+      if (oldPager) oldPager.parentNode.removeChild(oldPager);
+      if (shown < items.length) {
+        var pager = el("div", { class: "pager-row" });
+        var btn = el("button", { class: "pager-btn", text: "Show " + Math.min(PAGE_SIZE, items.length - shown) + " more" });
+        btn.addEventListener("click", renderPage);
+        pager.appendChild(btn);
+        mainEl.appendChild(pager);
+      }
+    }
+    renderPage();
   }
 
   // Brand/logo click -- goes to the new default experience (Person,
