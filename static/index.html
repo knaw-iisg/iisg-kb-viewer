@@ -699,17 +699,6 @@
   .explore-ghost { opacity: 0; transition: opacity 150ms ease; cursor: pointer; }
   .explore-ghost.show { opacity: 1; }
   .explore-ghost:hover .explore-ghost-label { fill: var(--accent-strong); }
-  /* Hovering a station on one side fades the other side out and slides the
-     hub + active side into the space it vacated (see addStation/scheduleGhost
-     in exploreSvgEl) -- more canvas for the hovered station's ghost to grow
-     into, without re-deriving every station's x/y on hover. */
-  .explore-layer { transition: transform 220ms ease, opacity 200ms ease; }
-  .explore-svg.hover-outgoing .explore-incoming-group { opacity: 0; pointer-events: none; }
-  .explore-svg.hover-outgoing .explore-outgoing-group,
-  .explore-svg.hover-outgoing .explore-hub-group { transform: translateX(90px); }
-  .explore-svg.hover-incoming .explore-outgoing-group { opacity: 0; pointer-events: none; }
-  .explore-svg.hover-incoming .explore-incoming-group,
-  .explore-svg.hover-incoming .explore-hub-group { transform: translateX(-90px); }
   .explore-ghost-label { font-family: var(--font-body); font-size: 11px; fill: var(--ink-soft); }
 
   .record-uri {
@@ -1578,6 +1567,22 @@
     return loadEntity(uri);
   }
 
+  // Clicking a station in the Explore map: make it the new hub and jump
+  // straight into its own Explore map, rather than landing on its flat
+  // record page and making the user click "Explore this person" again.
+  // Reuses the same navigate()+toggle-click sequence renderPersonLanding
+  // already relies on for its random landing, so history/trail/breadcrumbs
+  // stay correct for free. Harmless no-op for a non-Person target (a
+  // creation's work, or a ghost that turned out to be a place/term) --
+  // renderRecord only adds the .explore-toggle for sdo:Person.
+  function navigateAndExplore(uri, label) {
+    var p = navigate(uri, { label: label });
+    if (p) p.then(function () {
+      var toggle = mainEl.querySelector(".explore-toggle");
+      if (toggle) toggle.click();
+    });
+  }
+
   // Named landing pages (sidebar "Views") vs. the entity-URI hash format --
   // kept as a distinct "view:xxx" prefix so syncFromHash can tell them
   // apart from a real record URI without ambiguity.
@@ -2326,31 +2331,14 @@
     svg.setAttribute("class", "explore-svg");
     svg.setAttribute("role", "img");
 
-    // Three independently-movable layers: hovering a station on one side
-    // fades the *other* side out and slides the hub + active side into the
-    // space it vacated, so the hovered station (and its ghost, which grows
-    // further outward along the same spoke) gets more canvas before
-    // hitting the edge. Plain rigid translate, not a re-layout -- cheap,
-    // and the existing x/y math for every child stays correct since it's
-    // the group that moves, not the coordinates inside it.
-    var incomingGroup = document.createElementNS(svgNS, "g");
-    incomingGroup.setAttribute("class", "explore-layer explore-incoming-group");
-    var outgoingGroup = document.createElementNS(svgNS, "g");
-    outgoingGroup.setAttribute("class", "explore-layer explore-outgoing-group");
-    var hubGroup = document.createElementNS(svgNS, "g");
-    hubGroup.setAttribute("class", "explore-layer explore-hub-group");
-    svg.appendChild(incomingGroup);
-    svg.appendChild(outgoingGroup);
-    svg.appendChild(hubGroup);
-
-    function addLine(target, x1, y1, x2, y2, color, width) {
+    function addLine(x1, y1, x2, y2, color, width) {
       var ln = document.createElementNS(svgNS, "line");
       ln.setAttribute("x1", x1); ln.setAttribute("y1", y1);
       ln.setAttribute("x2", x2); ln.setAttribute("y2", y2);
       ln.setAttribute("stroke", color);
       ln.setAttribute("stroke-width", width);
       ln.setAttribute("stroke-linecap", "round");
-      target.appendChild(ln);
+      svg.appendChild(ln);
     }
 
     // Hover-ghost: previews one extra hop off a station without touching
@@ -2409,11 +2397,11 @@
       t.setAttribute("class", "explore-ghost-label");
       t.textContent = truncateForStation(neighbor.label, 20);
       g.appendChild(t);
-      g.addEventListener("click", function (e) { e.stopPropagation(); navigate(neighbor.uri, { label: neighbor.label }); });
+      g.addEventListener("click", function (e) { e.stopPropagation(); navigateAndExplore(neighbor.uri, neighbor.label); });
       return g;
     }
 
-    function scheduleGhost(target, x, y, color, ghostKind, ghostUri) {
+    function scheduleGhost(x, y, color, ghostKind, ghostUri) {
       clearGhost();
       var token = ghostToken;
       ghostHoverTimer = setTimeout(function () {
@@ -2424,18 +2412,13 @@
           var gx = clamp(x + (dx / len) * 55, 24, 716);
           var gy = clamp(y + (dy / len) * 55, 24, 476);
           ghostGroup = buildGhostGroup(x, y, gx, gy, color, neighbor);
-          target.appendChild(ghostGroup);
+          svg.appendChild(ghostGroup);
           requestAnimationFrame(function () { if (ghostGroup) ghostGroup.classList.add("show"); });
         });
       }, 150);
     }
 
-    // ghostKind doubles as which side a station belongs to: "person"
-    // stations are the incoming (co-subject) branch, "work" stations are
-    // the outgoing (creation) branch. Hovering either one tells the svg
-    // which side to fade and which way to slide the hub, via a class on
-    // the root element rather than threading state through every station.
-    function addStation(target, x, y, r, color, title, subtitle, labelFar, onClick, ghostKind, ghostUri) {
+    function addStation(x, y, r, color, title, subtitle, labelFar, onClick, ghostKind, ghostUri) {
       var g = document.createElementNS(svgNS, "g");
       g.setAttribute("class", "explore-station" + (onClick ? " clickable" : ""));
       var circle = document.createElementNS(svgNS, "circle");
@@ -2469,17 +2452,10 @@
       }
       if (onClick) g.addEventListener("click", onClick);
       if (ghostKind && ghostUri) {
-        var sideClass = ghostKind === "person" ? "hover-incoming" : "hover-outgoing";
-        g.addEventListener("mouseenter", function () {
-          svg.classList.add(sideClass);
-          scheduleGhost(target, x, y, color, ghostKind, ghostUri);
-        });
-        g.addEventListener("mouseleave", function () {
-          svg.classList.remove(sideClass);
-          clearGhost();
-        });
+        g.addEventListener("mouseenter", function () { scheduleGhost(x, y, color, ghostKind, ghostUri); });
+        g.addEventListener("mouseleave", clearGhost);
       }
-      target.appendChild(g);
+      svg.appendChild(g);
     }
 
     // Capped to keep the map readable -- a station per connection would
@@ -2495,10 +2471,10 @@
       var angle = (n === 1 ? 0 : (-80 + (160 * i / (n - 1)))) * Math.PI / 180;
       var x = cx + Math.cos(angle) * 230, y = cy + Math.sin(angle) * 175;
       var vx = cx + Math.cos(angle) * 110, vy = cy + Math.sin(angle) * 85;
-      addLine(incomingGroup, cx, cy, vx, vy, blueColor, 5);
-      addLine(incomingGroup, vx, vy, x, y, blueColor, 5);
-      addStation(incomingGroup, vx, vy, 5, blueColor, truncateForStation(cs.viaLabel, 20), null, false, null);
-      addStation(incomingGroup, x, y, 11, blueColor, truncateForStation(cs.label, 22), cs.shared + " shared works", i % 2 === 1, (function (cs) { return function () { navigate(cs.uri, { label: cs.label }); }; })(cs), "person", cs.uri);
+      addLine(cx, cy, vx, vy, blueColor, 5);
+      addLine(vx, vy, x, y, blueColor, 5);
+      addStation(vx, vy, 5, blueColor, truncateForStation(cs.viaLabel, 20), null, false, null);
+      addStation(x, y, 11, blueColor, truncateForStation(cs.label, 22), cs.shared + " shared works", i % 2 === 1, (function (cs) { return function () { navigateAndExplore(cs.uri, cs.label); }; })(cs), "person", cs.uri);
     });
 
     var coralColor = "var(--crit)";
@@ -2506,8 +2482,8 @@
     creations.forEach(function (w, i) {
       var angle = (180 + (m === 1 ? 0 : (-60 + (120 * i / (m - 1))))) * Math.PI / 180;
       var x = cx + Math.cos(angle) * 230, y = cy + Math.sin(angle) * 175;
-      addLine(outgoingGroup, cx, cy, x, y, coralColor, 5);
-      addStation(outgoingGroup, x, y, 8, coralColor, truncateForStation(w.label, 24), w.date, i % 2 === 1, (function (w) { return function () { navigate(w.uri, { label: w.label }); }; })(w), "work", w.uri);
+      addLine(cx, cy, x, y, coralColor, 5);
+      addStation(x, y, 8, coralColor, truncateForStation(w.label, 24), w.date, i % 2 === 1, (function (w) { return function () { navigate(w.uri, { label: w.label }); }; })(w), "work", w.uri);
     });
 
     var hub = document.createElementNS(svgNS, "g");
@@ -2519,13 +2495,13 @@
     inner.setAttribute("cx", cx); inner.setAttribute("cy", cy); inner.setAttribute("r", 10);
     inner.setAttribute("fill", coralColor);
     hub.appendChild(inner);
-    hubGroup.appendChild(hub);
+    svg.appendChild(hub);
     var hubText = document.createElementNS(svgNS, "text");
     hubText.setAttribute("x", cx); hubText.setAttribute("y", cy - 32);
     hubText.setAttribute("text-anchor", "middle");
     hubText.setAttribute("class", "explore-hub-label");
     hubText.textContent = centerLabel;
-    hubGroup.appendChild(hubText);
+    svg.appendChild(hubText);
 
     var wrap = el("div", { class: "explore-wrap" });
     wrap.appendChild(svg);
