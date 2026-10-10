@@ -196,6 +196,15 @@
     justify-content: space-between;
   }
 
+  /* Separates the content-browsing views (Archive, Books, ...) from the
+     pipeline-monitoring ones (Graph Runs, Delta) further down the same
+     rail-section -- a plain rule, since the two groups' own headings
+     already carry the label difference. */
+  .rail-subdivider {
+    border-top: 1px solid var(--line);
+    margin: 2px 0;
+  }
+
   .rail-graphs {
     list-style: none;
     padding: 0;
@@ -407,6 +416,179 @@
   }
   .dash-loading { color: var(--muted); font-size: 13px; font-style: italic; }
 
+  /* ---------- Nightly run history (Data science view) ----------
+     A month calendar (green/red day tiles) plus a persistent detail panel
+     next to it -- clicking a tile updates the panel, which otherwise
+     defaults to the most recent run so it's never empty on first load.
+     Click rather than hover-only, so it still works on touch. */
+
+  .cal-body { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .cal-wrap { flex: 1 1 300px; max-width: 360px; }
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cal-month-label { font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+  .cal-nav-btn {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    width: 26px;
+    height: 26px;
+    line-height: 1;
+    font-size: 14px;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .cal-nav-btn:hover { border-color: var(--accent); color: var(--accent-strong); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-dow {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+    padding-bottom: 4px;
+  }
+  .cal-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    border: 1px solid transparent;
+    padding: 0;
+  }
+  .cal-cell.empty { visibility: hidden; }
+  div.cal-cell { color: var(--muted); }
+  button.cal-cell { cursor: pointer; color: var(--surface); font-weight: 600; }
+  .cal-cell.today { border-color: var(--accent); }
+  .cal-cell.has-run.ok { background: var(--good); }
+  .cal-cell.has-run.crit { background: var(--crit); }
+  .cal-cell.has-run:hover { filter: brightness(1.1); }
+  .cal-cell.selected { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
+
+  .run-detail-panel-holder { flex: 1 1 260px; min-width: 240px; }
+  .run-detail-panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .run-detail-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .run-detail-head .run-date { font-weight: 600; }
+
+  .run-date { font-family: var(--font-mono); font-size: 13px; }
+  .run-meta { display: flex; align-items: center; gap: 12px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .run-badge {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 9px;
+    border-radius: 20px;
+    border: 1px solid currentColor;
+  }
+  .run-badge.ok { color: var(--good); }
+  .run-badge.warn { color: var(--warn); }
+  .run-badge.crit { color: var(--crit); }
+  .run-pipeline-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 3px 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .run-pipeline-row .status.ok { color: var(--good); }
+  .run-pipeline-row .status.failed { color: var(--crit); }
+
+  /* ---------- Growth view: per-graph daily delta bars ---------- */
+  /* A real grid (not stacked cards) so the label/total/change columns line
+     up across graphs and are easy to scan down. Each "row" is a `display:
+     contents` wrapper -- its cells become direct children of the grid, the
+     wrapper itself renders nothing -- so JS can still group a row's cells
+     together without breaking the column alignment. */
+
+  .growth-table {
+    display: grid;
+    grid-template-columns: minmax(140px, 200px) 110px 150px 1fr;
+    column-gap: 18px;
+    align-items: center;
+  }
+  .growth-table-head { display: contents; }
+  .growth-table-head > div {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 2px;
+  }
+  .growth-row { display: contents; }
+  .growth-row > div { padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .growth-row:last-child > div { border-bottom: none; }
+  .growth-label { display: flex; align-items: center; gap: 7px; font-weight: 500; }
+  .growth-label .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+  .growth-total { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-soft); }
+  .growth-total[data-breakdown] { border-bottom: 1px dotted var(--muted); }
+  .growth-label-text[data-explain] { border-bottom: 1px dotted var(--muted); }
+  .growth-net { font-family: var(--font-mono); font-size: 12px; }
+  .growth-net.pos { color: var(--good); }
+  .growth-net.neg { color: var(--crit); }
+  .growth-bars { overflow-x: auto; }
+  .growth-bars svg { display: block; }
+  .growth-bars rect[data-delta] { cursor: default; }
+
+  @media (max-width: 760px) {
+    .growth-table { grid-template-columns: 1fr; row-gap: 4px; }
+    .growth-table-head { display: none; }
+    .growth-row { display: block; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .growth-row > div { padding: 2px 0; border-bottom: none; }
+    .growth-row:last-child { border-bottom: none; }
+  }
+
+  /* Shared hover tooltip -- for the delta bars (native SVG <title> tooltips
+     are inconsistent: slow to appear, and easy to miss on a 1-2px-tall
+     bar) and for the per-graph S/P/O composition breakdown on each row's
+     total. A plain positioned div driven by mouse events, rather than
+     native tooltips, covers both. pre-line (not nowrap) so the breakdown's
+     "\n"-joined lines still break, while the bars' single-line text is
+     unaffected. */
+  .chart-tooltip {
+    position: fixed;
+    pointer-events: none;
+    z-index: 50;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--ink);
+    box-shadow: var(--shadow);
+    opacity: 0;
+    white-space: pre-line;
+    line-height: 1.6;
+    transform: translate(-50%, -100%);
+  }
+  .chart-tooltip.visible { opacity: 1; }
+
+  .metric-switcher { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 22px; }
+  .metric-chip {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  .metric-chip:hover { border-color: var(--accent); }
+  .metric-chip.active { background: var(--accent-strong); border-color: var(--accent-strong); color: var(--surface); }
+
   /* results list */
 
   .results-heading {
@@ -598,6 +780,28 @@
   }
   .hierarchy-link:hover { color: var(--accent-strong); text-decoration: underline; }
 
+  /* A child row's chevron + the inline "unfold" it reveals -- see
+     expandableHierarchyRowEl. Max-height transition (not height/grid)
+     since the final content height isn't known upfront; 2000px just
+     needs to comfortably exceed real content, not match it exactly. */
+  .hierarchy-chevron {
+    display: inline-block;
+    width: 10px;
+    flex-shrink: 0;
+    color: var(--muted);
+    font-size: 10px;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .hierarchy-chevron.expanded { transform: rotate(90deg); }
+  .hierarchy-chevron.loading { opacity: 0.5; }
+  .hierarchy-expand-wrap {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+  }
+  .hierarchy-expand-wrap.expanded { max-height: 2000px; }
+
   .pager-row { display: flex; gap: 8px; margin-top: 14px; }
   .pager-btn {
     font-family: var(--font-mono);
@@ -695,18 +899,38 @@
   }
   .identity-fact-value { min-width: 0; }
 
-  .explore-toggle {
+  /* ---------- Player panel: Random/Next/Previous while exploring
+     Person/Archive/Books (see playerPanelEl) ---------- */
+  .player-panel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0 18px;
+  }
+  .player-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-soft);
+    cursor: pointer;
+    padding: 0;
+  }
+  .player-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-strong); }
+  .player-btn:disabled { opacity: 0.35; cursor: default; }
+  .player-btn-random { color: var(--accent-strong); border-color: var(--accent-soft); background: var(--accent-soft); }
+  .player-mode-label {
     font-family: var(--font-mono);
     font-size: 11px;
-    background: none;
-    border: 1px solid var(--line);
-    color: var(--accent-strong);
-    padding: 5px 11px;
-    border-radius: 20px;
-    cursor: pointer;
-    margin: 4px 0 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-left: 2px;
   }
-  .explore-toggle:hover { border-color: var(--accent); background: var(--accent-soft); }
 
   .explore-wrap {
     background: var(--surface);
@@ -1097,14 +1321,21 @@
       </div>
     </div>
 
-    <div class="rail-section">
+    <div class="rail-section" id="rail-views">
       <div class="rail-heading"><span>Views</span></div>
-      <ul class="rail-graphs" id="rail-views">
+      <ul class="rail-graphs">
         <li><button class="rail-graph-btn" data-view="archive"><span>Archive</span></button></li>
         <li><button class="rail-graph-btn" data-view="books"><span>Books</span></button></li>
         <li><button class="rail-graph-btn" data-view="person"><span>Person</span></button></li>
-        <li><button class="rail-graph-btn" data-view="datascience"><span>Data science</span></button></li>
         <li><button class="rail-graph-btn" data-view="events"><span>Events@IISG</span></button></li>
+      </ul>
+
+      <div class="rail-subdivider"></div>
+
+      <div class="rail-heading"><span>Monitoring</span></div>
+      <ul class="rail-graphs">
+        <li><button class="rail-graph-btn" data-view="datascience"><span>Graph Runs</span></button></li>
+        <li><button class="rail-graph-btn" data-view="growth"><span>Delta</span></button></li>
       </ul>
     </div>
 
@@ -1613,10 +1844,42 @@
     check();
   }
 
+  // The actual cause of hierarchy-tree navigation "feeling like a page
+  // reload": clear(mainEl) (inside renderRecord) makes the document
+  // briefly shorter than wherever you'd scrolled to -- scrolled deep into
+  // a long sibling list, say -- so the browser immediately clamps scrollY
+  // toward 0, same as it would if you'd manually scrolled past the end of
+  // a page that just got shorter. The new (taller) content streaming back
+  // in afterward doesn't undo that clamp; nothing tells it to. This is the
+  // same "wait for the height to stop changing" polling scrollToWhenStable
+  // already uses above, just restoring a saved position instead of
+  // scrolling to a target element.
+  function restoreScrollWhenStable(y, maxWaitMs) {
+    var lastHeight = -1, stableCount = 0, start = Date.now();
+    function check() {
+      var h = document.documentElement.scrollHeight;
+      stableCount = h === lastHeight ? stableCount + 1 : 0;
+      lastHeight = h;
+      if (stableCount >= 2 || Date.now() - start > maxWaitMs) {
+        window.scrollTo(0, y);
+      } else {
+        setTimeout(check, 100);
+      }
+    }
+    check();
+  }
+
   // ---------- App state ----------
 
   var trail = [];
   var currentUri = null;
+
+  // null | "person" | "archive" | "books" -- which "explore" domain the
+  // player panel (see playerPanelEl) is currently shuffling/stepping
+  // through. Set by the three explore-landing nav buttons (or by clicking
+  // Random within the panel itself) and cleared by navigateToView()
+  // whenever you head to a non-explore named view.
+  var exploreMode = null;
 
   var mainEl = document.getElementById("main");
   var trailListEl = document.getElementById("trail-list");
@@ -1653,20 +1916,39 @@
     });
   }
 
+  // opts.preserveScroll: for navigation that's conceptually "stay in this
+  // same list/flow, just move to the next item in it" (a hierarchy-tree
+  // sibling/ancestor click, Archive's Next walking the finding aid) --
+  // not for a deliberate jump to something new and different (Random,
+  // search results, an ordinary link), where landing at the top is the
+  // expected, correct behavior. Both ends are driven explicitly (not left
+  // to however the browser happens to handle the DOM swap) by the same
+  // restoreScrollWhenStable settle-then-scroll call below, just aimed at
+  // the saved position or at 0.
   function navigate(uri, opts) {
     opts = opts || {};
     if (!/^https?:\/\//i.test(uri)) { renderError("Not a browsable URI: " + uri); return; }
+    var targetScrollY = opts.preserveScroll ? window.scrollY : 0;
     currentUri = uri;
     history.pushState({ uri: uri }, "", "#" + encodeURIComponent(uri));
-    return loadEntity(uri);
+    var result = loadEntity(uri);
+    restoreScrollWhenStable(targetScrollY, 1500);
+    return result;
   }
 
   // Named landing pages (sidebar "Views") vs. the entity-URI hash format --
   // kept as a distinct "view:xxx" prefix so syncFromHash can tell them
   // apart from a real record URI without ambiguity.
+  var EXPLORE_VIEW_NAMES = { person: true, archive: true, books: true };
+
   function navigateToView(viewName) {
     currentUri = null;
     searchInput.value = "";
+    // Heading to a non-explore named view (Events, Graph Runs, Delta) ends
+    // the current explore session; heading to person/archive/books starts
+    // (or restarts) one -- renderExploreLanding sets exploreMode itself,
+    // via renderPersonLanding/renderArchiveLanding/renderBooksLanding.
+    if (!EXPLORE_VIEW_NAMES[viewName]) exploreMode = null;
     history.pushState({ view: viewName }, "", "#view:" + viewName);
     renderTrail();
     renderView(viewName);
@@ -1684,19 +1966,21 @@
     if (viewName === "archive") renderArchiveLanding();
     else if (viewName === "books") renderBooksLanding();
     else if (viewName === "events") renderEventsLanding();
-    else if (viewName === "datascience") renderHome();
+    else if (viewName === "datascience") renderDataScience();
+    else if (viewName === "growth") renderGrowth();
     else renderPersonLanding(); // "person", and the fallback default
   }
 
-  // ---------- Person view: randomly-centered Explore landing ----------
-  // The new default experience (see init, below, and navigateHome()).
-  // Picks a real person weighted toward being reasonably well-connected
-  // (sampling from sdo:about edges, not a uniform pick over all Persons,
-  // most of whom have zero "written about together" connections) and
-  // jumps straight into their Explore map rather than the flat record
-  // page -- reuses loadEntity()/renderRecord() as-is, then simulates a
-  // click on the Explore toggle those already build, instead of
-  // duplicating that rendering path.
+  // ---------- Person / Archive / Books: randomly-centered explore landings ----------
+  // The default experience for all three (see init, below, and
+  // navigateHome()) -- each picks a real starting point by a mode-specific
+  // SPARQL sampling query, jumps straight to loadEntity()/renderRecord()
+  // for it (no separate flat "browse by type" list to click through
+  // first), and sets exploreMode so renderRecord's player panel (see
+  // playerPanelEl, below renderRecord) knows what Random/Next should do
+  // from here on -- not just on this first landing, but on every record
+  // you reach afterward via the panel or by clicking through the page,
+  // until you navigate to a different named view.
 
   var aboutPersonTripleCount = null;
 
@@ -1735,43 +2019,109 @@
     }).catch(function () { return null; });
   }
 
-  function renderPersonLanding() {
+  // Scoped to the findingaid-etl graph specifically (not archive-etl's own
+  // flat, single-level MARC records) and required to have a parent --
+  // findingaid-etl's full EAD hierarchy is the richer, more explorable of
+  // the two pipelines asserting sdo:ArchiveComponent (siblings, children,
+  // a real breadcrumb; archive-etl's records have none of that), and
+  // requiring a parent keeps the landing off of bare top-level/orphan
+  // nodes with nothing around them yet to explore.
+  var archiveWithParentCount = null;
+
+  function fetchArchiveWithParentCount() {
+    if (archiveWithParentCount !== null) return Promise.resolve(archiveWithParentCount);
+    var q = "SELECT (COUNT(*) AS ?n) WHERE {\n" +
+      "  GRAPH <https://iisg.amsterdam/graph/findingaid> {\n" +
+      "    ?c a <https://schema.org/ArchiveComponent> .\n" +
+      "    { ?c <http://schema.org/isPartOf> ?p } UNION { ?c <https://schema.org/isPartOf> ?p }\n" +
+      "  }\n" +
+      "}";
+    return sparql(q).then(function (rows) {
+      archiveWithParentCount = rows.length ? parseInt(rows[0].n.value, 10) : 10000;
+      return archiveWithParentCount;
+    }).catch(function () { return 10000; });
+  }
+
+  function fetchRandomArchiveCandidate() {
+    return fetchArchiveWithParentCount().then(function (total) {
+      var offset = Math.floor(Math.random() * Math.max(total - 1, 1));
+      var q = "SELECT ?c ?lbl WHERE {\n" +
+        "  GRAPH <https://iisg.amsterdam/graph/findingaid> {\n" +
+        "    ?c a <https://schema.org/ArchiveComponent> .\n" +
+        "    { ?c <http://schema.org/isPartOf> ?p } UNION { ?c <https://schema.org/isPartOf> ?p }\n" +
+        "    OPTIONAL { ?c <http://schema.org/name> ?n1 }\n" +
+        "    OPTIONAL { ?c <https://schema.org/name> ?n2 }\n" +
+        "    BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
+        "  }\n" +
+        "} LIMIT 1 OFFSET " + offset;
+      return sparql(q);
+    }).then(function (rows) {
+      if (!rows.length) return null;
+      return { uri: rows[0].c.value, label: rows[0].lbl ? rows[0].lbl.value : shortLabel(rows[0].c.value) };
+    }).catch(function () { return null; });
+  }
+
+  // Requires both a name and a creator so the landing never lands on a
+  // bare catalog stub -- not weighted toward "well-connected" like Person,
+  // since a book's connections (creator, subject) are already front and
+  // center on its own record page.
+  var bookWithCreatorCount = null;
+
+  function fetchBookWithCreatorCount() {
+    if (bookWithCreatorCount !== null) return Promise.resolve(bookWithCreatorCount);
+    var q = "SELECT (COUNT(*) AS ?n) WHERE {\n" +
+      "  ?b a <https://schema.org/Book> .\n" +
+      "  OPTIONAL { ?b <http://schema.org/name> ?n1 }\n" +
+      "  OPTIONAL { ?b <https://schema.org/name> ?n2 }\n" +
+      "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
+      "  FILTER(BOUND(?lbl))\n" +
+      "  { ?b <http://schema.org/creator> ?c1 } UNION { ?b <https://schema.org/creator> ?c2 }\n" +
+      "}";
+    return sparql(q).then(function (rows) {
+      bookWithCreatorCount = rows.length ? parseInt(rows[0].n.value, 10) : 100000;
+      return bookWithCreatorCount;
+    }).catch(function () { return 100000; });
+  }
+
+  function fetchRandomBookCandidate() {
+    return fetchBookWithCreatorCount().then(function (total) {
+      var offset = Math.floor(Math.random() * Math.max(total - 1, 1));
+      var q = "SELECT ?b ?lbl WHERE {\n" +
+        "  ?b a <https://schema.org/Book> .\n" +
+        "  OPTIONAL { ?b <http://schema.org/name> ?n1 }\n" +
+        "  OPTIONAL { ?b <https://schema.org/name> ?n2 }\n" +
+        "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
+        "  FILTER(BOUND(?lbl))\n" +
+        "  { ?b <http://schema.org/creator> ?c1 } UNION { ?b <https://schema.org/creator> ?c2 }\n" +
+        "} LIMIT 1 OFFSET " + offset;
+      return sparql(q);
+    }).then(function (rows) {
+      if (!rows.length) return null;
+      return { uri: rows[0].b.value, label: rows[0].lbl ? rows[0].lbl.value : shortLabel(rows[0].b.value) };
+    }).catch(function () { return null; });
+  }
+
+  function renderExploreLanding(mode, candidateFetcher) {
     var gen = viewGeneration;
     clear(mainEl);
-    mainEl.appendChild(el("div", { class: "results-heading", text: "Finding someone to explore…" }));
-    fetchRandomPersonCandidate().then(function (candidate) {
+    exploreMode = mode;
+    mainEl.appendChild(el("div", { class: "results-heading", text: "Finding something to explore…" }));
+    candidateFetcher().then(function (candidate) {
       if (gen !== viewGeneration) return;
       if (!candidate) {
         clear(mainEl);
-        renderError("Couldn’t find a starting point.", renderPersonLanding);
+        renderError("Couldn’t find a starting point.", function () { renderExploreLanding(mode, candidateFetcher); });
         return;
       }
       currentUri = candidate.uri;
       history.replaceState({ uri: candidate.uri }, "", "#" + encodeURIComponent(candidate.uri));
-      loadEntity(candidate.uri).then(function () {
-        if (gen !== viewGeneration) return;
-        var graphSlot = mainEl.querySelector(".graph-slot");
-        if (!graphSlot) return; // shouldn't happen for a Person, but don't break if it does
-        var reroll = el("button", { class: "explore-toggle", text: "↻ Show me someone else" });
-        reroll.addEventListener("click", function () { navigateToView("person"); });
-        graphSlot.insertBefore(reroll, graphSlot.firstChild);
-      });
+      loadEntity(candidate.uri);
     });
   }
 
-  // ---------- Archive / Books views: curated entry points ----------
-  // v1: the existing "browse by type" list, same as the home dashboard's
-  // tiles already offer -- a real, working landing page, not a dead end,
-  // with a more deliberately designed entry (e.g. starting from a specific
-  // top-level collection, or a notable book) as a follow-up.
-
-  function renderArchiveLanding() {
-    browseType("https://schema.org/ArchiveComponent", "sdo:ArchiveComponent");
-  }
-
-  function renderBooksLanding() {
-    browseType("https://schema.org/Book", "sdo:Book");
-  }
+  function renderPersonLanding() { renderExploreLanding("person", fetchRandomPersonCandidate); }
+  function renderArchiveLanding() { renderExploreLanding("archive", fetchRandomArchiveCandidate); }
+  function renderBooksLanding() { renderExploreLanding("books", fetchRandomBookCandidate); }
 
   // ---------- Events view: image-forward showcase, not a plain list ----------
   // sdo:Event is also asserted by authorities-etl's meeting-name headings
@@ -1880,7 +2230,10 @@
 
   function pipelinesDashSection() {
     var section = el("div", { class: "dash-section" });
-    section.appendChild(el("div", { class: "dash-heading", text: "Pipelines" }));
+    section.appendChild(el("div", { class: "dash-heading" }, [
+      document.createTextNode("Pipelines"),
+      el("span", { text: "live snapshot, straight from the store" })
+    ]));
     var grid = el("div", { class: "stat-grid" });
     var loading = el("div", { class: "dash-loading", text: "Loading pipeline counts…" });
     section.appendChild(loading);
@@ -1905,6 +2258,520 @@
       grid.appendChild(el("div", { class: "column-empty", text: "Store unreachable." }));
     });
     return section;
+  }
+
+  // ---------- Nightly run history ----------
+  // nightly-harvest.sh (triplestore repo, runs on the VPS as a systemd
+  // timer at 3am) appends one JSON line per harvest to run-history.jsonl --
+  // timing, per-pipeline ok/failed status, the resulting per-graph triple
+  // counts, and the authority-interlinking count (see that repo's
+  // deploy/record_run_history.py). iisgBrowser.py's /api/run-history reads
+  // it across the silk/kbviewer user boundary. Both the "Data science" run
+  // list and the "Growth" delta charts read from this one endpoint -- cached
+  // here so switching between those two views doesn't re-fetch.
+  var runHistoryPromise = null;
+  function fetchRunHistory() {
+    if (!runHistoryPromise) {
+      runHistoryPromise = fetch("/api/run-history").then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      }).catch(function (err) {
+        runHistoryPromise = null; // let the next view that needs it retry
+        throw err;
+      });
+    }
+    return runHistoryPromise;
+  }
+
+  function fmtDuration(seconds) {
+    seconds = Math.round(seconds || 0);
+    var h = Math.floor(seconds / 3600);
+    var m = Math.floor((seconds % 3600) / 60);
+    var s = seconds % 60;
+    if (h) return h + "h " + m + "m";
+    if (m) return m + "m " + s + "s";
+    return s + "s";
+  }
+
+  function fmtRunDate(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) +
+      ", " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function fmtRunDateShort(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  }
+
+  function runStatus(run) {
+    var pipelines = run.pipelines || [];
+    var failed = pipelines.filter(function (p) { return p.status !== "ok"; }).length;
+    if (!failed && run.pipelines_exit === 0) return { cls: "ok", text: "OK" };
+    if (pipelines.length && failed < pipelines.length) return { cls: "warn", text: failed + " of " + pipelines.length + " failed" };
+    return { cls: "crit", text: "failed" };
+  }
+
+  // Detail panel content for one run -- always rendered in full (no
+  // click-to-expand chevron) since it now lives in its own persistent
+  // section next to the calendar, not inline in a list row.
+  function runDetailPanelEl(run) {
+    var panel = el("div", { class: "run-detail-panel" });
+    if (!run) {
+      panel.appendChild(el("div", { class: "column-empty", text: "Pick a highlighted day for that run’s detail." }));
+      return panel;
+    }
+    var head = el("div", { class: "run-detail-head" });
+    head.appendChild(el("span", { class: "run-date", text: fmtRunDate(run.started_at) }));
+    var status = runStatus(run);
+    head.appendChild(el("span", { class: "run-badge " + status.cls, text: status.text }));
+    panel.appendChild(head);
+
+    var meta = el("div", { class: "run-meta" });
+    meta.appendChild(el("span", { text: fmtDuration(run.duration_s) }));
+    if (run.graph_counts) {
+      var total = Object.keys(run.graph_counts).reduce(function (s, k) { return s + run.graph_counts[k]; }, 0);
+      meta.appendChild(el("span", { text: fmtNum(total) + " triples" }));
+    }
+    panel.appendChild(meta);
+
+    (run.pipelines || []).forEach(function (p) {
+      var pr = el("div", { class: "run-pipeline-row" });
+      pr.appendChild(el("span", { text: p.name }));
+      pr.appendChild(el("span", { class: "status " + (p.status === "ok" ? "ok" : "failed"), text: p.status + " · " + p.duration_s + "s" }));
+      panel.appendChild(pr);
+    });
+    if (typeof run.interlinked_authority_iris === "number") {
+      var ir = el("div", { class: "run-pipeline-row" });
+      ir.appendChild(el("span", { text: "Authority IRIs interlinked" }));
+      ir.appendChild(el("span", { text: fmtNum(run.interlinked_authority_iris) }));
+      panel.appendChild(ir);
+    }
+    return panel;
+  }
+
+  function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+
+  // Local-calendar-day key (not UTC) -- a run's started_at is an ISO
+  // string with its own offset, so this reflects the viewer's own
+  // calendar day, same as any other date display in the app.
+  function dateKeyLocal(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+
+  var MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  var DOW_LABELS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+
+  // onPick fires on hover (mouseover) as well as click/focus -- cheap
+  // either way, since it only swaps the small detail panel and toggles one
+  // CSS class, not a re-render of the grid itself. click/focus stay wired
+  // too so a tap (touch) or keyboard tab still works where there's no
+  // hover.
+  function calendarGridEl(runsByDate, year, month, selectedKey, onPick) {
+    var grid = el("div", { class: "cal-grid" });
+    DOW_LABELS.forEach(function (d) { grid.appendChild(el("div", { class: "cal-dow", text: d })); });
+
+    var first = new Date(year, month, 1);
+    var leading = (first.getDay() + 6) % 7; // Monday-first: JS getDay() is 0=Sun..6=Sat
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var todayKey = dateKeyLocal(new Date().toISOString());
+
+    for (var i = 0; i < leading; i++) grid.appendChild(el("div", { class: "cal-cell empty" }));
+
+    for (var day = 1; day <= daysInMonth; day++) {
+      var key = year + "-" + pad2(month + 1) + "-" + pad2(day);
+      var run = runsByDate[key];
+      var cls = "cal-cell";
+      if (key === todayKey) cls += " today";
+      if (key === selectedKey) cls += " selected";
+      if (run) {
+        // Binary tile color (plain ok/not-ok), even though runStatus's own
+        // "warn" (some pipelines failed) vs "crit" (all of them did) stays
+        // meaningful in the detail panel's badge text -- a calendar reads
+        // better as green/red than a three-way distinction per square.
+        cls += " has-run " + (runStatus(run).cls === "ok" ? "ok" : "crit");
+        var cell = el("button", { class: cls, text: String(day) });
+        var pick = (function (k) { return function (e) { onPick(k, e.currentTarget); }; })(key);
+        cell.addEventListener("mouseover", pick);
+        cell.addEventListener("focus", pick);
+        cell.addEventListener("click", pick);
+        grid.appendChild(cell);
+      } else {
+        grid.appendChild(el("div", { class: cls, text: String(day) }));
+      }
+    }
+    return grid;
+  }
+
+  function nightlyRunsCalendarSection() {
+    var section = el("div", { class: "dash-section" });
+    section.appendChild(el("div", { class: "dash-heading" }, [
+      document.createTextNode("Nightly runs"),
+      el("span", { text: "green = ok, red = a pipeline failed — hover a day for detail" })
+    ]));
+    var loading = el("div", { class: "dash-loading", text: "Loading run history…" });
+    section.appendChild(loading);
+    var body = el("div", { class: "cal-body" });
+    section.appendChild(body);
+
+    fetchRunHistory().then(function (runs) {
+      section.removeChild(loading);
+      if (!runs.length) {
+        body.appendChild(el("div", { class: "column-empty", text: "No nightly-run history yet — the next 03:00 harvest will add the first entry here." }));
+        return;
+      }
+
+      var runsByDate = {};
+      runs.forEach(function (r) {
+        var k = dateKeyLocal(r.started_at);
+        if (k) runsByDate[k] = r; // runs are ascending, so a repeated date keeps the latest
+      });
+
+      var latest = runs[runs.length - 1];
+      var latestDate = new Date(latest.started_at);
+      var viewYear = latestDate.getFullYear(), viewMonth = latestDate.getMonth();
+      var selectedKey = dateKeyLocal(latest.started_at);
+      var selectedCellEl = null;
+
+      var calWrap = el("div", { class: "cal-wrap" });
+      var header = el("div", { class: "cal-header" });
+      var prevBtn = el("button", { class: "cal-nav-btn", text: "‹" });
+      var monthLabel = el("div", { class: "cal-month-label" });
+      var nextBtn = el("button", { class: "cal-nav-btn", text: "›" });
+      header.appendChild(prevBtn);
+      header.appendChild(monthLabel);
+      header.appendChild(nextBtn);
+      calWrap.appendChild(header);
+      var gridHolder = el("div", {});
+      calWrap.appendChild(gridHolder);
+      body.appendChild(calWrap);
+
+      var detailHolder = el("div", { class: "run-detail-panel-holder" });
+      body.appendChild(detailHolder);
+
+      // Hovering across the grid shouldn't rebuild it on every cell --
+      // that's the one thing that would make mouseover noticeably more
+      // work than click. This just toggles the "selected" class on two
+      // elements and swaps the (small) detail panel; redrawGrid() below,
+      // which actually rebuilds the DOM, only runs for month navigation.
+      function pick(key, cellEl) {
+        if (selectedCellEl && selectedCellEl !== cellEl) selectedCellEl.classList.remove("selected");
+        selectedKey = key;
+        selectedCellEl = cellEl || null;
+        if (selectedCellEl) selectedCellEl.classList.add("selected");
+        clear(detailHolder);
+        detailHolder.appendChild(runDetailPanelEl(runsByDate[selectedKey] || null));
+      }
+
+      function redrawGrid() {
+        monthLabel.textContent = MONTH_NAMES[viewMonth] + " " + viewYear;
+        clear(gridHolder);
+        gridHolder.appendChild(calendarGridEl(runsByDate, viewYear, viewMonth, selectedKey, pick));
+        selectedCellEl = gridHolder.querySelector(".cal-cell.selected");
+      }
+
+      prevBtn.addEventListener("click", function () {
+        viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+        redrawGrid();
+      });
+      nextBtn.addEventListener("click", function () {
+        viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+        redrawGrid();
+      });
+
+      redrawGrid();
+      detailHolder.appendChild(runDetailPanelEl(runsByDate[selectedKey] || null));
+    }).catch(function (err) {
+      section.removeChild(loading);
+      body.appendChild(el("div", { class: "column-empty", text: "Couldn’t load run history: " + err.message }));
+    });
+
+    return section;
+  }
+
+  function renderDataScience() {
+    clear(mainEl);
+    var wrap = el("div", { class: "home-dash" });
+    wrap.appendChild(el("h1", { text: "How the graph is built, run by run." }));
+    wrap.appendChild(el("p", { text: "Live triple counts per pipeline, and the history of each nightly harvest that produced them — how long it took, which pipelines succeeded, and how well the result interlinks. See the Delta view for how these counts change night over night." }));
+    wrap.appendChild(pipelinesDashSection());
+    wrap.appendChild(nightlyRunsCalendarSection());
+    mainEl.appendChild(wrap);
+  }
+
+  // ---------- Growth view: per-graph day-over-day triple deltas ----------
+  // Same run-history.jsonl as above, read as a time series instead of a
+  // run log: for each graph, how many triples it gained or lost between
+  // one nightly snapshot and the next, as a strip of bars (one per run) --
+  // and the same for the authority-interlinking count, as a proxy for
+  // whether cross-pipeline linking is keeping pace with new data.
+
+  // Each bar is actually two rects: a thin visible one sized to the delta,
+  // plus a full-height transparent one behind it that owns the whole
+  // column's hover area -- without it a small day-to-day change renders as
+  // a 1-2px sliver that's genuinely hard to land a cursor on, which is why
+  // hovering "didn't always work" with a single <title>-bearing rect.
+  function deltaBarsSvg(deltas, dates) {
+    var barW = 6, gap = 2, h = 36, mid = h / 2;
+    var w = Math.max(deltas.length * (barW + gap), barW);
+    var maxAbs = Math.max.apply(null, deltas.map(function (d) { return Math.abs(d); }).concat([1]));
+    var scale = (mid - 2) / maxAbs;
+    var bars = deltas.map(function (d, i) {
+      var barH = Math.max(Math.abs(d) * scale, d === 0 ? 1 : 2);
+      var y = d >= 0 ? mid - barH : mid;
+      var color = d > 0 ? "var(--good)" : (d < 0 ? "var(--crit)" : "var(--muted)");
+      var x = i * (barW + gap);
+      var deltaText = (d >= 0 ? "+" : "") + Number(d).toLocaleString("en-US");
+      var dateText = fmtRunDateShort(dates[i + 1]);
+      return '<rect x="' + x + '" y="' + y.toFixed(1) + '" width="' + barW + '" height="' + barH.toFixed(1) + '" rx="1" style="fill:' + color + '"/>' +
+        '<rect x="' + x + '" y="0" width="' + barW + '" height="' + h + '" fill="transparent" data-delta="' + deltaText + '" data-date="' + dateText + '"/>';
+    }).join("");
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">' +
+      '<line x1="0" y1="' + mid + '" x2="' + w + '" y2="' + mid + '" style="stroke:var(--line);stroke-width:1"/>' + bars + '</svg>';
+  }
+
+  // A count on its own doesn't say much about a graph's shape -- e.g.
+  // whether it's a few entities with lots of properties each, or many
+  // entities with sparse ones. breakdown (if given) is that graph's latest
+  // subject/predicate/object counts, shown as a hover tooltip on the total
+  // figure: each as a share of the S+P+O sum (so the three percentages
+  // always add to 100%, reading as "how is this graph's data split between
+  // subjects/predicates/objects" rather than against an unrelated total).
+  function fmtPct(pct) {
+    if (pct === null || pct === undefined || !isFinite(pct)) return null;
+    var abs = Math.abs(pct);
+    var decimals = abs > 0 && abs < 1 ? 2 : (abs < 10 ? 1 : 0);
+    return pct.toFixed(decimals) + "%";
+  }
+
+  function breakdownTooltipText(b) {
+    if (!b) return null;
+    var parts = [["Subjects", b.subjects], ["Predicates", b.predicates], ["Objects", b.objects]]
+      .filter(function (pair) { return typeof pair[1] === "number"; });
+    var denom = parts.reduce(function (s, pair) { return s + pair[1]; }, 0);
+    if (!denom) return null;
+    return parts.map(function (pair) {
+      var pct = fmtPct(pair[1] / denom * 100);
+      return pair[0] + ": " + fmtNum(pair[1]) + (pct ? " (" + pct + ")" : "");
+    }).join("\n");
+  }
+
+  function growthRowEl(info, counts, dates, breakdown) {
+    var deltas = [];
+    for (var i = 1; i < counts.length; i++) deltas.push(counts[i] - counts[i - 1]);
+    var netChange = counts[counts.length - 1] - counts[0];
+
+    var row = el("div", { class: "growth-row" });
+
+    var label = el("div", { class: "growth-label" });
+    var dot = document.createElement("span"); dot.className = "dot"; dot.style.background = info.color;
+    label.appendChild(dot);
+    var labelText = el("span", { class: "growth-label-text", text: info.label });
+    if (info.sub) labelText.setAttribute("data-explain", info.sub);
+    label.appendChild(labelText);
+    row.appendChild(label);
+
+    var totalEl = el("div", { class: "growth-total", text: fmtNum(counts[counts.length - 1]) });
+    var tipText = breakdownTooltipText(breakdown);
+    if (tipText) totalEl.setAttribute("data-breakdown", tipText);
+    row.appendChild(totalEl);
+
+    row.appendChild(el("div", {
+      class: "growth-net " + (netChange >= 0 ? "pos" : "neg"),
+      text: (netChange >= 0 ? "+" : "") + fmtNum(netChange)
+    }));
+
+    var bars = el("div", { class: "growth-bars" });
+    bars.innerHTML = deltaBarsSvg(deltas, dates);
+    row.appendChild(bars);
+    return row;
+  }
+
+  // Most recent run that actually has a triple count for this graph --
+  // normally just the latest run, but falls back if that one happened to
+  // fail before producing a snapshot for this particular graph.
+  function latestBreakdown(runs, iri) {
+    for (var i = runs.length - 1; i >= 0; i--) {
+      var r = runs[i];
+      if (r.graph_counts && typeof r.graph_counts[iri] === "number") {
+        return {
+          subjects: r.graph_subject_counts ? r.graph_subject_counts[iri] : undefined,
+          predicates: r.graph_predicate_counts ? r.graph_predicate_counts[iri] : undefined,
+          objects: r.graph_object_counts ? r.graph_object_counts[iri] : undefined
+        };
+      }
+    }
+    return null;
+  }
+
+  // Same, summed across every graph, for the "all graphs combined" row.
+  // Unlike the triple-count combined row (safe to sum -- triples are
+  // genuinely partitioned per named graph), summing distinct subject/
+  // predicate/object IRIs across graphs can double-count ones shared
+  // between pipelines (e.g. archive-etl and findingaid-etl's shared
+  // collection: IRIs) -- fine here since this only feeds a rough
+  // composition percentage, not a count presented as authoritative.
+  function combinedLatestBreakdown(runs, graphIris) {
+    var latest = runs[runs.length - 1];
+    if (!latest) return null;
+    function sumField(field) {
+      if (!latest[field]) return undefined;
+      var total = 0, any = false;
+      graphIris.forEach(function (iri) {
+        if (typeof latest[field][iri] === "number") { total += latest[field][iri]; any = true; }
+      });
+      return any ? total : undefined;
+    }
+    return {
+      subjects: sumField("graph_subject_counts"),
+      predicates: sumField("graph_predicate_counts"),
+      objects: sumField("graph_object_counts")
+    };
+  }
+
+  function growthTableHeadEl(sinceDate, noun) {
+    var head = el("div", { class: "growth-table-head" });
+    head.appendChild(el("div", { text: "Graph" }));
+    head.appendChild(el("div", { text: "Current " + noun }));
+    head.appendChild(el("div", { text: "Change since " + fmtRunDateShort(sinceDate) }));
+    head.appendChild(el("div", { text: "Daily change" }));
+    return head;
+  }
+
+  // Raw triple count is a shallow growth signal -- a pipeline re-asserting
+  // the same records more verbosely looks identical to real growth. These
+  // three are alternate lenses over the same per-run snapshot: distinct
+  // subjects is the actual entity/record count (new books, new people, not
+  // just more facts about existing ones), distinct predicates is how varied
+  // the schema usage is (should stay flat day-to-day; a jump means a
+  // pipeline started asserting a genuinely new field). Only the triple
+  // count is safe to sum into an "all graphs combined" row -- subject/
+  // predicate IRIs can be shared across graphs (e.g. archive-etl and
+  // findingaid-etl's shared collection: IRIs), so summing distinct counts
+  // across graphs would double-count them.
+  var GROWTH_METRICS = [
+    { key: "graph_counts", label: "Triples", noun: "triples", combined: true },
+    { key: "graph_subject_counts", label: "Subjects (entities)", noun: "subjects", combined: false },
+    { key: "graph_predicate_counts", label: "Predicates (properties)", noun: "predicates", combined: false }
+  ];
+
+  // One tooltip div shared by every bar and every total figure in the
+  // view, positioned on mouse move and driven by delegated events on the
+  // table so it works for elements added after the initial render too.
+  // Two independent sources feed it: a bar's data-delta/data-date (one
+  // day's change), or a total's data-breakdown (that graph's S/P/O
+  // composition) -- whichever the hovered element carries.
+  function growthTooltipText(t) {
+    if (!t || !t.getAttribute) return null;
+    if (t.hasAttribute("data-delta")) return t.getAttribute("data-delta") + " · " + t.getAttribute("data-date");
+    if (t.hasAttribute("data-breakdown")) return t.getAttribute("data-breakdown");
+    if (t.hasAttribute("data-explain")) return t.getAttribute("data-explain");
+    return null;
+  }
+
+  function attachGrowthTooltip(table) {
+    var tooltip = el("div", { class: "chart-tooltip" });
+    table.parentNode.insertBefore(tooltip, table.nextSibling);
+    table.addEventListener("mouseover", function (e) {
+      var text = growthTooltipText(e.target);
+      if (!text) return;
+      tooltip.textContent = text;
+      tooltip.classList.add("visible");
+    });
+    table.addEventListener("mousemove", function (e) {
+      if (!tooltip.classList.contains("visible")) return;
+      tooltip.style.left = e.clientX + "px";
+      tooltip.style.top = (e.clientY - 10) + "px";
+    });
+    table.addEventListener("mouseout", function (e) {
+      if (growthTooltipText(e.target)) tooltip.classList.remove("visible");
+    });
+  }
+
+  function renderGrowthTable(container, runs, metric) {
+    clear(container);
+    var withCounts = runs.filter(function (r) { return r[metric.key] && Object.keys(r[metric.key]).length; });
+    if (withCounts.length < 2) {
+      container.appendChild(el("div", { class: "column-empty", text: "Need at least two nightly runs with recorded " + metric.noun + " counts to show day-over-day change — check back after tomorrow’s 03:00 harvest." }));
+      return;
+    }
+
+    var table = el("div", { class: "growth-table" });
+    var dates = withCounts.map(function (r) { return r.started_at; });
+    table.appendChild(growthTableHeadEl(dates[0], metric.noun));
+
+    var graphIris = {};
+    withCounts.forEach(function (r) { Object.keys(r[metric.key]).forEach(function (g) { graphIris[g] = true; }); });
+
+    if (metric.combined) {
+      var totals = withCounts.map(function (r) {
+        return Object.keys(r[metric.key]).reduce(function (s, g) { return s + r[metric.key][g]; }, 0);
+      });
+      var combinedBreakdown = combinedLatestBreakdown(runs, Object.keys(graphIris));
+      table.appendChild(growthRowEl({
+        label: "All graphs combined", color: "#294a60",
+        sub: "Every pipeline’s named graph, summed together."
+      }, totals, dates, combinedBreakdown));
+    }
+
+    Object.keys(graphIris).map(graphInfo).sort(function (a, b) {
+      return a.label.localeCompare(b.label);
+    }).forEach(function (info) {
+      var counts = withCounts.map(function (r) { return r[metric.key][info.iri] || 0; });
+      table.appendChild(growthRowEl(info, counts, dates, latestBreakdown(runs, info.iri)));
+    });
+
+    var withInterlink = runs.filter(function (r) { return typeof r.interlinked_authority_iris === "number"; });
+    if (withInterlink.length >= 2) {
+      var ilDates = withInterlink.map(function (r) { return r.started_at; });
+      var ilCounts = withInterlink.map(function (r) { return r.interlinked_authority_iris; });
+      table.appendChild(growthRowEl({
+        label: "Authority IRIs interlinked with other graphs", color: "#7c5ba0",
+        sub: "Authority-graph IRIs (people, places, terms) that also have data asserted in at least one other pipeline’s graph — the connective tissue between pipelines."
+      }, ilCounts, ilDates));
+    }
+
+    container.appendChild(table);
+    attachGrowthTooltip(table);
+  }
+
+  function renderGrowth() {
+    clear(mainEl);
+    var wrap = el("div", { class: "home-dash" });
+    wrap.appendChild(el("h1", { text: "Graph Delta" }));
+    wrap.appendChild(el("p", { text: "Day-over-day change per graph, from nightly run history. Green = growth, red = shrinkage. Hover a bar, total, or name for detail; switch metrics below." }));
+
+    var switcher = el("div", { class: "metric-switcher" });
+    wrap.appendChild(switcher);
+    var tableHolder = el("div", {});
+    var loading = el("div", { class: "dash-loading", text: "Loading growth history…" });
+    tableHolder.appendChild(loading);
+    wrap.appendChild(tableHolder);
+    mainEl.appendChild(wrap);
+
+    fetchRunHistory().then(function (runs) {
+      clear(tableHolder);
+      var activeMetric = GROWTH_METRICS[0];
+      GROWTH_METRICS.forEach(function (metric) {
+        var chip = el("button", { class: "metric-chip" + (metric === activeMetric ? " active" : ""), text: metric.label });
+        chip.addEventListener("click", function () {
+          if (metric === activeMetric) return;
+          activeMetric = metric;
+          Array.prototype.forEach.call(switcher.children, function (c) { c.classList.remove("active"); });
+          chip.classList.add("active");
+          renderGrowthTable(tableHolder, runs, metric);
+        });
+        switcher.appendChild(chip);
+      });
+      renderGrowthTable(tableHolder, runs, activeMetric);
+    }).catch(function (err) {
+      clear(tableHolder);
+      tableHolder.appendChild(el("div", { class: "column-empty", text: "Couldn’t load growth history: " + err.message }));
+    });
   }
 
   // ---------- Rendering: home dashboard ----------
@@ -2318,6 +3185,140 @@
       };
       return (ctx.arrangement || ctx.physicalDescription || ctx.dates) ? ctx : null;
     }).catch(function () { return null; });
+  }
+
+  // ---------- Player panel: Next as a pre-order walk of the finding aid ----------
+  // "Next" on an ArchiveComponent, while exploreMode is "archive", doesn't
+  // just cycle the immediate sibling group (fetchHierarchyNeighborhood,
+  // above -- also alphabetical, for the browse tree's sake, not document
+  // order) -- it walks the whole finding aid in sdo:position order, the
+  // way you'd flip through a physical folder of folders: into this node's
+  // own first child if it has one, else the next sibling, else climb to
+  // the parent and take *its* next sibling, and so on up the chain.
+  //
+  // fetchPreOrderContext re-fetches the ancestor chain itself (a second
+  // fetchAncestorChains call, alongside the one the hierarchy-tree slot
+  // already makes in renderRecord) rather than threading it through --
+  // only runs while the player panel actually needs it, so the duplicate
+  // is cheap, and it keeps this self-contained rather than reaching into
+  // that already-dense promise chain.
+  function fetchPreOrderContext(uri) {
+    return fetchAncestorChains([uri]).then(function (chains) {
+      var chain = chains[uri] || []; // ascending: root ... immediate parent
+      var parents = [uri];
+      for (var i = chain.length - 1; i >= 0; i--) parents.push(chain[i].uri);
+      // parents[0] = uri (for its own children), parents[1] = immediate
+      // parent (for uri's siblings), parents[2] = grandparent, ...
+
+      var values = parents.map(iriRef).join(" ");
+      var q = "SELECT ?parent ?child ?pos (SAMPLE(?lbl) AS ?label) WHERE {\n" +
+        "  VALUES ?parent { " + values + " }\n" +
+        "  { ?child <http://schema.org/isPartOf> ?parent } UNION { ?child <https://schema.org/isPartOf> ?parent }\n" +
+        "  OPTIONAL { ?child <http://schema.org/position> ?p1 }\n" +
+        "  OPTIONAL { ?child <https://schema.org/position> ?p2 }\n" +
+        "  BIND(COALESCE(?p1, ?p2) AS ?pos)\n" +
+        "  OPTIONAL { ?child <http://schema.org/name> ?n1 }\n" +
+        "  OPTIONAL { ?child <https://schema.org/name> ?n2 }\n" +
+        "  BIND(COALESCE(?n1, ?n2) AS ?lbl)\n" +
+        "} GROUP BY ?parent ?child ?pos";
+
+      return sparql(q).then(function (rows) {
+        var byParent = {};
+        rows.forEach(function (r) {
+          var p = r.parent.value;
+          if (!byParent[p]) byParent[p] = [];
+          byParent[p].push({
+            uri: r.child.value,
+            label: r.label ? r.label.value : shortLabel(r.child.value),
+            pos: r.pos ? r.pos.value : null
+          });
+        });
+        Object.keys(byParent).forEach(function (p) {
+          byParent[p].sort(function (a, b) {
+            var na = a.pos !== null ? parseFloat(a.pos) : NaN;
+            var nb = b.pos !== null ? parseFloat(b.pos) : NaN;
+            if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+            if (isNaN(na) !== isNaN(nb)) return isNaN(na) ? 1 : -1; // positioned entries sort first
+            return a.label.localeCompare(b.label);
+          });
+        });
+        return { parents: parents, byParent: byParent };
+      }).catch(function () { return { parents: parents, byParent: {} }; });
+    });
+  }
+
+  function computeNextInFindingAid(uri, ctx) {
+    var ownChildren = ctx.byParent[uri] || [];
+    if (ownChildren.length) return ownChildren[0];
+
+    var parents = ctx.parents;
+    for (var i = 0; i < parents.length - 1; i++) {
+      var node = parents[i], nodeParent = parents[i + 1];
+      var levelSiblings = ctx.byParent[nodeParent] || [];
+      for (var j = 0; j < levelSiblings.length; j++) {
+        if (levelSiblings[j].uri === node) {
+          if (j + 1 < levelSiblings.length) return levelSiblings[j + 1];
+          break;
+        }
+      }
+    }
+    return null; // end of the whole finding aid
+  }
+
+  // Hand-drawn to match the app's existing stroke-icon style (ICONS,
+  // above), not emoji -- same 24x24 viewBox, same stroke/fill conventions.
+  var PLAYER_ICONS = {
+    prev: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 20 9 12l10-8Z"/><line x1="5" y1="19" x2="5" y2="5"/></svg>',
+    next: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8Z"/><line x1="19" y1="5" x2="19" y2="19"/></svg>',
+    random: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3.3c1.9 0 3.1 1 4.3 2.5"/><path d="M16.4 6.5c1.2-1.5 2.4-2.5 4.3-2.5H21"/><path d="M18 3l3 1.5L18 6"/><path d="M3 17h3.3c1.9 0 3.1-1 4.3-2.5"/><path d="M16.4 17.5c1.2 1.5 2.4 2.5 4.3 2.5H21"/><path d="M18 21l3-1.5L18 18"/></svg>'
+  };
+
+  var EXPLORE_MODE_LABELS = { person: "people", archive: "archives", books: "books" };
+
+  function playerPanelEl(mode, uri, preOrderCtx) {
+    var panel = el("div", { class: "player-panel" });
+
+    var randomFn = mode === "archive" ? fetchRandomArchiveCandidate
+      : mode === "books" ? fetchRandomBookCandidate
+      : fetchRandomPersonCandidate;
+
+    function goRandom() {
+      randomFn().then(function (candidate) { if (candidate) navigate(candidate.uri); });
+    }
+
+    // Previous always steps back exactly one entry in the Trail (a
+    // de-duplicated, most-recent-first visit history, already pushed for
+    // the current record by the time this renders) -- if you've been
+    // clicking Next, that's already the correct reverse order, with no
+    // separate "previous in the tree" algorithm needed.
+    var prevEntry = null;
+    for (var i = 0; i < trail.length; i++) {
+      if (trail[i].uri === uri) { prevEntry = trail[i + 1] || null; break; }
+    }
+    var prevBtn = el("button", { class: "player-btn", title: "Previous" });
+    prevBtn.innerHTML = PLAYER_ICONS.prev;
+    if (prevEntry) prevBtn.addEventListener("click", function () { navigate(prevEntry.uri); });
+    else prevBtn.disabled = true;
+    panel.appendChild(prevBtn);
+
+    var randomBtn = el("button", { class: "player-btn player-btn-random", title: "Random" });
+    randomBtn.innerHTML = PLAYER_ICONS.random;
+    randomBtn.addEventListener("click", goRandom);
+    panel.appendChild(randomBtn);
+
+    var nextBtn = el("button", { class: "player-btn", title: "Next" });
+    nextBtn.innerHTML = PLAYER_ICONS.next;
+    if (preOrderCtx) {
+      var nextTarget = computeNextInFindingAid(uri, preOrderCtx);
+      if (nextTarget) nextBtn.addEventListener("click", function () { navigate(nextTarget.uri, { preserveScroll: true }); });
+      else nextBtn.disabled = true; // genuinely the last item in this finding aid
+    } else {
+      nextBtn.addEventListener("click", goRandom); // no document order here -- acts like Random
+    }
+    panel.appendChild(nextBtn);
+
+    panel.appendChild(el("span", { class: "player-mode-label", text: "Exploring " + EXPLORE_MODE_LABELS[mode] }));
+    return panel;
   }
 
   // Cross-system identity expansion: identity-etl mints one hub
@@ -2830,6 +3831,60 @@
     return wrap;
   }
 
+  // A child row tries to "unfold" in place first, rather than navigating
+  // to a whole new page -- clicking it lazily fetches that child's own
+  // children (fetchHierarchyNeighborhood again, just without a parentUri
+  // so only its "child" scope runs) and nests them right here,
+  // recursively, collapsible on a second click. Only once that fetch
+  // comes back empty (a genuine leaf -- an actual document, nothing left
+  // to reveal) does it fall back to navigate(), since there's nowhere
+  // else for an in-place reveal to go.
+  function expandableHierarchyRowEl(item) {
+    var wrap = el("div", {});
+    var row = el("div", { class: "hierarchy-row" });
+    var chevron = el("span", { class: "hierarchy-chevron", text: "▸" });
+    row.appendChild(chevron);
+    row.appendChild(iconSpan(item.typeCurie, item.formName));
+    var link = el("button", { class: "hierarchy-link", text: item.label });
+    row.appendChild(link);
+    wrap.appendChild(row);
+
+    var nestedWrap = el("div", { class: "hierarchy-children hierarchy-expand-wrap" });
+    wrap.appendChild(nestedWrap);
+
+    var loaded = false, expanded = false, isLeaf = false;
+
+    function setExpanded(v) {
+      expanded = v;
+      nestedWrap.classList.toggle("expanded", v);
+      chevron.classList.toggle("expanded", v);
+    }
+
+    function toggle() {
+      if (isLeaf) { navigate(item.uri, { label: item.label, preserveScroll: true }); return; }
+      if (!loaded) {
+        chevron.classList.add("loading");
+        fetchHierarchyNeighborhood(item.uri, null).then(function (nbhd) {
+          loaded = true;
+          chevron.classList.remove("loading");
+          if (!nbhd.children.length) {
+            isLeaf = true;
+            navigate(item.uri, { label: item.label, preserveScroll: true });
+            return;
+          }
+          nbhd.children.forEach(function (gc) { nestedWrap.appendChild(expandableHierarchyRowEl(gc)); });
+          setExpanded(true);
+        });
+        return;
+      }
+      setExpanded(!expanded);
+    }
+
+    link.addEventListener("click", toggle);
+    chevron.addEventListener("click", toggle);
+    return wrap;
+  }
+
   function hierarchyTreeEl(chain, currentUri, currentLabel, siblings, children, groupContext) {
     var innerRows = el("div", {});
     if (groupContext) {
@@ -2845,12 +3900,7 @@
     // out for whatever's left.
     function appendChildrenPage(kids, kidsShown) {
       children.slice(kidsShown, kidsShown + PAGE_SIZE).forEach(function (child) {
-        var kidRow = el("div", { class: "hierarchy-row" });
-        kidRow.appendChild(iconSpan(child.typeCurie, child.formName));
-        var kidBtn = el("button", { class: "hierarchy-link", text: child.label });
-        kidBtn.addEventListener("click", function () { navigate(child.uri, { label: child.label }); });
-        kidRow.appendChild(kidBtn);
-        kids.appendChild(kidRow);
+        kids.appendChild(expandableHierarchyRowEl(child));
       });
       kidsShown += PAGE_SIZE;
       if (kidsShown < children.length) {
@@ -2868,26 +3918,31 @@
     function appendSiblingsPage(shown) {
       rowsToShow.slice(shown, shown + PAGE_SIZE).forEach(function (item) {
         var isCurrent = item.uri === currentUri;
-        var row = el("div", { class: "hierarchy-row" + (isCurrent ? " current" : "") });
-        row.appendChild(iconSpan(item.typeCurie, item.formName));
-        if (isCurrent) {
-          row.appendChild(el("span", { text: item.label }));
-        } else {
-          var btn = el("button", { class: "hierarchy-link", text: item.label });
-          btn.addEventListener("click", function () { navigate(item.uri, { label: item.label }); });
-          row.appendChild(btn);
+        if (!isCurrent) {
+          // Same lazy-expand-in-place row as children (expandableHierarchyRowEl)
+          // -- a sibling click used to be a full navigate(), which meant
+          // clear(mainEl)'s rebuild always included a gap where the
+          // hierarchy-tree box itself was simply gone (its own data is
+          // fetched *after* the page swap, not with it) before popping back
+          // in -- visibly "disappear, repaint" even once the scroll-position
+          // and loading-flash issues were separately fixed. Expanding in
+          // place here means a sibling click never touches the page at all
+          // unless it turns out to be a leaf with nothing to expand.
+          innerRows.appendChild(expandableHierarchyRowEl(item));
+          return;
         }
+        var row = el("div", { class: "hierarchy-row current" });
+        row.appendChild(iconSpan(item.typeCurie, item.formName));
+        row.appendChild(el("span", { text: item.label }));
         innerRows.appendChild(row);
 
-        if (isCurrent) {
-          var kids = el("div", { class: "hierarchy-children" });
-          if (children.length) {
-            appendChildrenPage(kids, 0);
-          } else {
-            kids.appendChild(el("div", { class: "hierarchy-row muted", text: "Nothing catalogued below this level" }));
-          }
-          innerRows.appendChild(kids);
+        var kids = el("div", { class: "hierarchy-children" });
+        if (children.length) {
+          appendChildrenPage(kids, 0);
+        } else {
+          kids.appendChild(el("div", { class: "hierarchy-row muted", text: "Nothing catalogued below this level" }));
         }
+        innerRows.appendChild(kids);
       });
       shown += PAGE_SIZE;
       if (shown < rowsToShow.length) {
@@ -2916,7 +3971,7 @@
       var wrap = el("div", {});
       var ancestorRow = el("div", { class: "hierarchy-row ancestor" });
       var aBtn = el("button", { class: "hierarchy-link", text: ancestor.label });
-      aBtn.addEventListener("click", (function (u, l) { return function () { navigate(u, { label: l }); }; })(ancestor.uri, ancestor.label));
+      aBtn.addEventListener("click", (function (u, l) { return function () { navigate(u, { label: l, preserveScroll: true }); }; })(ancestor.uri, ancestor.label));
       ancestorRow.appendChild(aBtn);
       wrap.appendChild(ancestorRow);
       var nested = el("div", { class: "hierarchy-children" });
@@ -3094,9 +4149,33 @@
 
   // ---------- Entity record ----------
 
+  // The "Loading record\u2026" wipe used to fire synchronously, the instant
+  // loadEntity() was called -- clearing the whole page before a single
+  // byte had come back. For a local QLever instance that's usually well
+  // under the time it takes to notice, so on every navigation (including
+  // a hierarchy-tree sibling click, which has no "unfold" of its own to
+  // fall back on) it read as a jarring full-page reload regardless of how
+  // fast the actual fetch was. Now the old content just stays on screen
+  // while the new one loads in the background, and the swap only happens
+  // once renderRecord() is ready to show it in one shot -- for the common
+  // fast case there's no intermediate blank state at all. The loading
+  // placeholder still shows, but only after a grace period, so a slow
+  // query (cold cache, network hiccup) still gives feedback instead of
+  // leaving a click looking like it did nothing. That grace period is
+  // generous (1200ms, not a snappier-looking few hundred ms) because
+  // renderRecord now waits for everything up front, hierarchy-tree data
+  // included (see fetchHierarchyTreeData) -- a hierarchy-tree leaf click
+  // alone is already two sequential round trips (expandableHierarchyRowEl
+  // checking for children first, then the navigation itself), so a
+  // shorter threshold was tripping on perfectly normal interactions, not
+  // actually slow ones -- clearing the page via this exact timer was
+  // itself the remaining cause of a visible "reload" flash.
   function loadEntity(uri) {
-    clear(mainEl);
-    mainEl.appendChild(el("div", { class: "results-heading", text: "Loading record\u2026" }));
+    var loadingTimer = setTimeout(function () {
+      if (currentUri !== uri) return;
+      clear(mainEl);
+      mainEl.appendChild(el("div", { class: "results-heading", text: "Loading record\u2026" }));
+    }, 1200);
 
     // Everything the entity itself asserts, fetched in one shot (bounded --
     // this is the record's own fields, not its potentially huge fan-in).
@@ -3122,6 +4201,7 @@
       sparql(factsQuery),
       fetchIdentityCluster(uri)
     ]).then(function (results) {
+      if (currentUri !== uri) return; // navigated elsewhere while this was in flight
       var factRows = results[0], cluster = results[1];
       var valuesFrag = valuesClause("?target", cluster);
 
@@ -3135,13 +4215,33 @@
         "  GRAPH ?g { ?s ?p ?target }\n" +
         "} GROUP BY ?p ORDER BY DESC(?c)";
 
+      // Fetched here, alongside everything else, rather than after
+      // renderRecord has already drawn an empty hierarchy-tree box and the
+      // player panel -- that gap (the box popping in a few hundred ms
+      // after the rest of the page) was the actual cause of a full-page
+      // navigation (a hierarchy-tree leaf, an ancestor click, Random,
+      // Next) still reading as "it reloaded" even after the scroll-
+      // position and sibling/child-expand-in-place fixes. Needs the type
+      // to know whether there's a hierarchy tree at all, which needs
+      // factRows -- can't start this any earlier than here.
+      var view = pickView(extractTypeCuries(factRows));
+      var needsHierarchy = !!(view && HIERARCHICAL_TYPES[view.type]);
+      var hierarchyPromise = needsHierarchy ? fetchHierarchyTreeData(uri) : Promise.resolve(null);
+      var preOrderPromise = (exploreMode === "archive" && needsHierarchy) ? fetchPreOrderContext(uri) : Promise.resolve(null);
+
       return Promise.all([
         sparql(sourcesQuery),
-        sparql(inCountsQuery)
+        sparql(inCountsQuery),
+        hierarchyPromise,
+        preOrderPromise
       ]).then(function (results2) {
-        renderRecord(uri, factRows, results2[0], results2[1], cluster);
+        clearTimeout(loadingTimer);
+        if (currentUri !== uri) return;
+        renderRecord(uri, factRows, results2[0], results2[1], cluster, results2[2], results2[3]);
       });
     }).catch(function (err) {
+      clearTimeout(loadingTimer);
+      if (currentUri !== uri) return;
       clear(mainEl);
       renderError("Couldn\u2019t load this record: " + err.message, function () { loadEntity(uri); });
     });
@@ -3167,7 +4267,36 @@
     return null;
   }
 
-  function renderRecord(uri, factRows, sourceRows, inCounts, cluster) {
+  // Just enough of renderRecord's own label/type extraction to call
+  // pickView() -- needed a step earlier than renderRecord runs now (see
+  // loadEntity), to decide whether to pre-fetch hierarchy data at all.
+  function extractTypeCuries(factRows) {
+    var typeCuries = [];
+    factRows.forEach(function (r) {
+      if (curie(r.p.value) === "rdf:type") typeCuries.push(curie(r.o.value) || r.o.value);
+    });
+    return typeCuries;
+  }
+
+  // The {chain, nbhd, groupContext} a hierarchical record's breadcrumb and
+  // tree need -- split out of renderRecord so loadEntity can fetch it
+  // ahead of the render instead of after.
+  function fetchHierarchyTreeData(uri) {
+    return fetchAncestorChains([uri]).then(function (chains) {
+      var chain = chains[uri] || [];
+      var parentUri = chain.length ? chain[chain.length - 1].uri : null;
+      return Promise.all([
+        fetchHierarchyNeighborhood(uri, parentUri),
+        parentUri ? fetchGroupContext(parentUri) : Promise.resolve(null)
+      ]).then(function (results) {
+        var nbhd = results[0], groupContext = results[1];
+        if (!chain.length && !nbhd.children.length) return null; // nothing hierarchical to show
+        return { chain: chain, nbhd: nbhd, groupContext: groupContext };
+      });
+    });
+  }
+
+  function renderRecord(uri, factRows, sourceRows, inCounts, cluster, hierarchyData, preOrderCtx) {
     clear(mainEl);
 
     var outByPred = buildOutIndex(factRows);
@@ -3191,24 +4320,23 @@
     var header = el("div", { class: "record-header" });
     var breadcrumbHolder = el("div", {});
     header.appendChild(breadcrumbHolder);
+    // hierarchyData and preOrderCtx (player panel's Next-walk context)
+    // both arrive pre-fetched from loadEntity now, resolved alongside the
+    // rest of this record's data -- not kicked off here and left to pop
+    // in a few hundred ms after the rest of the page, which is what made
+    // a full-page navigation still read as "it reloaded" even after the
+    // scroll-position and sibling/child-expand-in-place fixes.
     var hierarchyTreeSlot = el("div", {});
-    if (view && HIERARCHICAL_TYPES[view.type]) {
-      fetchAncestorChains([uri]).then(function (chains) {
-        if (currentUri !== uri) return; // navigated elsewhere while this was in flight
-        var chain = chains[uri] || [];
-        if (chain.length) breadcrumbHolder.appendChild(breadcrumbEl(chain, "breadcrumb"));
-        var parentUri = chain.length ? chain[chain.length - 1].uri : null;
-        Promise.all([
-          fetchHierarchyNeighborhood(uri, parentUri),
-          parentUri ? fetchGroupContext(parentUri) : Promise.resolve(null)
-        ]).then(function (results) {
-          var nbhd = results[0], groupContext = results[1];
-          if (currentUri !== uri) return;
-          if (!chain.length && !nbhd.children.length) return; // nothing hierarchical to show
-          hierarchyTreeSlot.appendChild(hierarchyTreeEl(chain, uri, label, nbhd.siblings, nbhd.children, groupContext));
-        });
-      });
+    if (hierarchyData) {
+      if (hierarchyData.chain.length) breadcrumbHolder.appendChild(breadcrumbEl(hierarchyData.chain, "breadcrumb"));
+      hierarchyTreeSlot.appendChild(hierarchyTreeEl(
+        hierarchyData.chain, uri, label,
+        hierarchyData.nbhd.siblings, hierarchyData.nbhd.children, hierarchyData.groupContext
+      ));
     }
+
+    var playerPanelSlot = el("div", {});
+    if (exploreMode) playerPanelSlot.appendChild(playerPanelEl(exploreMode, uri, preOrderCtx));
 
     // "More by this creator" -- books/images/audio/video/articles only
     // (whichever views share BOOK_FIELDS); at most 3 creators, skipping any
@@ -3236,7 +4364,17 @@
     var coCreatorsSlot = el("div", {});
     var subjectOfSlot = el("div", {});
     var graphSlot = el("div", { class: "graph-slot" });
-    if (view && view.type === "sdo:Person") {
+    // Skipped entirely during an active explore session (exploreMode set)
+    // -- the player panel is already the primary way to move to another
+    // record there (Archive's Next even walks real isPartOf edges, same
+    // as this graph would show), so the two competed for the same job.
+    // Still built as normal for anything reached outside an explore
+    // session (search, an outside link) -- there it's the only
+    // "what's connected to this" affordance on the page.
+    if (exploreMode) {
+      // graphSlot stays empty -- no fetch, no card, nothing to compete
+      // with the player panel.
+    } else if (view && view.type === "sdo:Person") {
       var creationsPromise = fetchMoreByCreator(uri, null);
       creationsPromise.then(function (works) {
         if (currentUri !== uri || !works.length) return;
@@ -3348,6 +4486,7 @@
     header.appendChild(statsToggle);
 
     mainEl.appendChild(header);
+    mainEl.appendChild(playerPanelSlot);
     mainEl.appendChild(graphSlot);
 
     // Event records: title bar goes right under the graph, above the
