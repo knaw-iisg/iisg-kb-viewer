@@ -657,6 +657,42 @@
     object-fit: contain;
     background: var(--surface-alt);
   }
+  .person-portrait {
+    max-width: 140px;
+    max-height: 180px;
+    object-fit: cover;
+  }
+  .person-portrait-link {
+    position: relative;
+    display: inline-block;
+    line-height: 0;
+  }
+  .person-portrait-link .person-portrait { margin-bottom: 0; }
+  .portrait-card { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 14px; }
+  .portrait-caption {
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--muted, #758790);
+    text-decoration: none;
+  }
+  .portrait-caption:hover { color: var(--accent-strong); text-decoration: underline; }
+  .portrait-badge {
+    position: absolute;
+    left: 6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+  .portrait-badge-rdf { top: 6px; background: #d6670a; }
+  .portrait-badge-wikidata { bottom: 6px; background: #1b1b1b; }
+  .portrait-badge-rkd { bottom: 6px; background: #474747; width: 26px; }
+  .portraits-row { display: flex; gap: 12px; flex-wrap: wrap; }
   .result-thumb {
     width: 44px;
     height: 44px;
@@ -1804,6 +1840,79 @@
   }
 
   function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+  // Loads a URL into a detached Image() and only calls onReady if it
+  // actually resolves as an image -- used for the person-portrait badges
+  // below so a 404/miss never paints a pending or broken-image placeholder
+  // into the layout. onReady building the visible <img> from the same URL
+  // is effectively instant: the browser already has it cached from this
+  // probe request.
+  function probeImage(src, onReady) {
+    var img = new Image();
+    img.onload = onReady;
+    img.src = src;
+  }
+
+  // Wraps a person-portrait <a> (image + corner badges) with a visible,
+  // separately clickable caption underneath it -- the corner badges alone
+  // only explain themselves on hover, which isn't obvious as "this photo
+  // is a link out to another knowledge graph" at a glance. Both the image
+  // and the caption point at the same external record.
+  function portraitCardEl(portraitLink, href, sourceName) {
+    var card = el("div", { class: "portrait-card" });
+    card.appendChild(portraitLink);
+    card.appendChild(el("a", {
+      class: "portrait-caption",
+      href: href,
+      target: "_blank",
+      rel: "noopener",
+      text: sourceName + " ↗"
+    }));
+    return card;
+  }
+
+  // Small inline-SVG badges for the person portrait (see renderRecord) --
+  // drawn locally rather than hotlinked image files, consistent with this
+  // viewer's no-third-party-hotlinking policy. Not pixel reproductions of
+  // the official marks, just recognizable stand-ins: the LOD cloud's
+  // three-node glyph for "this is linked RDF data", and a plain "Wd"
+  // wordmark in Wikidata's blue for "sourced from Wikidata".
+  function rdfIconEl() {
+    var span = el("span", {});
+    span.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">' +
+      '<circle cx="5" cy="19" r="3" fill="#fff"/>' +
+      '<circle cx="19" cy="19" r="3" fill="#fff"/>' +
+      '<circle cx="12" cy="5" r="3" fill="#fff"/>' +
+      '<path d="M7 17.5 10.5 7.5M17 17.5 13.5 7.5M8 19H16" stroke="#fff" stroke-width="1.6" fill="none"/>' +
+      '</svg>';
+    return span.firstChild;
+  }
+
+  // Wikidata's own mark is three ascending bars (a little bar chart --
+  // "data") rather than a letterform; the user asked for that shape with a
+  // "W" layered on top rather than the plain wordmark badge this used to be.
+  function wikidataIconEl() {
+    var span = el("span", {});
+    span.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">' +
+      '<rect x="2" y="13" width="5" height="9" rx="1" fill="#8dc4e0"/>' +
+      '<rect x="9.5" y="8" width="5" height="14" rx="1" fill="#4a8fc2"/>' +
+      '<rect x="17" y="2" width="5" height="20" rx="1" fill="#1a5c96"/>' +
+      '<text x="12" y="17" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="13" fill="#fff" stroke="#14477a" stroke-width="0.6" paint-order="stroke">W</text>' +
+      '</svg>';
+    return span.firstChild;
+  }
+
+  // RKDartists badge -- see renderRecord's second portrait, sourced via
+  // Wikidata's P650 claim (iisgBrowser.py's /api/rkd-artist). RKD's own
+  // mark is a wordmark, not a simple glyph; a plain monogram chip is a
+  // closer fit for a 20px badge than attempting to shrink that wordmark.
+  function rkdIconEl() {
+    var span = el("span", {});
+    span.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="12" aria-hidden="true">' +
+      '<text x="12" y="9" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="8" fill="#fff">RKD</text>' +
+      '</svg>';
+    return span.firstChild;
+  }
 
   function graphInfo(iri) {
     for (var i = 0; i < GRAPHS.length; i++) if (GRAPHS[i].iri === iri) return GRAPHS[i];
@@ -3375,6 +3484,20 @@
   ];
   var IDENTITY_HUB_RE = /^https:\/\/iisg\.amsterdam\/id\/[0-9]+$/;
 
+  // Person portraits: identity-etl's Wikidata sameAs links (see
+  // fetchIdentityCluster above) give us a Q-id, which /api/wikidata-image
+  // (iisgBrowser.py) resolves to a cached local copy of Wikidata's P18
+  // (image) claim -- so the <img> below only ever hits our own origin,
+  // same no-hotlinking policy as every other image in this viewer.
+  var WIKIDATA_QID_RE = /^https:\/\/www\.wikidata\.org\/wiki\/(Q[1-9][0-9]*)$/;
+  function findWikidataQid(cluster) {
+    for (var i = 0; i < (cluster || []).length; i++) {
+      var m = WIKIDATA_QID_RE.exec(cluster[i]);
+      if (m) return m[1];
+    }
+    return null;
+  }
+
   function classifyIdentifier(uri) {
     for (var i = 0; i < IDENTIFIER_SCHEMES.length; i++) {
       if (IDENTIFIER_SCHEMES[i].test.test(uri)) return IDENTIFIER_SCHEMES[i].label;
@@ -4539,6 +4662,77 @@
         img.onerror = function () { img.remove(); };
         heroImageSlot.appendChild(img);
       }).catch(function () { /* thumbnails are a nice-to-have; ignore failures */ });
+    }
+
+    // ---- Person portraits, via identity-etl's Wikidata link (see
+    // findWikidataQid above): one from Wikidata itself (P18), and --
+    // alongside it -- one from RKDartists, matched through Wikidata's own
+    // P650 (RKDartists ID) claim on that same Q-id (iisgBrowser.py's
+    // /api/rkd-artist, /api/rkd-image). Every <img> src here is our own
+    // backend proxy, never Wikidata/Commons/RKD directly -- same
+    // fetch-once-cache-forever, same-origin-only pattern as the rest of
+    // this viewer's images.
+    //
+    // Most persons have neither portrait, and the RKD lookup in particular
+    // is a slow chain on a cold cache (Wikidata, then RKD's detail API,
+    // then IIIF) -- building the <img> up front and letting onerror remove
+    // it on a miss used to leave a pending/broken-image placeholder
+    // visible in the layout for that whole stretch, which read as "an
+    // image appears, then disappears". probeImage() below loads into a
+    // detached Image() first and only builds the visible, badged frame
+    // once we positively know the request succeeds -- a miss never paints
+    // anything, a hit appears once, fully formed (the real <img> then
+    // loads instantly, same URL already sitting in the browser's cache).
+    if (view && view.type === "sdo:Person") {
+      var wikidataQid = findWikidataQid(cluster);
+      if (wikidataQid) {
+        var portraitsRow = el("div", { class: "portraits-row" });
+        heroImageSlot.appendChild(portraitsRow);
+
+        var wikidataImgUrl = "/api/wikidata-image/" + wikidataQid;
+        probeImage(wikidataImgUrl, function () {
+          if (currentUri !== uri) return;
+          var wikidataHref = "https://www.wikidata.org/wiki/" + wikidataQid;
+          var portraitLink = el("a", {
+            class: "person-portrait-link",
+            href: wikidataHref,
+            target: "_blank",
+            rel: "noopener",
+            title: "View " + label + " on Wikidata"
+          });
+          portraitLink.appendChild(el("img", { class: "file-thumb person-portrait", src: wikidataImgUrl, alt: label }));
+          portraitLink.appendChild(el("span", { class: "portrait-badge portrait-badge-rdf", title: "Linked data (RDF)" }, [rdfIconEl()]));
+          portraitLink.appendChild(el("span", { class: "portrait-badge portrait-badge-wikidata", title: "Wikidata" }, [wikidataIconEl()]));
+          portraitsRow.appendChild(portraitCardEl(portraitLink, wikidataHref, "Wikidata"));
+        });
+
+        // RKDartists: a second lookup off the same Q-id. Only fired once
+        // we know whether there's even an RKD id to chase, so a non-artist
+        // (the overwhelming majority of persons) costs one small cached
+        // JSON fetch, not a wasted image request.
+        fetch("/api/rkd-artist/" + wikidataQid).then(function (resp) {
+          if (!resp.ok) return null;
+          return resp.json();
+        }).then(function (data) {
+          if (currentUri !== uri || !data || !data.rkd_id) return;
+          var rkdId = data.rkd_id;
+          var rkdImgUrl = "/api/rkd-image/" + rkdId;
+          var rkdHref = "https://rkd.nl/explore/artists/" + rkdId;
+          probeImage(rkdImgUrl, function () {
+            if (currentUri !== uri) return;
+            var rkdLink = el("a", {
+              class: "person-portrait-link",
+              href: rkdHref,
+              target: "_blank",
+              rel: "noopener",
+              title: "View " + label + " on RKDartists"
+            });
+            rkdLink.appendChild(el("img", { class: "file-thumb person-portrait", src: rkdImgUrl, alt: label }));
+            rkdLink.appendChild(el("span", { class: "portrait-badge portrait-badge-rkd", title: "RKDartists" }, [rkdIconEl()]));
+            portraitsRow.appendChild(portraitCardEl(rkdLink, rkdHref, "RKDartists"));
+          });
+        }).catch(function () { /* RKD match is a nice-to-have; ignore failures */ });
+      }
     }
 
     // ---- Real thumbnail, when the file itself is an image (e.g. Dataverse
