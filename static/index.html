@@ -537,7 +537,7 @@
   .landing-panel .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }
   .landing-panel .badges { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 12.5px; }
   .landing-panel .badges svg { width: 20px; height: 20px; }
-  .landing-panel .badges svg + svg { background: #1d1d1b; border-radius: 3px; padding: 4px 1px 2px; height: 16px; }
+  .landing-panel .badges svg + svg { background: #1d1d1b; border-radius: 3px; padding: 4px 1px 2px; height: 16px; outline: 1px solid var(--line); }
   .landing-run {
     font-family: var(--font-mono);
     font-size: 12px;
@@ -563,6 +563,157 @@
   .landing-links .t { font-weight: 600; font-size: 14px; }
   .landing-links .u { font-family: var(--font-mono); font-size: 12px; color: var(--accent); grid-column: 2; grid-row: 1 / span 2; align-self: center; }
   .landing-links .d { font-size: 13px; color: var(--ink-soft); }
+
+  .landing-note { font-size: 13.5px; color: var(--ink-soft); margin: -4px 0 12px; }
+  .landing-more { margin-top: 10px; }
+  .landing-events { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom: 0; }
+  .event-past {
+    margin-left: 8px;
+    padding: 0 6px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    text-transform: uppercase;
+    font-size: 9.5px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Featured person, inside the "Linked beyond the IISG" panel */
+  .featured-person {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 12px;
+    background: var(--surface-alt);
+    border-radius: 8px;
+    min-height: 120px;
+  }
+  .fp-photo-btn { padding: 0; border: none; background: none; cursor: pointer; flex-shrink: 0; }
+  .fp-photo {
+    width: 76px;
+    height: 96px;
+    object-fit: cover;
+    object-position: center 20%;
+    border-radius: 6px;
+    display: block;
+    background: var(--line);
+  }
+  .fp-body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .fp-kicker { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .fp-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 17px;
+    line-height: 1.25;
+    color: var(--ink);
+    background: none;
+    border: none;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+  }
+  .fp-name:hover { color: var(--accent); text-decoration: underline; }
+  .fp-meta { font-size: 12.5px; color: var(--ink-soft); }
+  .fp-links { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin-top: 4px; }
+  .fp-ext {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--accent-strong);
+    text-decoration: none;
+  }
+  .fp-ext:hover { text-decoration: underline; }
+  .fp-again {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .fp-again:hover { color: var(--accent); }
+
+  /* Recently added */
+  .landing-recent {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  .landing-recent-col {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 6px 8px;
+    min-width: 0;
+  }
+  .landing-recent-head {
+    font-weight: 600;
+    font-size: 13.5px;
+    padding: 0 8px 6px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .landing-recent-head .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .landing-recent-list { list-style: none; margin: 0; padding: 0; }
+  .landing-recent-list > li.dash-loading, .landing-recent-list > li.column-empty { padding: 4px 8px; }
+  .landing-recent-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 6px 8px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--ink);
+    font-family: var(--font-body);
+    cursor: pointer;
+  }
+  .landing-recent-item:hover { background: var(--accent-soft); }
+  .landing-recent-item .t {
+    display: block;
+    font-size: 13px;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .landing-recent-item .m { display: block; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); }
+
+  /* Example queries */
+  .landing-queries {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+  }
+  .landing-query {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+    min-width: 0;
+  }
+  .landing-query .t { font-weight: 600; font-size: 14px; }
+  .landing-query .d { font-size: 13px; color: var(--ink-soft); }
+  .landing-query details { width: 100%; font-size: 12px; }
+  .landing-query summary { cursor: pointer; color: var(--muted); font-family: var(--font-mono); font-size: 11.5px; }
+  .landing-query pre {
+    margin: 8px 0 2px;
+    padding: 10px;
+    background: var(--surface-alt);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    overflow-x: auto;
+  }
+  .landing-query .landing-btn { margin-top: 4px; font-size: 13px; padding: 7px 12px; }
 
   @media (max-width: 560px) {
     .landing h1 { font-size: 28px; }
@@ -2503,6 +2654,240 @@
     ]);
   }
 
+  // Ready-to-run examples for the QLever UI at kg.zijdeman.nl, whose
+  // ?query= parameter prefills its editor.
+  var QLEVER_UI = "https://kg.zijdeman.nl/iisg-kg";
+  var LANDING_QUERIES = [
+    {
+      title: "How big is each graph?",
+      desc: "Triples per named graph — one graph per source pipeline.",
+      query: "SELECT ?graph (COUNT(*) AS ?triples) WHERE {\n  GRAPH ?graph { ?s ?p ?o }\n}\nGROUP BY ?graph\nORDER BY DESC(?triples)"
+    },
+    {
+      title: "Most written-about persons",
+      desc: "Persons who are the subject of the most works in the collections.",
+      query: "PREFIX sdo: <https://schema.org/>\nSELECT ?person (SAMPLE(?n) AS ?name) (COUNT(DISTINCT ?work) AS ?works) WHERE {\n  ?work sdo:about ?person .\n  ?person a sdo:Person .\n  OPTIONAL { ?person sdo:name ?n }\n}\nGROUP BY ?person\nORDER BY DESC(?works)\nLIMIT 50"
+    },
+    {
+      title: "IISG persons on Wikidata",
+      desc: "Our authority records linked to a Wikidata item via the identity graph.",
+      query: "PREFIX sdo: <https://schema.org/>\nSELECT ?person (SAMPLE(?n) AS ?name) ?wikidata WHERE {\n  GRAPH <https://iisg.amsterdam/graph/identity> {\n    ?person sdo:sameAs ?hub .\n    ?hub sdo:sameAs ?wikidata .\n    FILTER(STRSTARTS(STR(?wikidata), \"https://www.wikidata.org/\"))\n  }\n  ?person a sdo:Person .\n  OPTIONAL { ?person sdo:name ?n }\n}\nGROUP BY ?person ?wikidata\nLIMIT 100"
+    },
+    {
+      title: "Archives updated most recently",
+      desc: "Archival collections, newest description first.",
+      query: "PREFIX sdo: <https://schema.org/>\nSELECT ?archive ?name ?updated WHERE {\n  GRAPH <https://iisg.amsterdam/graph/archive> {\n    ?archive sdo:sdDatePublished ?updated .\n    OPTIONAL { ?archive sdo:name ?name }\n  }\n}\nORDER BY DESC(?updated)\nLIMIT 25"
+    }
+  ];
+
+  function exampleQueryEl(q) {
+    var card = el("div", { class: "landing-query" });
+    card.appendChild(el("div", { class: "t", text: q.title }));
+    card.appendChild(el("div", { class: "d", text: q.desc }));
+    var details = el("details");
+    details.appendChild(el("summary", { text: "Show SPARQL" }));
+    details.appendChild(el("pre", { text: q.query }));
+    card.appendChild(details);
+    card.appendChild(el("a", {
+      class: "landing-btn ghost",
+      href: QLEVER_UI + "?query=" + encodeURIComponent(q.query),
+      target: "_blank",
+      rel: "noopener",
+      text: "Open in QLever ↗"
+    }));
+    return card;
+  }
+
+  // Authority headings carry cataloguing punctuation ("Elsken, Ed van der,")
+  // -- drop the trailing bits for display.
+  function tidyName(s) { return (s || "").replace(/[\s,.;:/]+$/, ""); }
+
+  // Upcoming events first (soonest first); topped up with the most recent
+  // past ones so the strip is never empty between seasons.
+  function fillLandingEvents(gen, section, grid) {
+    var q = "PREFIX schema: <https://schema.org/>\n" +
+      "SELECT ?e (SAMPLE(?nm) AS ?name) (SAMPLE(?start) AS ?startDate) (SAMPLE(?url) AS ?imgUrl) WHERE {\n" +
+      "  GRAPH <https://iisg.amsterdam/graph/events> { ?e a schema:Event . ?e schema:startDate ?start }\n" +
+      "  OPTIONAL { ?e schema:name ?nm }\n" +
+      "  OPTIONAL { ?e schema:image ?img . ?img schema:contentUrl ?url }\n" +
+      "} GROUP BY ?e ORDER BY DESC(?startDate) LIMIT 12";
+    sparql(q).then(function (rows) {
+      if (gen !== viewGeneration) return;
+      var now = new Date().toISOString().slice(0, 19);
+      var items = rows.map(function (r) {
+        return {
+          uri: r.e.value,
+          label: r.name ? r.name.value : shortLabel(r.e.value),
+          startDate: r.startDate.value,
+          imgUrl: r.imgUrl && isLocalUri(r.imgUrl.value) ? r.imgUrl.value : null
+        };
+      });
+      var upcoming = items.filter(function (it) { return it.startDate >= now; }).reverse();
+      var past = items.filter(function (it) { return it.startDate < now; });
+      var shown = upcoming.concat(past).slice(0, 4);
+      if (!shown.length) { section.remove(); return; }
+      if (!upcoming.length) section.querySelector(".dash-heading").textContent = "Recent events at the IISG";
+      clear(grid);
+      shown.forEach(function (it) {
+        var card = el("button", { class: "event-card" });
+        if (it.imgUrl) {
+          var img = el("img", { class: "event-card-img", src: it.imgUrl, alt: "", loading: "lazy" });
+          img.onerror = function () { img.remove(); };
+          card.appendChild(img);
+        }
+        var body = el("div", { class: "event-card-body" });
+        body.appendChild(el("div", { class: "event-card-title", text: it.label }));
+        var dateLine = el("div", { class: "event-card-date", text: fmtEventDate(it.startDate) });
+        if (it.startDate < now) dateLine.appendChild(el("span", { class: "event-past", text: "past" }));
+        body.appendChild(dateLine);
+        card.appendChild(body);
+        card.addEventListener("click", function () { navigate(it.uri, { label: it.label }); });
+        grid.appendChild(card);
+      });
+      var more = el("button", { class: "landing-btn ghost", text: "All events →" });
+      more.addEventListener("click", function () { navigateToView("events"); });
+      section.appendChild(el("div", { class: "landing-more" }, [more]));
+    }).catch(function () {
+      if (gen === viewGeneration) section.remove();
+    });
+  }
+
+  // Featured person: someone written about in at least three works and
+  // linked to Wikidata, shown with their Wikidata portrait (served via
+  // our own /api/wikidata-image cache, like the Person view). Candidates
+  // without a portrait are skipped, up to a few tries.
+  var featuredPoolPromise = null;
+  function fetchFeaturedPool() {
+    if (!featuredPoolPromise) {
+      var q = "PREFIX sdo: <https://schema.org/>\n" +
+        "SELECT ?p (SAMPLE(?wd) AS ?w) (SAMPLE(?name) AS ?nm) (COUNT(DISTINCT ?work) AS ?works) WHERE {\n" +
+        "  GRAPH " + iriRef(IDENTITY_GRAPH) + " {\n" +
+        "    ?p sdo:sameAs ?hub . ?hub sdo:sameAs ?wd .\n" +
+        "    FILTER(STRSTARTS(STR(?wd), \"https://www.wikidata.org/\"))\n" +
+        "  }\n" +
+        "  ?p a sdo:Person .\n" +
+        "  ?work sdo:about ?p .\n" +
+        "  OPTIONAL { ?p sdo:name ?name }\n" +
+        "} GROUP BY ?p HAVING (COUNT(DISTINCT ?work) >= 3)";
+      featuredPoolPromise = sparql(q).then(function (rows) {
+        return rows.map(function (r) {
+          var m = WIKIDATA_QID_RE.exec(r.w.value);
+          return m ? { uri: r.p.value, qid: m[1], wdUrl: r.w.value, name: tidyName(r.nm ? r.nm.value : shortLabel(r.p.value)), works: parseInt(r.works.value, 10) } : null;
+        }).filter(Boolean);
+      }).catch(function (err) { featuredPoolPromise = null; throw err; });
+    }
+    return featuredPoolPromise;
+  }
+
+  function fillFeaturedPerson(gen, box) {
+    fetchFeaturedPool().then(function (pool) {
+      var tries = 0;
+      function attempt() {
+        if (gen !== viewGeneration) return;
+        if (!pool.length || tries++ >= 8) { showFallback(); return; }
+        var c = pool[Math.floor(Math.random() * pool.length)];
+        var img = new Image();
+        img.onload = function () { if (gen === viewGeneration) show(c, img); };
+        img.onerror = attempt;
+        img.src = "/api/wikidata-image/" + c.qid;
+      }
+      function show(c, img) {
+        clear(box);
+        img.alt = "Portrait of " + c.name;
+        img.className = "fp-photo";
+        var photoBtn = el("button", { class: "fp-photo-btn", title: "Open " + c.name }, [img]);
+        photoBtn.addEventListener("click", function () { navigate(c.uri, { label: c.name }); });
+        box.appendChild(photoBtn);
+        var body = el("div", { class: "fp-body" });
+        body.appendChild(el("div", { class: "fp-kicker", text: "Featured person" }));
+        var nameBtn = el("button", { class: "fp-name", text: c.name });
+        nameBtn.addEventListener("click", function () { navigate(c.uri, { label: c.name }); });
+        body.appendChild(nameBtn);
+        body.appendChild(el("div", { class: "fp-meta", text: "Subject of " + fmtNum(c.works) + " works in the collections" }));
+        var links = el("div", { class: "fp-links" });
+        var wd = el("a", { href: c.wdUrl, target: "_blank", rel: "noopener", class: "fp-ext" }, [wikidataIconEl(), document.createTextNode(c.qid + " ↗")]);
+        links.appendChild(wd);
+        var again = el("button", { class: "fp-again", text: "↻ Someone else" });
+        again.addEventListener("click", function () { tries = 0; attempt(); });
+        links.appendChild(again);
+        body.appendChild(links);
+        box.appendChild(body);
+      }
+      function showFallback() {
+        clear(box);
+        var b = el("button", { class: "landing-btn ghost", text: "Meet a random person" });
+        b.addEventListener("click", function () { navigateToView("person"); });
+        box.appendChild(b);
+      }
+      attempt();
+    }).catch(function () {
+      if (gen !== viewGeneration) return;
+      clear(box);
+    });
+  }
+
+  // "Recently added": the newest records per source. Archives and
+  // authorities carry a real per-record date (sdo:sdDatePublished); the
+  // catalogue's is stamped in record-number order on each harvest, so the
+  // same sort yields its newest record numbers -- i.e. the latest
+  // catalogued items -- but the date itself isn't shown for those.
+  var RECENT_SOURCES = [
+    { title: "In the catalogue", graph: "https://iisg.amsterdam/graph/biblio", showDate: false },
+    { title: "Archives", graph: "https://iisg.amsterdam/graph/archive", showDate: true },
+    { title: "Persons & organizations", graph: "https://iisg.amsterdam/graph/authority", showDate: true,
+      typeFilter: "FILTER(?t0 IN (sdo:Person, sdo:Organization))" }
+  ];
+
+  function fillRecentlyAdded(gen, grid) {
+    RECENT_SOURCES.forEach(function (src) {
+      var col = el("div", { class: "landing-recent-col" });
+      col.appendChild(el("div", { class: "landing-recent-head" }, [
+        el("span", { class: "dot", style: "background:" + graphInfo(src.graph).color }),
+        document.createTextNode(src.title)
+      ]));
+      var list = el("ul", { class: "landing-recent-list" }, [el("li", { class: "dash-loading", text: "Loading…" })]);
+      col.appendChild(list);
+      grid.appendChild(col);
+
+      var q = "PREFIX sdo: <https://schema.org/>\n" +
+        "SELECT ?s ?d ?name ?t WHERE {\n" +
+        "  { SELECT ?s ?d WHERE {\n" +
+        "      GRAPH " + iriRef(src.graph) + " { ?s sdo:sdDatePublished ?d" + (src.typeFilter ? " . ?s a ?t0 " + src.typeFilter : "") + " }\n" +
+        "    } ORDER BY DESC(?d) LIMIT 16 }\n" +
+        "  OPTIONAL { ?s sdo:name ?name }\n" +
+        "  OPTIONAL { ?s a ?t }\n" +
+        "} ORDER BY DESC(?d)";
+      sparql(q).then(function (rows) {
+        if (gen !== viewGeneration) return;
+        var byUri = {}, order = [];
+        rows.forEach(function (r) {
+          var u = r.s.value;
+          if (!byUri[u]) { byUri[u] = { uri: u, date: r.d.value, name: null, types: [] }; order.push(u); }
+          if (r.name && (!byUri[u].name || r.name.value.length < byUri[u].name.length)) byUri[u].name = r.name.value;
+          if (r.t) byUri[u].types.push(curie(r.t.value));
+        });
+        clear(list);
+        order.slice(0, 6).forEach(function (u) {
+          var it = byUri[u];
+          var label = tidyName(it.name || shortLabel(u));
+          var view = pickView(it.types);
+          var meta = [view ? view.kind : null, src.showDate ? fmtEventDate(it.date) : null].filter(Boolean).join(" · ");
+          var btn = el("button", { class: "landing-recent-item", title: label }, [
+            el("span", { class: "t", text: label }),
+            el("span", { class: "m", text: meta })
+          ]);
+          btn.addEventListener("click", function () { navigate(u, { label: label }); });
+          list.appendChild(el("li", null, [btn]));
+        });
+        if (!order.length) list.appendChild(el("li", { class: "column-empty", text: "Nothing yet." }));
+      }).catch(function () {
+        if (gen !== viewGeneration) return;
+        clear(list);
+        list.appendChild(el("li", { class: "column-empty", text: "Couldn’t load." }));
+      });
+    });
+  }
+
   function renderLanding() {
     currentUri = null;
     renderTrail();
@@ -2553,6 +2938,12 @@
     exploreSec.appendChild(cards);
     wrap.appendChild(exploreSec);
 
+    // Events strip -- filled in by fillLandingEvents (hidden if none)
+    var eventsSec = landingSectionEl("Coming up at the IISG");
+    var eventsGrid = el("div", { class: "event-grid landing-events" }, [el("div", { class: "dash-loading", text: "Loading events…" })]);
+    eventsSec.appendChild(eventsGrid);
+    wrap.appendChild(eventsSec);
+
     // Linked Data + Monitoring, side by side
     var panelsSec = el("div", { class: "dash-section" });
     var panels = el("div", { class: "landing-panels" });
@@ -2561,11 +2952,8 @@
     linked.appendChild(el("h2", { text: "Linked beyond the IISG" }));
     linked.appendChild(el("p", { text: "The Knowledge Base is Linked Data, so it can point outside our own organisation. Open a person and see their links to Wikidata and RKD Artists — including portraits, where those sources have one." }));
     linked.appendChild(el("div", { class: "badges" }, [wikidataIconEl(), rkdIconEl(), el("span", { text: "Wikidata · RKD Artists · ORCID" })]));
-    var linkedActions = el("div", { class: "actions" });
-    var personBtn = el("button", { class: "landing-btn ghost", text: "Meet a random person" });
-    personBtn.addEventListener("click", function () { navigateToView("person"); });
-    linkedActions.appendChild(personBtn);
-    linked.appendChild(linkedActions);
+    var featured = el("div", { class: "featured-person" }, [el("div", { class: "dash-loading", text: "Finding someone to introduce…" })]);
+    linked.appendChild(featured);
     panels.appendChild(linked);
 
     var monitor = el("div", { class: "landing-panel" });
@@ -2583,7 +2971,21 @@
     panels.appendChild(monitor);
 
     panelsSec.appendChild(panels);
+
+    // Recently added -- right under the monitoring panel it belongs to
+    var recentSec = landingSectionEl("Recently added");
+    var recentGrid = el("div", { class: "landing-recent" });
+    recentSec.appendChild(recentGrid);
     wrap.appendChild(panelsSec);
+    wrap.appendChild(recentSec);
+
+    // Example queries
+    var querySec = landingSectionEl("Try a query");
+    querySec.appendChild(el("p", { class: "landing-note", text: "Each opens, ready to run, in the QLever query editor at kg.zijdeman.nl — change it and run your own." }));
+    var queryGrid = el("div", { class: "landing-queries" });
+    LANDING_QUERIES.forEach(function (q) { queryGrid.appendChild(exampleQueryEl(q)); });
+    querySec.appendChild(queryGrid);
+    wrap.appendChild(querySec);
 
     // Open data & code
     var openSec = landingSectionEl("Open data & open source");
@@ -2603,6 +3005,9 @@
     mainEl.appendChild(wrap);
 
     var gen = viewGeneration;
+    fillLandingEvents(gen, eventsSec, eventsGrid);
+    fillFeaturedPerson(gen, featured);
+    fillRecentlyAdded(gen, recentGrid);
     fetchRunHistory().then(function (runs) {
       if (gen !== viewGeneration) return;
       var last = runs && runs.length ? runs[runs.length - 1] : null;
@@ -2638,6 +3043,7 @@
     var raw = decodeURIComponent(location.hash.replace(/^#/, ""));
     if (raw === currentUri) return;
     if (raw.indexOf("view:") === 0) { currentUri = null; renderTrail(); renderView(raw.slice(5)); return; }
+    if (raw.indexOf("search:") === 0) { searchInput.value = raw.slice(7); runSearch(raw.slice(7), { fromHash: true }); return; }
     if (raw && /^https?:\/\//i.test(raw)) { currentUri = raw; loadEntity(raw); }
     else { currentUri = null; renderTrail(); renderView("home"); }
   }
@@ -4500,17 +4906,26 @@
   searchInput.addEventListener("input", function () {
     var term = searchInput.value.trim();
     clearTimeout(searchDebounce);
-    if (term.length < 2) { if (!term) renderHome(); return; }
+    if (term.length < 2) { if (!term) navigateHome(); return; }
     searchDebounce = setTimeout(function () { runSearch(term); }, 380);
   });
 
   searchInput.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") { searchInput.value = ""; renderHome(); }
+    if (e.key === "Escape") { searchInput.value = ""; navigateHome(); }
     if (e.key === "Enter") { clearTimeout(searchDebounce); runSearch(searchInput.value.trim()); }
   });
 
-  function runSearch(term) {
+  // opts.fromHash: the term came from the URL (back/forward, a shared
+  // link), so don't write it back. Otherwise record it as #search:<term>
+  // -- replacing, not stacking, while the user is still refining the same
+  // search (the rail box searches as you type).
+  function runSearch(term, opts) {
     if (term.length < 2) return;
+    if (!(opts && opts.fromHash)) {
+      var hash = "#search:" + encodeURIComponent(term);
+      if (/^#search:/.test(location.hash)) history.replaceState({ search: term }, "", hash);
+      else history.pushState({ search: term }, "", hash);
+    }
     currentUri = null;
     renderTrail();
     searchSpinner.classList.add("active");
@@ -5495,6 +5910,9 @@
     currentUri = initialHash;
     history.replaceState({ uri: initialHash }, "", "#" + encodeURIComponent(initialHash));
     loadEntity(initialHash);
+  } else if (initialHash.indexOf("search:") === 0) {
+    searchInput.value = initialHash.slice(7);
+    runSearch(initialHash.slice(7), { fromHash: true });
   } else if (initialHash.indexOf("view:") === 0) {
     history.replaceState({ view: initialHash.slice(5) }, "", "#" + initialHash);
     renderView(initialHash.slice(5));
