@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>IISG Knowledge Base Explorer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -548,6 +549,9 @@
     align-items: center;
   }
 
+  .landing-growth .growth-bars svg { height: 40px; }
+  .landing-growth-cap { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 4px; }
+
   .landing-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
   .landing-links a {
     display: grid;
@@ -566,7 +570,8 @@
 
   .landing-note { font-size: 13.5px; color: var(--ink-soft); margin: -4px 0 12px; }
   .landing-more { margin-top: 10px; }
-  .landing-events { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom: 0; }
+  .event-grid.landing-events { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 0; }
+  .landing-events .event-card-img { aspect-ratio: 4 / 3; }
   .event-past {
     margin-left: 8px;
     padding: 0 6px;
@@ -576,6 +581,7 @@
     font-size: 9.5px;
     letter-spacing: 0.05em;
   }
+  .event-past.upcoming { color: var(--good); border-color: var(--good); }
 
   /* Featured person, inside the "Linked beyond the IISG" panel */
   .featured-person {
@@ -685,7 +691,7 @@
   /* Example queries */
   .landing-queries {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 12px;
   }
   .landing-query {
@@ -1641,8 +1647,25 @@
       height: auto;
       border-right: none;
       border-bottom: 1px solid var(--line);
+      padding: 14px 16px;
+      gap: 12px;
     }
-    .main { padding: 26px 20px 50px; }
+    .main { padding: 26px 16px 50px; }
+
+    /* Phones: the full rail would push the page a screen down, so it
+       collapses to the brand, one wrapping row of view chips and the
+       search box. Trail and endpoint note are desktop-only. */
+    .brand-sub, .rail-heading, .rail-subdivider, .rail-trail, .rail-endpoint { display: none; }
+    #rail-views { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    .rail-graphs { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    .rail-graph-btn {
+      width: auto;
+      padding: 5px 11px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface);
+    }
+    .search-box label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   }
 </style>
 </head>
@@ -1673,7 +1696,7 @@
       </ul>
     </div>
 
-    <div class="rail-section" style="flex: 1;">
+    <div class="rail-section rail-trail" style="flex: 1;">
       <div class="rail-heading"><span>Trail</span></div>
       <ul class="trail-list" id="trail-list"></ul>
     </div>
@@ -2702,6 +2725,21 @@
   // -- drop the trailing bits for display.
   function tidyName(s) { return (s || "").replace(/[\s,.;:/]+$/, ""); }
 
+  // "Beimler, Hans" -> "Hans Beimler" for display in running text; leaves
+  // anything that isn't a plain "Surname, Given" pair alone.
+  // Authority headings may also carry life dates ("Atatürk, Mustafa
+  // Kemal, 1881-1938"), which are dropped first.
+  function personDisplayName(s) {
+    // Bracketed expansions ("J[ules] Destrée") are read as written out.
+    var name = tidyName(s).replace(/,\s*[\d?.\s\u2013-]*\d[\d?.\s\u2013-]*$/, "").replace(/\[([^\]]*)\]/g, "$1");
+    var m = /^([^,]+),\s*([^,]+)$/.exec(name);
+    return m ? m[2] + " " + m[1] : name;
+  }
+
+  // Catalogue (ISBD) titles: "Union voice : a socialist voice" ->
+  // "Union voice: a socialist voice", trailing " /" dropped.
+  function tidyTitle(s) { return tidyName(s).replace(/\s+([:;])\s/g, "$1 "); }
+
   // Upcoming events first (soonest first); topped up with the most recent
   // past ones so the strip is never empty between seasons.
   function fillLandingEvents(gen, section, grid) {
@@ -2726,7 +2764,9 @@
       var past = items.filter(function (it) { return it.startDate < now; });
       var shown = upcoming.concat(past).slice(0, 4);
       if (!shown.length) { section.remove(); return; }
-      if (!upcoming.length) section.querySelector(".dash-heading").textContent = "Recent events at the IISG";
+      var heading = section.querySelector(".dash-heading");
+      if (!upcoming.length) heading.textContent = "Recent events at the IISG";
+      else if (upcoming.length < shown.length) heading.textContent = "Events at the IISG";
       clear(grid);
       shown.forEach(function (it) {
         var card = el("button", { class: "event-card" });
@@ -2738,7 +2778,7 @@
         var body = el("div", { class: "event-card-body" });
         body.appendChild(el("div", { class: "event-card-title", text: it.label }));
         var dateLine = el("div", { class: "event-card-date", text: fmtEventDate(it.startDate) });
-        if (it.startDate < now) dateLine.appendChild(el("span", { class: "event-past", text: "past" }));
+        dateLine.appendChild(el("span", { class: "event-past" + (it.startDate < now ? "" : " upcoming"), text: it.startDate < now ? "past" : "upcoming" }));
         body.appendChild(dateLine);
         card.appendChild(body);
         card.addEventListener("click", function () { navigate(it.uri, { label: it.label }); });
@@ -2767,12 +2807,14 @@
         "  }\n" +
         "  ?p a sdo:Person .\n" +
         "  ?work sdo:about ?p .\n" +
-        "  OPTIONAL { ?p sdo:name ?name }\n" +
+        // A few authority records also carry their bare life dates
+        // ("1881-1938") as an extra sdo:name -- skip anything letterless.
+        "  OPTIONAL { ?p sdo:name ?name FILTER(REGEX(STR(?name), \"\\\\p{L}\")) }\n" +
         "} GROUP BY ?p HAVING (COUNT(DISTINCT ?work) >= 3)";
       featuredPoolPromise = sparql(q).then(function (rows) {
         return rows.map(function (r) {
           var m = WIKIDATA_QID_RE.exec(r.w.value);
-          return m ? { uri: r.p.value, qid: m[1], wdUrl: r.w.value, name: tidyName(r.nm ? r.nm.value : shortLabel(r.p.value)), works: parseInt(r.works.value, 10) } : null;
+          return m ? { uri: r.p.value, qid: m[1], wdUrl: r.w.value, name: personDisplayName(r.nm ? r.nm.value : shortLabel(r.p.value)), works: parseInt(r.works.value, 10) } : null;
         }).filter(Boolean);
       }).catch(function (err) { featuredPoolPromise = null; throw err; });
     }
@@ -2863,14 +2905,14 @@
         rows.forEach(function (r) {
           var u = r.s.value;
           if (!byUri[u]) { byUri[u] = { uri: u, date: r.d.value, name: null, types: [] }; order.push(u); }
-          if (r.name && (!byUri[u].name || r.name.value.length < byUri[u].name.length)) byUri[u].name = r.name.value;
+          if (r.name && /\p{L}/u.test(r.name.value) && (!byUri[u].name || r.name.value.length < byUri[u].name.length)) byUri[u].name = r.name.value;
           if (r.t) byUri[u].types.push(curie(r.t.value));
         });
         clear(list);
         order.slice(0, 6).forEach(function (u) {
           var it = byUri[u];
-          var label = tidyName(it.name || shortLabel(u));
           var view = pickView(it.types);
+          var label = view && view.kind === "Person" ? personDisplayName(it.name || shortLabel(u)) : tidyTitle(it.name || shortLabel(u));
           var meta = [view ? view.kind : null, src.showDate ? fmtEventDate(it.date) : null].filter(Boolean).join(" · ");
           var btn = el("button", { class: "landing-recent-item", title: label }, [
             el("span", { class: "t", text: label }),
@@ -2886,6 +2928,35 @@
         list.appendChild(el("li", { class: "column-empty", text: "Couldn’t load." }));
       });
     });
+  }
+
+  // Records per night over the last two weeks of runs, as the same
+  // green/red bars the Delta view draws per graph.
+  function recordCount(run) {
+    var counts = run.graph_subject_counts || {}, n = 0;
+    Object.keys(counts).forEach(function (g) { if (g !== IDENTITY_GRAPH) n += counts[g]; });
+    return n;
+  }
+
+  function fillLandingGrowth(box, runs) {
+    var recent = runs.slice(-15);
+    if (recent.length < 2) return;
+    var counts = recent.map(recordCount);
+    var deltas = counts.slice(1).map(function (c, i) { return c - counts[i]; });
+    var dates = recent.map(function (r) { return r.started_at; });
+    var net = counts[counts.length - 1] - counts[0];
+    var chart = el("div", { class: "growth-bars" });
+    chart.innerHTML = deltaBarsSvg(deltas, dates);
+    var svg = chart.firstChild;
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("preserveAspectRatio", "none");
+    Array.prototype.forEach.call(svg.querySelectorAll("rect[data-delta]"), function (r) {
+      var t = document.createElementNS("http://www.w3.org/2000/svg", "title");
+      t.textContent = r.getAttribute("data-date") + ": " + r.getAttribute("data-delta") + " records";
+      r.appendChild(t);
+    });
+    box.appendChild(chart);
+    box.appendChild(el("div", { class: "landing-growth-cap", text: (net >= 0 ? "+" : "") + fmtNum(net) + " records over the last " + deltas.length + " nightly runs" }));
   }
 
   function renderLanding() {
@@ -2942,7 +3013,6 @@
     var eventsSec = landingSectionEl("Coming up at the IISG");
     var eventsGrid = el("div", { class: "event-grid landing-events" }, [el("div", { class: "dash-loading", text: "Loading events…" })]);
     eventsSec.appendChild(eventsGrid);
-    wrap.appendChild(eventsSec);
 
     // Linked Data + Monitoring, side by side
     var panelsSec = el("div", { class: "dash-section" });
@@ -2961,6 +3031,8 @@
     monitor.appendChild(el("p", { text: "The graph is rebuilt every night from the IISG’s source systems. The monitoring views show each run and what changed — such as newly entered metadata." }));
     var runLine = el("div", { class: "landing-run", text: "Loading last run…" });
     monitor.appendChild(runLine);
+    var growth = el("div", { class: "landing-growth" });
+    monitor.appendChild(growth);
     var monActions = el("div", { class: "actions" });
     [["datascience", "Graph runs"], ["growth", "What changed (Delta)"]].forEach(function (v) {
       var b = el("button", { class: "landing-btn ghost", text: v[1] });
@@ -2978,6 +3050,7 @@
     recentSec.appendChild(recentGrid);
     wrap.appendChild(panelsSec);
     wrap.appendChild(recentSec);
+    wrap.appendChild(eventsSec);
 
     // Example queries
     var querySec = landingSectionEl("Try a query");
@@ -3018,9 +3091,9 @@
         total += counts[g];
         if (g !== IDENTITY_GRAPH) records += (last.graph_subject_counts || {})[g] || 0;
       });
-      stats.appendChild(landingStatEl(fmtNum(total), "statements (triples)"));
-      if (records) stats.appendChild(landingStatEl(fmtNum(records), "described things"));
-      if (last.interlinked_authority_iris) stats.appendChild(landingStatEl(fmtNum(last.interlinked_authority_iris), "interlinked identities"));
+      if (records) stats.appendChild(landingStatEl(fmtNum(records), "records"));
+      stats.appendChild(landingStatEl(fmtNum(total), "linked-data facts"));
+      if (last.interlinked_authority_iris) stats.appendChild(landingStatEl(fmtNum(last.interlinked_authority_iris), "identities linked across systems"));
       stats.appendChild(landingStatEl(fmtRunDateShort(last.started_at), "last updated"));
 
       clear(runLine);
@@ -3028,6 +3101,7 @@
       runLine.appendChild(el("span", { text: "Last run " + fmtRunDate(last.started_at) }));
       runLine.appendChild(el("span", { class: "run-badge " + status.cls, text: status.text }));
       runLine.appendChild(el("span", { text: fmtDuration(last.duration_s) }));
+      fillLandingGrowth(growth, runs);
     }).catch(function () {
       if (gen !== viewGeneration) return;
       stats.remove();
