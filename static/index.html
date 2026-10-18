@@ -851,6 +851,7 @@
   .growth-bars { overflow-x: auto; }
   .growth-bars svg { display: block; }
   .growth-bars rect[data-delta] { cursor: default; }
+  .growth-asof { font-family: var(--font-mono); font-size: 10.5px; color: var(--warn); white-space: nowrap; }
 
   @media (max-width: 760px) {
     .growth-table { grid-template-columns: 1fr; row-gap: 4px; }
@@ -2941,22 +2942,21 @@
   function fillLandingGrowth(box, runs) {
     var recent = runs.slice(-15);
     if (recent.length < 2) return;
-    var counts = recent.map(recordCount);
-    var deltas = counts.slice(1).map(function (c, i) { return c - counts[i]; });
-    var dates = recent.map(function (r) { return r.started_at; });
-    var net = counts[counts.length - 1] - counts[0];
+    var series = successSeries(recent, recordCount, runSucceeded);
+    if (series.last === null) return;
+    var net = series.last - series.first;
     var chart = el("div", { class: "growth-bars" });
-    chart.innerHTML = deltaBarsSvg(deltas, dates);
+    chart.innerHTML = deltaBarsSvg(series.slots);
     var svg = chart.firstChild;
     svg.setAttribute("width", "100%");
     svg.setAttribute("preserveAspectRatio", "none");
     Array.prototype.forEach.call(svg.querySelectorAll("rect[data-delta]"), function (r) {
       var t = document.createElementNS("http://www.w3.org/2000/svg", "title");
-      t.textContent = r.getAttribute("data-date") + ": " + r.getAttribute("data-delta") + " records";
+      t.textContent = r.getAttribute("data-date") + ": " + r.getAttribute("data-delta") + (r.hasAttribute("data-failed") ? "" : " records");
       r.appendChild(t);
     });
     box.appendChild(chart);
-    box.appendChild(el("div", { class: "landing-growth-cap", text: (net >= 0 ? "+" : "") + fmtNum(net) + " records over the last " + deltas.length + " nightly runs" }));
+    box.appendChild(el("div", { class: "landing-growth-cap", text: (net >= 0 ? "+" : "") + fmtNum(net) + " records since " + fmtRunDateShort(series.firstDate) + " (successful runs only)" }));
   }
 
   function renderLanding() {
@@ -3419,23 +3419,63 @@
   // column's hover area -- without it a small day-to-day change renders as
   // a 1-2px sliver that's genuinely hard to land a cursor on, which is why
   // hovering "didn't always work" with a single <title>-bearing rect.
-  function deltaBarsSvg(deltas, dates) {
+  // Change between successful runs, per graph or summed. A failed run
+  // (the pipeline crashed, or its graph is missing or stale that night)
+  // gets no delta: comparing against it would show a fake crash and a fake
+  // recovery the next night. Each later successful run is compared with
+  // the last successful one before it instead.
+  var PIPELINE_GRAPH_NAME = { authorities: "authority" };
+
+  function runSucceeded(run) { return runStatus(run).cls === "ok"; }
+
+  function graphPipelineOk(run, iri) {
+    var graphName = iri.split("/").pop();
+    var p = (run.pipelines || []).filter(function (p) {
+      return (PIPELINE_GRAPH_NAME[p.name] || p.name) === graphName;
+    })[0];
+    return p ? p.status === "ok" : runSucceeded(run);
+  }
+
+  // One slot per run after the first: {date, delta} for a successful run
+  // (delta null when there's no earlier successful run to compare with),
+  // {date, failed: true} otherwise. first/last are the earliest and latest
+  // successful values, for the total and net-change columns.
+  function successSeries(runs, valueOf, okOf) {
+    var slots = [], prev = null, first = null, firstDate = null, lastDate = null;
+    runs.forEach(function (r, i) {
+      var v = valueOf(r);
+      var ok = typeof v === "number" && okOf(r);
+      if (i > 0) slots.push(ok ? { date: r.started_at, delta: prev === null ? null : v - prev } : { date: r.started_at, failed: true });
+      if (ok) { if (first === null) { first = v; firstDate = r.started_at; } prev = v; lastDate = r.started_at; }
+    });
+    return { slots: slots, first: first, firstDate: firstDate, last: prev, lastDate: lastDate };
+  }
+
+  function deltaBarsSvg(slots) {
     var barW = 6, gap = 2, h = 36, mid = h / 2;
-    var w = Math.max(deltas.length * (barW + gap), barW);
-    var maxAbs = Math.max.apply(null, deltas.map(function (d) { return Math.abs(d); }).concat([1]));
+    var w = Math.max(slots.length * (barW + gap), barW);
+    var maxAbs = Math.max.apply(null, slots.map(function (s) { return s.delta ? Math.abs(s.delta) : 0; }).concat([1]));
     var scale = (mid - 2) / maxAbs;
-    var bars = deltas.map(function (d, i) {
+    var marks = slots.map(function (s, i) {
+      var x = i * (barW + gap);
+      var dateText = fmtRunDateShort(s.date);
+      var hit = function (deltaText) {
+        return '<rect x="' + x + '" y="0" width="' + barW + '" height="' + h + '" fill="transparent" data-delta="' + deltaText + '" data-date="' + dateText + '"' + (s.failed ? ' data-failed=""' : "") + '/>';
+      };
+      if (s.failed) {
+        return '<circle cx="' + (x + barW / 2) + '" cy="' + mid + '" r="2.4" style="fill:var(--surface);stroke:var(--warn);stroke-width:1.3"/>' +
+          hit("no successful run");
+      }
+      if (s.delta === null) return "";
+      var d = s.delta;
       var barH = Math.max(Math.abs(d) * scale, d === 0 ? 1 : 2);
       var y = d >= 0 ? mid - barH : mid;
       var color = d > 0 ? "var(--good)" : (d < 0 ? "var(--crit)" : "var(--muted)");
-      var x = i * (barW + gap);
-      var deltaText = (d >= 0 ? "+" : "") + Number(d).toLocaleString("en-US");
-      var dateText = fmtRunDateShort(dates[i + 1]);
       return '<rect x="' + x + '" y="' + y.toFixed(1) + '" width="' + barW + '" height="' + barH.toFixed(1) + '" rx="1" style="fill:' + color + '"/>' +
-        '<rect x="' + x + '" y="0" width="' + barW + '" height="' + h + '" fill="transparent" data-delta="' + deltaText + '" data-date="' + dateText + '"/>';
+        hit((d >= 0 ? "+" : "") + Number(d).toLocaleString("en-US"));
     }).join("");
     return '<svg viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">' +
-      '<line x1="0" y1="' + mid + '" x2="' + w + '" y2="' + mid + '" style="stroke:var(--line);stroke-width:1"/>' + bars + '</svg>';
+      '<line x1="0" y1="' + mid + '" x2="' + w + '" y2="' + mid + '" style="stroke:var(--line);stroke-width:1"/>' + marks + '</svg>';
   }
 
   // A count on its own doesn't say much about a graph's shape -- e.g.
@@ -3464,10 +3504,9 @@
     }).join("\n");
   }
 
-  function growthRowEl(info, counts, dates, breakdown) {
-    var deltas = [];
-    for (var i = 1; i < counts.length; i++) deltas.push(counts[i] - counts[i - 1]);
-    var netChange = counts[counts.length - 1] - counts[0];
+  function growthRowEl(info, series, breakdown) {
+    var hasData = series.last !== null;
+    var netChange = hasData ? series.last - series.first : 0;
 
     var row = el("div", { class: "growth-row" });
 
@@ -3479,18 +3518,25 @@
     label.appendChild(labelText);
     row.appendChild(label);
 
-    var totalEl = el("div", { class: "growth-total", text: fmtNum(counts[counts.length - 1]) });
+    var totalEl = el("div", { class: "growth-total", text: hasData ? fmtNum(series.last) : "\u2014" });
+    var lastSlot = series.slots[series.slots.length - 1];
+    if (hasData && lastSlot && lastSlot.failed) {
+      // Latest run failed for this row: the figure is from the last good one.
+      totalEl.appendChild(el("span", { class: "growth-asof", text: " as of " + fmtRunDateShort(series.lastDate) }));
+    }
     var tipText = breakdownTooltipText(breakdown);
     if (tipText) totalEl.setAttribute("data-breakdown", tipText);
     row.appendChild(totalEl);
 
-    row.appendChild(el("div", {
+    var netEl = el("div", {
       class: "growth-net " + (netChange >= 0 ? "pos" : "neg"),
-      text: (netChange >= 0 ? "+" : "") + fmtNum(netChange)
-    }));
+      text: hasData ? (netChange >= 0 ? "+" : "") + fmtNum(netChange) : "\u2014"
+    });
+    if (hasData) netEl.setAttribute("data-explain", "Since " + fmtRunDateShort(series.firstDate) + ", the first successful run shown");
+    row.appendChild(netEl);
 
     var bars = el("div", { class: "growth-bars" });
-    bars.innerHTML = deltaBarsSvg(deltas, dates);
+    bars.innerHTML = deltaBarsSvg(series.slots);
     row.appendChild(bars);
     return row;
   }
@@ -3541,7 +3587,7 @@
     var head = el("div", { class: "growth-table-head" });
     head.appendChild(el("div", { text: "Graph" }));
     head.appendChild(el("div", { text: "Current " + noun }));
-    head.appendChild(el("div", { text: "Change since " + fmtRunDateShort(sinceDate) }));
+    head.appendChild(el("div", { text: "Net change" }));
     head.appendChild(el("div", { text: "Daily change" }));
     return head;
   }
@@ -3598,7 +3644,7 @@
 
   function renderGrowthTable(container, runs, metric) {
     clear(container);
-    var withCounts = runs.filter(function (r) { return r[metric.key] && Object.keys(r[metric.key]).length; });
+    var withCounts = runs.filter(function (r) { return r[metric.key]; });
     if (withCounts.length < 2) {
       container.appendChild(el("div", { class: "column-empty", text: "Need at least two nightly runs with recorded " + metric.noun + " counts to show day-over-day change — check back after tomorrow’s 03:00 harvest." }));
       return;
@@ -3612,31 +3658,32 @@
     withCounts.forEach(function (r) { Object.keys(r[metric.key]).forEach(function (g) { graphIris[g] = true; }); });
 
     if (metric.combined) {
-      var totals = withCounts.map(function (r) {
+      var combinedSeries = successSeries(withCounts, function (r) {
         return Object.keys(r[metric.key]).reduce(function (s, g) { return s + r[metric.key][g]; }, 0);
-      });
+      }, runSucceeded);
       var combinedBreakdown = combinedLatestBreakdown(runs, Object.keys(graphIris));
       table.appendChild(growthRowEl({
         label: "All graphs combined", color: "#294a60",
-        sub: "Every pipeline’s named graph, summed together."
-      }, totals, dates, combinedBreakdown));
+        sub: "Every pipeline’s named graph, summed together. Only nights where every pipeline succeeded count."
+      }, combinedSeries, combinedBreakdown));
     }
 
     Object.keys(graphIris).map(graphInfo).sort(function (a, b) {
       return a.label.localeCompare(b.label);
     }).forEach(function (info) {
-      var counts = withCounts.map(function (r) { return r[metric.key][info.iri] || 0; });
-      table.appendChild(growthRowEl(info, counts, dates, latestBreakdown(runs, info.iri)));
+      var series = successSeries(withCounts, function (r) { return r[metric.key][info.iri]; }, function (r) {
+        return graphPipelineOk(r, info.iri);
+      });
+      table.appendChild(growthRowEl(info, series, latestBreakdown(runs, info.iri)));
     });
 
     var withInterlink = runs.filter(function (r) { return typeof r.interlinked_authority_iris === "number"; });
     if (withInterlink.length >= 2) {
-      var ilDates = withInterlink.map(function (r) { return r.started_at; });
-      var ilCounts = withInterlink.map(function (r) { return r.interlinked_authority_iris; });
+      var ilSeries = successSeries(withInterlink, function (r) { return r.interlinked_authority_iris; }, runSucceeded);
       table.appendChild(growthRowEl({
         label: "Authority IRIs interlinked with other graphs", color: "#7c5ba0",
         sub: "Authority-graph IRIs (people, places, terms) that also have data asserted in at least one other pipeline’s graph — the connective tissue between pipelines."
-      }, ilCounts, ilDates));
+      }, ilSeries));
     }
 
     container.appendChild(table);
@@ -3647,7 +3694,7 @@
     clear(mainEl);
     var wrap = el("div", { class: "home-dash" });
     wrap.appendChild(el("h1", { text: "Graph Delta" }));
-    wrap.appendChild(el("p", { text: "Day-over-day change per graph, from nightly run history. Green = growth, red = shrinkage. Hover a bar, total, or name for detail; switch metrics below." }));
+    wrap.appendChild(el("p", { text: "Change per graph between successful nightly runs. Green = growth, red = shrinkage, hollow dot = that pipeline didn\u2019t run successfully (the next successful run is compared with the last good one). Hover a bar, total, or name for detail; switch metrics below." }));
 
     var switcher = el("div", { class: "metric-switcher" });
     wrap.appendChild(switcher);
