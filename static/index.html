@@ -416,6 +416,160 @@
   }
   .dash-loading { color: var(--muted); font-size: 13px; font-style: italic; }
 
+  /* ---------- Landing page (view:home, the default with no hash) ---------- */
+
+  .landing { max-width: 900px; }
+  .landing-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+  .landing h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 36px;
+    line-height: 1.15;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+  .landing-lead {
+    font-size: 17px;
+    color: var(--ink-soft);
+    max-width: 640px;
+    margin: 0 0 22px;
+    text-wrap: pretty;
+  }
+  .landing-search {
+    display: flex;
+    gap: 8px;
+    max-width: 560px;
+  }
+  .landing-search input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+  }
+  .landing-search input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .landing-search button, .landing-btn {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--surface);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .landing-btn.ghost { background: transparent; color: var(--accent-strong); border-color: var(--line); }
+  .landing-btn.ghost:hover { border-color: var(--accent); }
+
+  .landing-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+    margin: 26px 0 0;
+    padding: 14px 0 0;
+    border-top: 1px solid var(--line);
+  }
+  .landing-stat .n {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    display: block;
+  }
+  .landing-stat .lbl { font-size: 12px; color: var(--muted); }
+
+  .landing-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+  }
+  .landing-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--card-color, var(--accent));
+    border-radius: 10px;
+    padding: 14px 16px 16px;
+    text-align: left;
+    font-family: var(--font-body);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .landing-card:hover { border-color: var(--accent); border-left-color: var(--card-color, var(--accent)); box-shadow: var(--shadow); }
+  .landing-card .t { font-weight: 600; font-size: 15px; display: block; }
+  .landing-card .d { font-size: 13px; color: var(--ink-soft); display: block; margin-top: 4px; line-height: 1.45; }
+  .landing-card .go { font-family: var(--font-mono); font-size: 11px; color: var(--accent); display: block; margin-top: 10px; }
+
+  .landing-panels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+  }
+  .landing-panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .landing-panel h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 19px;
+    margin: 0;
+  }
+  .landing-panel p { margin: 0; font-size: 14px; color: var(--ink-soft); }
+  .landing-panel .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }
+  .landing-panel .badges { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 12.5px; }
+  .landing-panel .badges svg { width: 20px; height: 20px; }
+  .landing-panel .badges svg + svg { background: #1d1d1b; border-radius: 3px; padding: 4px 1px 2px; height: 16px; }
+  .landing-run {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    align-items: center;
+  }
+
+  .landing-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .landing-links a {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 12px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    text-decoration: none;
+  }
+  .landing-links a:hover { border-color: var(--accent); }
+  .landing-links .t { font-weight: 600; font-size: 14px; }
+  .landing-links .u { font-family: var(--font-mono); font-size: 12px; color: var(--accent); grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+  .landing-links .d { font-size: 13px; color: var(--ink-soft); }
+
+  @media (max-width: 560px) {
+    .landing h1 { font-size: 28px; }
+    .landing-links a { grid-template-columns: 1fr; }
+    .landing-links .u { grid-column: 1; grid-row: auto; }
+  }
+
   /* ---------- Nightly run history (Data science view) ----------
      A month calendar (green/red day tiles) plus a persistent detail panel
      next to it -- clicking a tile updates the panel, which otherwise
@@ -1352,6 +1506,7 @@
     <div class="rail-section" id="rail-views">
       <div class="rail-heading"><span>Views</span></div>
       <ul class="rail-graphs">
+        <li><button class="rail-graph-btn" data-view="home"><span>Home</span></button></li>
         <li><button class="rail-graph-btn" data-view="archive"><span>Archive</span></button></li>
         <li><button class="rail-graph-btn" data-view="books"><span>Books</span></button></li>
         <li><button class="rail-graph-btn" data-view="person"><span>Person</span></button></li>
@@ -2077,7 +2232,8 @@
     else if (viewName === "events") renderEventsLanding();
     else if (viewName === "datascience") renderDataScience();
     else if (viewName === "growth") renderGrowth();
-    else renderPersonLanding(); // "person", and the fallback default
+    else if (viewName === "person") renderPersonLanding();
+    else renderLanding(); // "home", and the fallback default
   }
 
   // ---------- Person / Archive / Books: randomly-centered explore landings ----------
@@ -2315,16 +2471,175 @@
     renderPage();
   }
 
-  // Brand/logo click -- goes to the new default experience (Person,
-  // randomly centered), same as landing on the bare site with no hash.
-  function navigateHome() { navigateToView("person"); }
+  // ---------- Landing page (view:home) ----------
+  // What a first-time visitor sees on the bare site: what the Knowledge
+  // Base is, where to start, what links outward (Wikidata, RKD), the
+  // monitoring views, and where to query the data directly. Live numbers
+  // come from the last nightly run (fetchRunHistory) -- one small JSON
+  // fetch, no SPARQL -- so the page is instant even on a cold store.
+  var LANDING_EXPLORE = [
+    { view: "archive", title: "Archives", desc: "Archival collections and their finding aids, from fonds down to single files.", graph: "https://iisg.amsterdam/graph/archive" },
+    { view: "books", title: "Books & serials", desc: "The library catalogue: books, periodicals, posters, audio and video.", graph: "https://iisg.amsterdam/graph/biblio" },
+    { view: "person", title: "Persons & organizations", desc: "Who created, is depicted in, or is written about in the collections.", graph: "https://iisg.amsterdam/graph/authority" },
+    { view: "events", title: "Events@IISG", desc: "Talks, exhibitions and conferences at the institute, newest first.", graph: "https://iisg.amsterdam/graph/events" }
+  ];
+
+  var LANDING_LINKS = [
+    { href: "https://kg.zijdeman.nl", title: "Query the Knowledge Graph", desc: "SPARQL against the QLever store, with autocompletion.", url: "kg.zijdeman.nl" },
+    { href: "https://graphs.zijdeman.nl", title: "APIs", desc: "Programmatic access to the named graphs.", url: "graphs.zijdeman.nl" },
+    { href: "https://github.com/knaw-iisg/", title: "Source code", desc: "All pipelines and this viewer, MIT licensed.", url: "github.com/knaw-iisg" }
+  ];
+
+  function landingSectionEl(heading) {
+    var s = el("div", { class: "dash-section" });
+    s.appendChild(el("div", { class: "dash-heading", text: heading }));
+    return s;
+  }
+
+  function landingStatEl(n, label) {
+    return el("div", { class: "landing-stat" }, [
+      el("span", { class: "n", text: n }),
+      el("span", { class: "lbl", text: label })
+    ]);
+  }
+
+  function renderLanding() {
+    currentUri = null;
+    renderTrail();
+    clear(mainEl);
+    var wrap = el("div", { class: "landing" });
+
+    // Hero
+    wrap.appendChild(el("p", { class: "landing-eyebrow", text: "International Institute of Social History" }));
+    wrap.appendChild(el("h1", { text: "Explore the IISG Knowledge Base." }));
+    wrap.appendChild(el("p", { class: "landing-lead", text: "Find metadata on archives, books, collections and datasets. Follow up on organizations, persons and places, or check out the latest events at the IISG." }));
+
+    var form = el("form", { class: "landing-search", role: "search" });
+    var input = el("input", { type: "search", placeholder: "Search for a person, union, place, book…", "aria-label": "Search the Knowledge Base", autocomplete: "off", spellcheck: "false" });
+    form.appendChild(input);
+    form.appendChild(el("button", { type: "submit", text: "Search" }));
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var term = input.value.trim();
+      if (term.length < 2) { input.focus(); return; }
+      searchInput.value = term;
+      runSearch(term);
+    });
+    wrap.appendChild(form);
+
+    var ex = el("div", { class: "empty-examples" });
+    ["dockworkers", "Rotterdam", "Emma Goldman", "Karl Marx"].forEach(function (term) {
+      var b = el("button", { class: "chip-btn", text: term });
+      b.addEventListener("click", function () { searchInput.value = term; runSearch(term); });
+      ex.appendChild(b);
+    });
+    wrap.appendChild(ex);
+
+    var stats = el("div", { class: "landing-stats" });
+    wrap.appendChild(stats);
+
+    // Explore
+    var exploreSec = landingSectionEl("Start exploring");
+    var cards = el("div", { class: "landing-cards" });
+    LANDING_EXPLORE.forEach(function (c) {
+      var card = el("button", { class: "landing-card", style: "--card-color: " + graphInfo(c.graph).color }, [
+        el("span", { class: "t", text: c.title }),
+        el("span", { class: "d", text: c.desc }),
+        el("span", { class: "go", text: c.view === "events" ? "See what’s on →" : "Start somewhere random →" })
+      ]);
+      card.addEventListener("click", function () { navigateToView(c.view); });
+      cards.appendChild(card);
+    });
+    exploreSec.appendChild(cards);
+    wrap.appendChild(exploreSec);
+
+    // Linked Data + Monitoring, side by side
+    var panelsSec = el("div", { class: "dash-section" });
+    var panels = el("div", { class: "landing-panels" });
+
+    var linked = el("div", { class: "landing-panel" });
+    linked.appendChild(el("h2", { text: "Linked beyond the IISG" }));
+    linked.appendChild(el("p", { text: "The Knowledge Base is Linked Data, so it can point outside our own organisation. Open a person and see their links to Wikidata and RKD Artists — including portraits, where those sources have one." }));
+    linked.appendChild(el("div", { class: "badges" }, [wikidataIconEl(), rkdIconEl(), el("span", { text: "Wikidata · RKD Artists · ORCID" })]));
+    var linkedActions = el("div", { class: "actions" });
+    var personBtn = el("button", { class: "landing-btn ghost", text: "Meet a random person" });
+    personBtn.addEventListener("click", function () { navigateToView("person"); });
+    linkedActions.appendChild(personBtn);
+    linked.appendChild(linkedActions);
+    panels.appendChild(linked);
+
+    var monitor = el("div", { class: "landing-panel" });
+    monitor.appendChild(el("h2", { text: "Track daily updates" }));
+    monitor.appendChild(el("p", { text: "The graph is rebuilt every night from the IISG’s source systems. The monitoring views show each run and what changed — such as newly entered metadata." }));
+    var runLine = el("div", { class: "landing-run", text: "Loading last run…" });
+    monitor.appendChild(runLine);
+    var monActions = el("div", { class: "actions" });
+    [["datascience", "Graph runs"], ["growth", "What changed (Delta)"]].forEach(function (v) {
+      var b = el("button", { class: "landing-btn ghost", text: v[1] });
+      b.addEventListener("click", function () { navigateToView(v[0]); });
+      monActions.appendChild(b);
+    });
+    monitor.appendChild(monActions);
+    panels.appendChild(monitor);
+
+    panelsSec.appendChild(panels);
+    wrap.appendChild(panelsSec);
+
+    // Open data & code
+    var openSec = landingSectionEl("Open data & open source");
+    var links = el("ul", { class: "landing-links" });
+    LANDING_LINKS.forEach(function (l) {
+      links.appendChild(el("li", null, [
+        el("a", { href: l.href, target: "_blank", rel: "noopener" }, [
+          el("span", { class: "t", text: l.title }),
+          el("span", { class: "u", text: l.url + " ↗" }),
+          el("span", { class: "d", text: l.desc })
+        ])
+      ]));
+    });
+    openSec.appendChild(links);
+    wrap.appendChild(openSec);
+
+    mainEl.appendChild(wrap);
+
+    var gen = viewGeneration;
+    fetchRunHistory().then(function (runs) {
+      if (gen !== viewGeneration) return;
+      var last = runs && runs.length ? runs[runs.length - 1] : null;
+      if (!last) { runLine.textContent = "No runs recorded yet."; return; }
+      var counts = last.graph_counts || {};
+      var total = 0, records = 0;
+      Object.keys(counts).forEach(function (g) {
+        total += counts[g];
+        if (g !== IDENTITY_GRAPH) records += (last.graph_subject_counts || {})[g] || 0;
+      });
+      stats.appendChild(landingStatEl(fmtNum(total), "statements (triples)"));
+      if (records) stats.appendChild(landingStatEl(fmtNum(records), "described things"));
+      if (last.interlinked_authority_iris) stats.appendChild(landingStatEl(fmtNum(last.interlinked_authority_iris), "interlinked identities"));
+      stats.appendChild(landingStatEl(fmtRunDateShort(last.started_at), "last updated"));
+
+      clear(runLine);
+      var status = runStatus(last);
+      runLine.appendChild(el("span", { text: "Last run " + fmtRunDate(last.started_at) }));
+      runLine.appendChild(el("span", { class: "run-badge " + status.cls, text: status.text }));
+      runLine.appendChild(el("span", { text: fmtDuration(last.duration_s) }));
+    }).catch(function () {
+      if (gen !== viewGeneration) return;
+      stats.remove();
+      runLine.textContent = "Run history unavailable right now.";
+    });
+  }
+
+  // Brand/logo click -- back to the landing page, same as the bare site
+  // with no hash.
+  function navigateHome() { navigateToView("home"); }
 
   function syncFromHash() {
     var raw = decodeURIComponent(location.hash.replace(/^#/, ""));
     if (raw === currentUri) return;
     if (raw.indexOf("view:") === 0) { currentUri = null; renderTrail(); renderView(raw.slice(5)); return; }
     if (raw && /^https?:\/\//i.test(raw)) { currentUri = raw; loadEntity(raw); }
-    else { currentUri = null; renderTrail(); renderView("person"); }
+    else { currentUri = null; renderTrail(); renderView("home"); }
   }
 
   window.addEventListener("popstate", syncFromHash);
@@ -5184,11 +5499,11 @@
     history.replaceState({ view: initialHash.slice(5) }, "", "#" + initialHash);
     renderView(initialHash.slice(5));
   } else {
-    // Default landing, no hash at all: the Person view (randomly centered
-    // Explore map), not the old pipeline dashboard -- see renderView().
-    renderView("person");
+    // Default landing, no hash at all: the landing page -- see
+    // renderLanding().
+    renderView("home");
   }
-  searchInput.focus();
+  searchInput.focus({ preventScroll: true });
 })();
 </script>
 </body>
