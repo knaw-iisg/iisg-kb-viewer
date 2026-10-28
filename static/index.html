@@ -1502,6 +1502,27 @@
     overflow: hidden;
   }
   .media-main img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+  .media-main img[hidden] { display: none; }
+  /* Stand-in when the image server hangs or a scan fails -- see
+     imageUnavailableEl. Shared by the gallery and the lightbox stage. */
+  .media-unavailable {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    max-width: 300px;
+    padding: 16px;
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+  .media-unavailable[hidden] { display: none; }
+  .media-unavailable svg { width: 40px; height: 40px; opacity: 0.7; }
+  .media-unavailable strong { color: var(--ink-soft); font-size: 14px; }
+  .lb-stage .media-unavailable { position: absolute; color: #9fb0b9; }
+  .lb-stage .media-unavailable strong { color: #e7edf1; }
   .media-main:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .media-meta {
     display: flex;
@@ -5493,6 +5514,35 @@
     return img.service + "/full/!" + px + "," + px + "/0/default.jpg";
   }
 
+  // IISG's image server, when down, tends to hang rather than refuse --
+  // no error event for minutes. So a slot that's still empty after this
+  // long shows imageUnavailableEl's "not reachable" stand-in; the real
+  // image still replaces it if it lands later.
+  var IMAGE_STALL_MS = 8000;
+
+  var IMAGE_OFF_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5-4 4"/><line x1="3" y1="3" x2="21" y2="21"/></svg>';
+
+  // Returns the stand-in element plus show(reason): "stalled" (server not
+  // answering) or "failed" (this one scan errored), or null to hide it.
+  function imageUnavailableEl() {
+    var icon = el("span", {});
+    icon.innerHTML = IMAGE_OFF_ICON;
+    var title = el("strong", {});
+    var body = el("span", {});
+    var box = el("div", { class: "media-unavailable", role: "status", hidden: "" }, [icon.firstChild, title, body]);
+    return {
+      el: box,
+      show: function (reason) {
+        if (!reason) { box.hidden = true; return; }
+        title.textContent = reason === "stalled" ? "Image server not reachable" : "Image not available";
+        body.textContent = reason === "stalled"
+          ? "IISG’s image server (access.iisg.amsterdam) isn’t responding right now. The scan will appear here once it’s back."
+          : "This scan couldn’t be loaded from IISG’s image server.";
+        box.hidden = false;
+      }
+    };
+  }
+
   function imageAccessNote(img) {
     if (!img.level || img.level === "open") return null;
     return el("span", { class: "media-note", title: img.conditions || "", text: "Reduced size (rights)" });
@@ -5515,8 +5565,17 @@
     var selected = 0;
     var main = el("button", { class: "media-main", type: "button" });
     var mainImg = el("img", { alt: "" });
+    var unavailable = imageUnavailableEl();
+    var stallTimer = null;
     main.appendChild(mainImg);
+    main.appendChild(unavailable.el);
     container.appendChild(main);
+
+    function showUnavailable(reason) {
+      clearTimeout(stallTimer);
+      mainImg.hidden = !!reason;
+      unavailable.show(reason);
+    }
 
     var meta = el("div", { class: "media-meta" });
     var countText = images.length === 1 ? "1 image" : fmtNum(images.length) + " images";
@@ -5544,6 +5603,10 @@
     function select(i) {
       selected = i;
       var img = images[i];
+      showUnavailable(null);
+      stallTimer = setTimeout(function () {
+        if (!mainImg.naturalWidth) showUnavailable("stalled");
+      }, IMAGE_STALL_MS);
       mainImg.src = iiifSizedUrl(img, 420);
       mainImg.alt = ctx.label + (images.length > 1 ? " — image " + (i + 1) + " of " + images.length : "");
       main.setAttribute("aria-label", "Open image " + (i + 1) + " of " + images.length + " full screen");
@@ -5552,10 +5615,12 @@
       if (note) noteSlot.appendChild(note);
       thumbs.forEach(function (t, j) { t.setAttribute("aria-current", j === i ? "true" : "false"); });
     }
+    mainImg.onload = function () { showUnavailable(null); };
     mainImg.onerror = function () {
       // Sized request failed -- fall back to the 200px thumbnail once.
       var img = images[selected];
       if (img.thumb && mainImg.src !== img.thumb) mainImg.src = img.thumb;
+      else showUnavailable("failed");
     };
     main.addEventListener("click", function () {
       openImageLightbox(images, selected, ctx, function (lastIndex) {
@@ -5590,7 +5655,10 @@
     var img = el("img", { class: "lb-img", alt: "", draggable: "false" });
     var prevBtn = el("button", { class: "lb-btn lb-prev", type: "button", "aria-label": "Previous image", text: "‹" });
     var nextBtn = el("button", { class: "lb-btn lb-next", type: "button", "aria-label": "Next image", text: "›" });
+    var unavailable = imageUnavailableEl();
+    var stallTimer = null;
     stage.appendChild(img);
+    stage.appendChild(unavailable.el);
     if (images.length > 1) { stage.appendChild(prevBtn); stage.appendChild(nextBtn); }
     box.appendChild(stage);
 
@@ -5620,6 +5688,17 @@
       count.textContent = fmtNum(index + 1) + " / " + fmtNum(images.length);
       img.alt = ctx.label + " — image " + (index + 1) + " of " + images.length;
       var large = iiifSizedUrl(im, stageSize());
+      clearTimeout(stallTimer);
+      unavailable.show(null);
+      img.style.visibility = "";
+      stallTimer = setTimeout(function () {
+        // Only when nothing at all is showing -- a blurred thumbnail
+        // waiting on its sharp copy is still worth looking at.
+        if (token === loadToken && !img.naturalWidth) {
+          img.style.visibility = "hidden";
+          unavailable.show("stalled");
+        }
+      }, IMAGE_STALL_MS);
       if (im.thumb) {
         img.src = im.thumb;
         img.classList.add("loading");
@@ -5642,10 +5721,21 @@
       }
       loader.onload = function () {
         if (token !== loadToken) return;
+        clearTimeout(stallTimer);
+        unavailable.show(null);
+        img.style.visibility = "";
         img.src = large;
         settle();
       };
-      loader.onerror = function () { if (token === loadToken) settle(); };
+      loader.onerror = function () {
+        if (token !== loadToken) return;
+        settle();
+        if (!img.naturalWidth) {
+          clearTimeout(stallTimer);
+          img.style.visibility = "hidden";
+          unavailable.show("failed");
+        }
+      };
       loader.src = large;
       [index - 1, index + 1].forEach(function (n) {
         if (images.length > 1) new Image().src = iiifSizedUrl(images[(n + images.length) % images.length], stageSize());
@@ -5686,6 +5776,7 @@
     function close() {
       if (activeLightbox !== handle) return;
       activeLightbox = null;
+      clearTimeout(stallTimer);
       document.removeEventListener("keydown", onKey, true);
       window.removeEventListener("hashchange", close);
       window.removeEventListener("popstate", close);
