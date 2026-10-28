@@ -1482,6 +1482,134 @@
     margin-bottom: 16px;
   }
 
+  /* IIIF scans (iisg-iiif): gallery left, the record's facts to its right
+     -- see renderRecordImages. Wraps to stacked below ~760px. */
+  .media-row { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; margin-bottom: 8px; }
+  .media-gallery { flex: 0 1 420px; min-width: 0; max-width: 100%; }
+  .media-facts { flex: 1 1 320px; min-width: 0; }
+  .media-facts > .hero-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .media-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface-alt);
+    cursor: zoom-in;
+    overflow: hidden;
+  }
+  .media-main img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+  .media-main:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .media-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    margin: 8px 0 6px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .media-meta a { color: var(--accent); text-decoration: none; }
+  .media-meta a:hover { text-decoration: underline; }
+  .media-note { color: var(--warn); }
+  .media-strip {
+    display: flex;
+    /* width:0 + min-width:100% -- fill the column but contribute nothing
+       to its intrinsic width, or a long strip widens the whole page grid
+       on phones instead of scrolling. */
+    width: 0;
+    min-width: 100%;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 2px 2px 6px;
+    scroll-snap-type: x proximity;
+  }
+  .media-thumb {
+    flex: 0 0 auto;
+    width: 64px;
+    height: 64px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface-alt);
+    overflow: hidden;
+    cursor: pointer;
+    scroll-snap-align: start;
+  }
+  .media-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .media-thumb[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  .media-thumb:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* Full-screen carousel over one record's images. Always dark, whatever
+     the page theme -- photos read best on a near-black surround. */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    background: #0b1013;
+    color: #e7edf1;
+  }
+  .lb-top { display: flex; align-items: center; gap: 14px; padding: 10px 14px; }
+  .lb-count { font-family: var(--font-mono); font-size: 12.5px; color: #9fb0b9; flex-shrink: 0; }
+  .lb-title { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lb-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e7edf1;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .lb-btn:hover { background: rgba(255, 255, 255, 0.16); }
+  .lb-btn:focus-visible { outline: 2px solid #86b3ce; outline-offset: 2px; }
+  .lb-btn:disabled { opacity: 0.3; cursor: default; }
+  .lb-stage {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 64px;
+    touch-action: pan-y pinch-zoom;
+  }
+  .lb-img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; user-select: none; }
+  .lb-img.loading { filter: blur(6px); }
+  .lb-stage .lb-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 46px; height: 46px; font-size: 24px; }
+  .lb-prev { left: 10px; }
+  .lb-next { right: 10px; }
+  .lb-caption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    justify-content: center;
+    padding: 8px 14px 4px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: #9fb0b9;
+    text-align: center;
+  }
+  .lb-caption a { color: #86b3ce; text-decoration: none; }
+  .lb-caption a:hover { text-decoration: underline; }
+  .lb-caption .media-note { color: #d6a44e; }
+  .lb-strip { display: flex; width: 0; min-width: 100%; box-sizing: border-box; gap: 6px; overflow-x: auto; padding: 6px 14px 12px; justify-content: safe center; }
+  .lb-strip .media-thumb { width: 52px; height: 52px; border-color: rgba(255, 255, 255, 0.16); background: #1f2a31; }
+  .lb-strip .media-thumb[aria-current="true"] { border-color: #86b3ce; box-shadow: 0 0 0 2px #86b3ce; }
+  @media (max-width: 560px) {
+    .lb-stage { padding: 0; }
+    .lb-stage .lb-btn { top: auto; bottom: 8px; transform: none; background: rgba(9, 13, 16, 0.7); }
+  }
+
   .download-btn {
     display: inline-block;
     font-family: var(--font-mono);
@@ -1778,6 +1906,7 @@
     { iri: "https://iisg.amsterdam/graph/dataverse", label: "Dataverse", sub: "dataverse-etl · research datasets", color: "#a06b3a" },
     { iri: "https://iisg.amsterdam/graph/orcid", label: "ORCID", sub: "orcid-etl · staff research output", color: "#3a7c6b" },
     { iri: "https://iisg.amsterdam/graph/events", label: "Events", sub: "events-etl · talks, exhibitions, conferences", color: "#a83e6c" },
+    { iri: "https://iisg.amsterdam/graph/iiif", label: "Images", sub: "iisg-iiif · IIIF scans of archive and library items", color: "#b08a2e" },
     { iri: "https://iisg.amsterdam/graph/identity", label: "Identity", sub: "identity-etl · cross-system identifier crosswalk", color: "#6b7280" }
   ];
 
@@ -1788,6 +1917,22 @@
   // Still fully queried for identity-cluster expansion (fetchIdentityCluster)
   // and still shown in the per-pipeline Sources breakdown.
   var IDENTITY_GRAPH = "https://iisg.amsterdam/graph/identity";
+
+  // iisg-iiif's graph: the scans attached to other pipelines' records. Its
+  // own subjects -- a manifest (sdo:MediaObject, named after the record it
+  // illustrates) and one sdo:ImageObject per page -- run to millions and
+  // aren't records anyone browses to on their own; they're shown on the
+  // record they belong to instead (see renderRecordImages). Excluded
+  // alongside IDENTITY_GRAPH from type counts, type browsing and record
+  // totals, so they don't swamp the "kinds of item" tiles.
+  var IIIF_GRAPH = "https://iisg.amsterdam/graph/iiif";
+  var NON_CONTENT_GRAPHS = [IDENTITY_GRAPH, IIIF_GRAPH];
+
+  function isContentGraph(g) { return NON_CONTENT_GRAPHS.indexOf(g) === -1; }
+
+  function contentGraphFilter(v) {
+    return "FILTER(" + v + " NOT IN (" + NON_CONTENT_GRAPHS.map(iriRef).join(", ") + "))";
+  }
 
   var RELATOR_LABELS = {
     cre: "Creator", aut: "Author", edt: "Editor", col: "Collector",
@@ -2935,7 +3080,7 @@
   // green/red bars the Delta view draws per graph.
   function recordCount(run) {
     var counts = run.graph_subject_counts || {}, n = 0;
-    Object.keys(counts).forEach(function (g) { if (g !== IDENTITY_GRAPH) n += counts[g]; });
+    Object.keys(counts).forEach(function (g) { if (isContentGraph(g)) n += counts[g]; });
     return n;
   }
 
@@ -3089,7 +3234,7 @@
       var total = 0, records = 0;
       Object.keys(counts).forEach(function (g) {
         total += counts[g];
-        if (g !== IDENTITY_GRAPH) records += (last.graph_subject_counts || {})[g] || 0;
+        if (isContentGraph(g)) records += (last.graph_subject_counts || {})[g] || 0;
       });
       if (records) stats.appendChild(landingStatEl(fmtNum(records), "records"));
       stats.appendChild(landingStatEl(fmtNum(total), "linked-data facts"));
@@ -3754,7 +3899,7 @@
     sparql(
       "SELECT ?g ?type (COUNT(*) AS ?c) WHERE {\n" +
       "  GRAPH ?g { ?s a ?type }\n" +
-      "  FILTER(?g != " + iriRef(IDENTITY_GRAPH) + ")\n" +
+      "  " + contentGraphFilter("?g") + "\n" +
       "} GROUP BY ?g ?type"
     ).then(function (rows) {
       typeSection.removeChild(typeSection.querySelector(".dash-loading"));
@@ -3850,7 +3995,7 @@
     clear(mainEl);
     var label = pluralType(typeKey);
     mainEl.appendChild(el("div", { class: "results-heading", text: "Loading " + label.toLowerCase() + "\u2026" }));
-    var countQ = "SELECT (COUNT(DISTINCT ?s) AS ?c) WHERE { GRAPH ?g { ?s a " + iriRef(typeUri) + " } FILTER(?g != " + iriRef(IDENTITY_GRAPH) + ") }";
+    var countQ = "SELECT (COUNT(DISTINCT ?s) AS ?c) WHERE { GRAPH ?g { ?s a " + iriRef(typeUri) + " } " + contentGraphFilter("?g") + " }";
     sparql(countQ).then(function (rows) {
       var total = rows.length ? parseInt(rows[0].c.value, 10) : 0;
       renderPagedTypeList(label, typeUri, typeKey, total);
@@ -3863,7 +4008,7 @@
   function fetchTypePage(typeUri, typeKey, offset) {
     var q = "SELECT ?s (SAMPLE(?lbl) AS ?label) (SAMPLE(?g) AS ?graph) WHERE {\n" +
       "  GRAPH ?g { ?s a " + iriRef(typeUri) + " }\n" +
-      "  FILTER(?g != " + iriRef(IDENTITY_GRAPH) + ")\n" +
+      "  " + contentGraphFilter("?g") + "\n" +
       "  OPTIONAL { ?s <http://schema.org/name> ?n1 }\n" +
       "  OPTIONAL { ?s <https://schema.org/name> ?n2 }\n" +
       "  OPTIONAL { ?s <http://www.w3.org/2000/01/rdf-schema#label> ?n3 }\n" +
@@ -4564,12 +4709,17 @@
   // by" statement columns already use for arbitrary predicates, so the
   // vocabulary matches the rest of the page instead of inventing new
   // wording per predicate.
+  // iisg-iiif's links from a record to its own scans: up to hundreds of
+  // pages, all already shown in the record's image gallery -- as graph
+  // stations they'd just crowd out the record's real neighbours.
+  var MEDIA_PREDICATES = { "sdo:image": true, "sdo:thumbnailUrl": true, "iisgv:iiifManifest": true };
+
   function genericOutgoingNeighbors(uri, factRows) {
     var seen = {}, out = [];
     for (var i = 0; i < factRows.length && out.length < 5; i++) {
       var r = factRows[i];
       if (r.o.type !== "uri" || r.o.value === uri) continue;
-      if (curie(r.p.value) === "rdf:type") continue;
+      if (curie(r.p.value) === "rdf:type" || MEDIA_PREDICATES[curie(r.p.value)]) continue;
       if (seen[r.o.value]) continue;
       seen[r.o.value] = true;
       out.push({ uri: r.o.value, label: r.label ? r.label.value : shortLabel(r.o.value), subtitle: shortLabel(r.p.value) });
@@ -5059,6 +5209,8 @@
     // this graph) -- every one of its 555k+ hubs carries the same sdo:name
     // as the real record(s) it links, so without this every search would
     // surface a redundant, content-free hub hit alongside the real one.
+    // Same for iisg-iiif's manifests (https://access.iisg.amsterdam/iiif/...),
+    // each named exactly like the record it illustrates.
     var q = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
       "SELECT DISTINCT ?s ?label ?type WHERE {\n" +
       "  { ?s <http://schema.org/name> ?label }\n" +
@@ -5066,6 +5218,7 @@
       "  UNION { ?s rdfs:label ?label }\n" +
       "  FILTER(CONTAINS(LCASE(STR(?label)), \"" + esc + "\"))\n" +
       "  FILTER(!REGEX(STR(?s), \"^https://iisg\\\\.amsterdam/id/[0-9]+$\"))\n" +
+      "  FILTER(!STRSTARTS(STR(?s), \"https://access.iisg.amsterdam/iiif/\"))\n" +
       "  OPTIONAL { ?s a ?type }\n" +
       "} LIMIT 300";
 
@@ -5268,6 +5421,303 @@
         return { chain: chain, nbhd: nbhd, groupContext: groupContext };
       });
     });
+  }
+
+  // ---------- IIIF images (iisg-iiif) ----------
+  // A findingaid-etl or biblio-etl record that's been digitized carries
+  // iisgv:iiifManifest plus one sdo:image per page; each page is an
+  // sdo:ImageObject with an IIIF Image API base (iisgv:iiifImageService),
+  // a 200px sdo:thumbnailUrl, pixel width/height (QuantitativeValue nodes)
+  // and an iisgv:accessLevel. Requiring the image service is what keeps
+  // events-etl's plain poster images (sdo:image too, no service) out of
+  // this path. Also matches a page itself, so landing on one from the
+  // statement list still shows the picture.
+  var IIIF_SIZE_STEPS = [400, 800, 1200, 1600, 2400];
+
+  function fetchRecordImages(uri) {
+    var q = "PREFIX schema: <https://schema.org/>\n" +
+      "PREFIX iisgv: <https://iisg.amsterdam/vocab/>\n" +
+      "SELECT ?c (SAMPLE(?m0) AS ?m) (SAMPLE(?pos0) AS ?pos) (SAMPLE(?svc0) AS ?svc) (SAMPLE(?thumb0) AS ?thumb)\n" +
+      "       (SAMPLE(?full0) AS ?full) (SAMPLE(?w0) AS ?w) (SAMPLE(?h0) AS ?h) (SAMPLE(?level0) AS ?level)\n" +
+      "       (SAMPLE(?cond0) AS ?cond) (SAMPLE(?credit0) AS ?credit) WHERE {\n" +
+      "  { " + iriRef(uri) + " schema:image ?c } UNION { BIND(" + iriRef(uri) + " AS ?c) }\n" +
+      "  ?c iisgv:iiifImageService ?svc0 .\n" +
+      "  OPTIONAL { ?c schema:isPartOf ?m0 . OPTIONAL { ?m0 schema:creditText ?credit0 } }\n" +
+      "  OPTIONAL { ?c schema:position ?pos0 }\n" +
+      "  OPTIONAL { ?c schema:thumbnailUrl ?thumb0 }\n" +
+      "  OPTIONAL { ?c schema:contentUrl ?full0 }\n" +
+      "  OPTIONAL { ?c schema:width/schema:value ?w0 }\n" +
+      "  OPTIONAL { ?c schema:height/schema:value ?h0 }\n" +
+      "  OPTIONAL { ?c iisgv:accessLevel ?level0 }\n" +
+      "  OPTIONAL { ?c schema:conditionsOfAccess ?cond0 }\n" +
+      "} GROUP BY ?c";
+    return sparql(q).then(function (rows) {
+      var images = rows.map(function (r) {
+        var v = function (k) { return r[k] ? r[k].value : null; };
+        var level = v("level");
+        return {
+          canvas: v("c"),
+          manifest: v("m"),
+          pos: v("pos") ? parseInt(v("pos"), 10) : 0,
+          service: v("svc").replace(/\/+$/, ""),
+          thumb: v("thumb"),
+          full: v("full"),
+          width: v("w") ? parseInt(v("w"), 10) : null,
+          height: v("h") ? parseInt(v("h"), 10) : null,
+          level: level ? level.replace(/^.*\//, "") : null,
+          conditions: v("cond"),
+          credit: v("credit")
+        };
+      }).filter(function (img) { return isLocalUri(img.service); });
+      // Several manifests on one record (a biblio item with more than one
+      // 856) keep their own page order, one manifest after the other.
+      images.sort(function (a, b) {
+        if (a.manifest !== b.manifest) return (a.manifest || "") < (b.manifest || "") ? -1 : 1;
+        return a.pos - b.pos;
+      });
+      return images;
+    });
+  }
+
+  // Never the master scan (contentUrl is full/full -- up to ~6600x9400px):
+  // ask the image server for the size this slot actually shows, rounded up
+  // to a few fixed steps so the browser cache gets hits across views. A
+  // capped image (pictoright/restricted) is handled server-side -- it
+  // redirects an oversized request to the largest copy the public may see.
+  function iiifSizedUrl(img, cssPx) {
+    var want = cssPx * (window.devicePixelRatio || 1);
+    var px = IIIF_SIZE_STEPS[IIIF_SIZE_STEPS.length - 1];
+    for (var i = 0; i < IIIF_SIZE_STEPS.length; i++) {
+      if (IIIF_SIZE_STEPS[i] >= want) { px = IIIF_SIZE_STEPS[i]; break; }
+    }
+    return img.service + "/full/!" + px + "," + px + "/0/default.jpg";
+  }
+
+  function imageAccessNote(img) {
+    if (!img.level || img.level === "open") return null;
+    return el("span", { class: "media-note", title: img.conditions || "", text: "Reduced size (rights)" });
+  }
+
+  function mediaThumbEl(img, i, total, label) {
+    var b = el("button", { class: "media-thumb", type: "button", "aria-label": "Image " + (i + 1) + " of " + total });
+    var t = el("img", { src: img.thumb || iiifSizedUrl(img, 64), alt: "", loading: "lazy" });
+    t.onerror = function () { t.remove(); };
+    b.appendChild(t);
+    return b;
+  }
+
+  // Gallery column of a record page: one large image, a meta line and a
+  // scrollable strip of every page. A strip click swaps the large image;
+  // clicking the large image opens the lightbox at that page. ctx carries
+  // the record's label and its Universal Viewer link (LINKOUT_FIELDS).
+  function renderRecordImages(container, images, ctx) {
+    clear(container);
+    var selected = 0;
+    var main = el("button", { class: "media-main", type: "button" });
+    var mainImg = el("img", { alt: "" });
+    main.appendChild(mainImg);
+    container.appendChild(main);
+
+    var meta = el("div", { class: "media-meta" });
+    var countText = images.length === 1 ? "1 image" : fmtNum(images.length) + " images";
+    meta.appendChild(el("span", { text: countText }));
+    var noteSlot = el("span", {});
+    meta.appendChild(noteSlot);
+    var manifest = images[0].manifest;
+    if (manifest && isSafeHref(manifest)) {
+      meta.appendChild(el("a", { href: manifest, target: "_blank", rel: "noopener", title: "IIIF Presentation manifest -- open in any IIIF viewer", text: "IIIF manifest ↗" }));
+    }
+    container.appendChild(meta);
+
+    var strip = null, thumbs = [];
+    if (images.length > 1) {
+      strip = el("div", { class: "media-strip" });
+      images.forEach(function (img, i) {
+        var b = mediaThumbEl(img, i, images.length, ctx.label);
+        b.addEventListener("click", function () { select(i); });
+        thumbs.push(b);
+        strip.appendChild(b);
+      });
+      container.appendChild(strip);
+    }
+
+    function select(i) {
+      selected = i;
+      var img = images[i];
+      mainImg.src = iiifSizedUrl(img, 420);
+      mainImg.alt = ctx.label + (images.length > 1 ? " — image " + (i + 1) + " of " + images.length : "");
+      main.setAttribute("aria-label", "Open image " + (i + 1) + " of " + images.length + " full screen");
+      clear(noteSlot);
+      var note = imageAccessNote(img);
+      if (note) noteSlot.appendChild(note);
+      thumbs.forEach(function (t, j) { t.setAttribute("aria-current", j === i ? "true" : "false"); });
+    }
+    mainImg.onerror = function () {
+      // Sized request failed -- fall back to the 200px thumbnail once.
+      var img = images[selected];
+      if (img.thumb && mainImg.src !== img.thumb) mainImg.src = img.thumb;
+    };
+    main.addEventListener("click", function () {
+      openImageLightbox(images, selected, ctx, function (lastIndex) {
+        select(lastIndex);
+        if (thumbs[lastIndex]) thumbs[lastIndex].scrollIntoView({ block: "nearest", inline: "nearest" });
+        main.focus({ preventScroll: true });
+      });
+    });
+    select(0);
+  }
+
+  var activeLightbox = null;
+
+  // Full-screen carousel over one record's images: arrow keys / swipe /
+  // buttons to page, Esc or a click on the dark surround to close. Shows
+  // the 200px thumbnail (blurred) at once and swaps in the screen-sized
+  // copy when it lands, preloading both neighbours meanwhile. onClose gets
+  // the index last shown, so the record page follows along.
+  function openImageLightbox(images, start, ctx, onClose) {
+    if (activeLightbox) activeLightbox.close();
+    var index = start;
+    var loadToken = 0;
+    var lastFocus = document.activeElement;
+    var prevOverflow = document.body.style.overflow;
+
+    var box = el("div", { class: "lightbox", role: "dialog", "aria-modal": "true", "aria-label": "Images: " + ctx.label });
+    var count = el("span", { class: "lb-count", "aria-live": "polite" });
+    var closeBtn = el("button", { class: "lb-btn", type: "button", "aria-label": "Close", title: "Close (Esc)", text: "×" });
+    box.appendChild(el("div", { class: "lb-top" }, [count, el("span", { class: "lb-title", text: ctx.label }), closeBtn]));
+
+    var stage = el("div", { class: "lb-stage" });
+    var img = el("img", { class: "lb-img", alt: "", draggable: "false" });
+    var prevBtn = el("button", { class: "lb-btn lb-prev", type: "button", "aria-label": "Previous image", text: "‹" });
+    var nextBtn = el("button", { class: "lb-btn lb-next", type: "button", "aria-label": "Next image", text: "›" });
+    stage.appendChild(img);
+    if (images.length > 1) { stage.appendChild(prevBtn); stage.appendChild(nextBtn); }
+    box.appendChild(stage);
+
+    var caption = el("div", { class: "lb-caption" });
+    box.appendChild(caption);
+
+    var thumbs = [];
+    if (images.length > 1) {
+      var strip = el("div", { class: "lb-strip" });
+      images.forEach(function (im, i) {
+        var b = mediaThumbEl(im, i, images.length, ctx.label);
+        b.addEventListener("click", function () { show(i); });
+        thumbs.push(b);
+        strip.appendChild(b);
+      });
+      box.appendChild(strip);
+    }
+
+    function stageSize() {
+      return Math.max(stage.clientWidth, stage.clientHeight, 400);
+    }
+
+    function show(i) {
+      index = (i + images.length) % images.length;
+      var im = images[index];
+      var token = ++loadToken;
+      count.textContent = (index + 1) + " / " + images.length;
+      img.alt = ctx.label + " — image " + (index + 1) + " of " + images.length;
+      var large = iiifSizedUrl(im, stageSize());
+      if (im.thumb) {
+        img.src = im.thumb;
+        img.classList.add("loading");
+        // Stretch the 200px placeholder to where the real image will sit,
+        // so the swap doesn't jump. Only when the scan's own pixel size is
+        // known; a capped copy may still land smaller than this.
+        if (im.width && im.height) {
+          var cs = getComputedStyle(stage);
+          var boxW = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+          var scale = Math.min(boxW / im.width, stage.clientHeight / im.height, 1);
+          img.style.width = Math.round(im.width * scale) + "px";
+          img.style.height = Math.round(im.height * scale) + "px";
+        }
+      }
+      var loader = new Image();
+      function settle() {
+        img.classList.remove("loading");
+        img.style.width = "";
+        img.style.height = "";
+      }
+      loader.onload = function () {
+        if (token !== loadToken) return;
+        img.src = large;
+        settle();
+      };
+      loader.onerror = function () { if (token === loadToken) settle(); };
+      loader.src = large;
+      [index - 1, index + 1].forEach(function (n) {
+        if (images.length > 1) new Image().src = iiifSizedUrl(images[(n + images.length) % images.length], stageSize());
+      });
+
+      clear(caption);
+      if (images.length > 1) caption.appendChild(el("span", { text: "Image " + (index + 1) + " of " + images.length }));
+      if (im.width && im.height) caption.appendChild(el("span", { text: "Scan " + fmtNum(im.width) + " × " + fmtNum(im.height) + " px" }));
+      var note = imageAccessNote(im);
+      if (note) caption.appendChild(note);
+      if (im.credit) caption.appendChild(el("span", { text: im.credit }));
+      if (im.level === "open" && im.full && isSafeHref(im.full)) {
+        caption.appendChild(el("a", { href: im.full, target: "_blank", rel: "noopener", text: "Full-size image ↗" }));
+      }
+      if (ctx.viewerUrl && isSafeHref(ctx.viewerUrl)) {
+        caption.appendChild(el("a", { href: ctx.viewerUrl, target: "_blank", rel: "noopener", text: "Universal Viewer ↗" }));
+      }
+      thumbs.forEach(function (t, j) { t.setAttribute("aria-current", j === index ? "true" : "false"); });
+      if (thumbs[index]) thumbs[index].scrollIntoView({ block: "nearest", inline: "nearest" });
+    }
+
+    function onKey(e) {
+      if (e.key === "Escape") { e.preventDefault(); close(); }
+      else if (e.key === "ArrowLeft" && images.length > 1) { e.preventDefault(); show(index - 1); }
+      else if (e.key === "ArrowRight" && images.length > 1) { e.preventDefault(); show(index + 1); }
+      else if (e.key === "Home") { e.preventDefault(); show(0); }
+      else if (e.key === "End") { e.preventDefault(); show(images.length - 1); }
+      else if (e.key === "Tab") {
+        // Keep focus inside the dialog.
+        var f = Array.prototype.filter.call(box.querySelectorAll("button, a[href]"), function (n) { return n.offsetParent !== null; });
+        if (!f.length) return;
+        var first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    }
+
+    function close() {
+      if (activeLightbox !== handle) return;
+      activeLightbox = null;
+      document.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("hashchange", close);
+      window.removeEventListener("popstate", close);
+      box.remove();
+      document.body.style.overflow = prevOverflow;
+      if (onClose) onClose(index);
+      else if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+    }
+
+    // Swipe on touch screens; a plain click on the dark surround closes.
+    var touchX = null;
+    stage.addEventListener("pointerdown", function (e) { if (e.pointerType !== "mouse") touchX = e.clientX; });
+    stage.addEventListener("pointerup", function (e) {
+      if (touchX === null) return;
+      var dx = e.clientX - touchX;
+      touchX = null;
+      if (Math.abs(dx) > 40 && images.length > 1) show(dx < 0 ? index + 1 : index - 1);
+    });
+    stage.addEventListener("click", function (e) { if (e.target === stage) close(); });
+    closeBtn.addEventListener("click", close);
+    prevBtn.addEventListener("click", function () { show(index - 1); });
+    nextBtn.addEventListener("click", function () { show(index + 1); });
+
+    var handle = { close: close };
+    activeLightbox = handle;
+    document.addEventListener("keydown", onKey, true);
+    window.addEventListener("hashchange", close);
+    window.addEventListener("popstate", close);
+    document.body.style.overflow = "hidden";
+    document.body.appendChild(box);
+    show(index);
+    closeBtn.focus({ preventScroll: true });
   }
 
   function renderRecord(uri, factRows, sourceRows, inCounts, cluster, hierarchyData, preOrderCtx) {
@@ -5496,7 +5946,32 @@
     } else {
       mainEl.appendChild(heroImageSlot);
     }
-    if (outByPred["sdo:image"]) {
+
+    // ---- IIIF scans (iisg-iiif): gallery on the left, this record's hero
+    // facts moved into the column beside it (factsTarget, below). Laid out
+    // up front, with a placeholder, so the facts don't jump sideways when
+    // the image query lands; on a miss the gallery column is dropped and
+    // the facts simply take the full width again.
+    var hasIiif = !isEventView && !!(outByPred["iisgv:iiifManifest"] || outByPred["iisgv:iiifImageService"]);
+    var factsTarget = mainEl;
+    if (hasIiif) {
+      var mediaGallery = el("div", { class: "media-gallery" }, [el("div", { class: "media-main", "aria-hidden": "true" })]);
+      var mediaFacts = el("div", { class: "media-facts" });
+      heroImageSlot.appendChild(el("div", { class: "media-row" }, [mediaGallery, mediaFacts]));
+      factsTarget = mediaFacts;
+      var viewerUrl = null;
+      for (var vi = 0; vi < LINKOUT_FIELDS.length && !viewerUrl; vi++) {
+        var vrows = outByPred[LINKOUT_FIELDS[vi]];
+        viewerUrl = vrows && vrows.length && (vrows[0].o.type === "uri" ? vrows[0].o.value : literalUrl(vrows[0].o));
+      }
+      fetchRecordImages(uri).then(function (images) {
+        if (currentUri !== uri) return;
+        if (!images.length) { mediaGallery.remove(); return; }
+        renderRecordImages(mediaGallery, images, { label: label, viewerUrl: viewerUrl || null });
+      }).catch(function () { if (currentUri === uri) mediaGallery.remove(); });
+    }
+
+    if (outByPred["sdo:image"] && !hasIiif) {
       var imageQuery = "PREFIX schema: <https://schema.org/>\n" +
         "SELECT ?url ?thumbUrl WHERE {\n" +
         "  " + iriRef(uri) + " schema:image ?img .\n" +
@@ -5628,7 +6103,7 @@
         any = true;
         grid.appendChild(renderHeroGroup(f, rows));
       });
-      if (any) mainEl.appendChild(grid);
+      if (any) factsTarget.appendChild(grid);
 
       if (!view.linkOutPrimary) {
         for (var lo = 0; lo < LINKOUT_FIELDS.length; lo++) {
@@ -5637,7 +6112,7 @@
           if (origUrl) {
             var wrap = el("div", { style: "margin: 4px 0 4px;" });
             wrap.appendChild(el("a", { class: "download-btn", href: origUrl, target: "_blank", rel: "noopener", text: "\u2197 View original / digitized copy" }));
-            mainEl.appendChild(wrap);
+            factsTarget.appendChild(wrap);
             break;
           }
         }

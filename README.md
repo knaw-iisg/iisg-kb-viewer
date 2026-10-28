@@ -1,14 +1,15 @@
 # iisg-kb-viewer
 
 A browser-based viewer for the IISG knowledge graph: the merged output of
-seven ETL pipelines --
+eight ETL pipelines --
 [biblio-etl](https://github.com/knaw-iisg/biblio-etl),
 [archive-etl](https://github.com/knaw-iisg/archive-etl),
 [findingaid-etl](https://github.com/knaw-iisg/findingaid-etl),
 [authorities-etl](https://github.com/knaw-iisg/authorities-etl),
 [dataverse-etl](https://github.com/knaw-iisg/dataverse-etl),
-[orcid-etl](https://github.com/knaw-iisg/orcid-etl) and
-[events-etl](https://github.com/knaw-iisg/events-etl) -- each loaded into its
+[orcid-etl](https://github.com/knaw-iisg/orcid-etl),
+[events-etl](https://github.com/knaw-iisg/events-etl) and
+[iisg-iiif](https://github.com/knaw-iisg/iisg-iiif) -- each loaded into its
 own named graph by [triplestore](https://github.com/knaw-iisg/triplestore).
 Lets you search the graph, browse it by pipeline or by kind of item, and
 trace a single record's connections across pipelines.
@@ -72,6 +73,16 @@ URL for a differently-hosted store.
   a dataset can belong to several catalogs at once via
   `sdo:includedInDataCatalog`, a many-to-many membership, not a
   single-parent chain a breadcrumb could represent.
+- **Scans of digitized items** (iisg-iiif): a finding-aid or catalogue
+  record with an IIIF manifest gets an image gallery beside its facts --
+  one large image, a scrollable strip of every page, a "Reduced size
+  (rights)" note for pages the image server caps (`iisgv:accessLevel`
+  other than `open`) and a link to the manifest itself. Clicking the large
+  image opens a full-screen carousel (arrow keys, swipe, Esc) with the
+  scan's pixel size, credit line and Universal Viewer link per page.
+  Images are always requested at screen size from the IIIF Image API
+  (`{service}/full/!N,N/0/default.jpg`, N in a few fixed steps), never the
+  full-resolution master in `sdo:contentUrl`.
 - **Cross-pipeline interlinking, for free**: an entity's page merges
   statements from every graph that asserts something about that same IRI
   (e.g. a person known to both `authorities-etl` and `orcid-etl`), since
@@ -96,4 +107,12 @@ URL for a differently-hosted store.
   `sdo:image` on any entity (events-etl's `sdo:ImageObject`, preferring its
   nested `sdo:thumbnail` when present) -- fetched with a small follow-up
   query scoped to the record's own URI, since the image node is blank and
-  isn't part of the record's own one-hop statement list.
+  isn't part of the record's own one-hop statement list. iisg-iiif's
+  scans (an `sdo:image` with an `iisgv:iiifImageService`) take the gallery
+  path above instead.
+- **Graphs that aren't records**: identity-etl's hub nodes and iisg-iiif's
+  manifests and pages (millions of `sdo:MediaObject`/`sdo:ImageObject`
+  subjects) are left out of type counts, type browsing, record totals and
+  search (`NON_CONTENT_GRAPHS`), so they don't swamp real records. A
+  record's links to its own scans are also left out of its neighbourhood
+  graph.
