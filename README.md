@@ -82,7 +82,23 @@ URL for a differently-hosted store.
   scan's pixel size, credit line and Universal Viewer link per page.
   Images are always requested at screen size from the IIIF Image API
   (`{service}/full/!N,N/0/default.jpg`, N in a few fixed steps), never the
-  full-resolution master in `sdo:contentUrl`.
+  full-resolution master in `sdo:contentUrl`. If the image server doesn't
+  answer within 8 seconds (it tends to hang rather than fail when down),
+  the slot says so instead of staying blank.
+- **Browsing from item to item**: in the carousel, "Previous/Next item"
+  (or arrowing past the first/last image, or PageUp/PageDown) moves to the
+  neighbouring digitized item in the same series and reopens there. An
+  archive node with scans somewhere below it gets a "Digitized in this
+  collection" strip: one card per direct child that holds scans, with a
+  representative thumbnail and a count, to walk down the hierarchy by.
+- **"From the collections" on the landing page**: a shuffled carousel of
+  digitized *visual* material only -- photos, drawings, prints, picture
+  books, and (once biblio items are digitized) posters and buttons -- not
+  the letters and minutes that make up most of the scans. There's no
+  genre field in the finding aids, so it picks items whose top-level
+  collection is named as a photo/drawing/iconographic/... collection, or
+  catalogue records by `iisgv:form`, at most two per collection so one
+  large photo collection doesn't fill it.
 - **Cross-pipeline interlinking, for free**: an entity's page merges
   statements from every graph that asserts something about that same IRI
   (e.g. a person known to both `authorities-etl` and `orcid-etl`), since

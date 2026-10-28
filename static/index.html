@@ -1565,6 +1565,82 @@
   .media-thumb[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
   .media-thumb:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+  /* "Digitized in this collection": one card per direct child holding
+     scans somewhere below it -- see renderDigitizedChildren. */
+  .dig-section { margin: 18px 0 22px; }
+  .dig-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .dig-heading span { text-transform: none; letter-spacing: 0; }
+  .dig-strip {
+    display: flex;
+    width: 0;
+    min-width: 100%;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 2px 2px 8px;
+    scroll-snap-type: x proximity;
+  }
+  .dig-card {
+    flex: 0 0 140px;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    text-align: left;
+    font-family: var(--font-body);
+    cursor: pointer;
+    overflow: hidden;
+    scroll-snap-align: start;
+  }
+  .dig-card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+  .dig-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .dig-card .thumb { display: block; width: 100%; aspect-ratio: 4 / 5; background: var(--surface-alt); }
+  .dig-card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .dig-card .t {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 7px 8px 2px;
+    font-size: 12.5px;
+    line-height: 1.35;
+  }
+  .dig-card .m { margin: 0 8px 8px; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); }
+  .dig-card .m.coll { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* Landing's "From the collections" carousel -- see fillLandingVisuals. */
+  .landing-visuals .dig-strip { scroll-behavior: smooth; }
+  .landing-visuals .dig-card { flex-basis: 170px; }
+  .carousel-bar { display: flex; align-items: center; gap: 8px; margin: -4px 0 10px; }
+  .carousel-bar .landing-note { margin: 0; flex: 1; }
+  .carousel-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .carousel-btn:hover { border-color: var(--accent); }
+  .carousel-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .carousel-bar .landing-btn { font-size: 13px; padding: 7px 12px; }
+
   /* Full-screen carousel over one record's images. Always dark, whatever
      the page theme -- photos read best on a near-black surround. */
   .lightbox {
@@ -1594,6 +1670,20 @@
   .lb-btn:hover { background: rgba(255, 255, 255, 0.16); }
   .lb-btn:focus-visible { outline: 2px solid #86b3ce; outline-offset: 2px; }
   .lb-btn:disabled { opacity: 0.3; cursor: default; }
+  .lb-item {
+    background: transparent;
+    color: #c9d6dd;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .lb-item:hover { background: rgba(255, 255, 255, 0.08); }
+  .lb-item:focus-visible { outline: 2px solid #86b3ce; outline-offset: 2px; }
+  .lb-item[hidden] { display: none; }
   .lb-stage {
     flex: 1;
     min-height: 0;
@@ -1627,6 +1717,9 @@
   .lb-strip .media-thumb { width: 52px; height: 52px; border-color: rgba(255, 255, 255, 0.16); background: #1f2a31; }
   .lb-strip .media-thumb[aria-current="true"] { border-color: #86b3ce; box-shadow: 0 0 0 2px #86b3ce; }
   @media (max-width: 560px) {
+    .lb-title { display: none; }
+    .lb-top { justify-content: flex-end; }
+    .lb-top .lb-count { margin-right: auto; }
     .lb-stage { padding: 0; }
     .lb-stage .lb-btn { top: auto; bottom: 8px; transform: none; background: rgba(9, 13, 16, 0.7); }
   }
@@ -3035,6 +3128,84 @@
     });
   }
 
+  // "From the collections": a shuffled carousel of digitized *visual*
+  // material -- photos, drawings, prints, posters, buttons -- not page
+  // after page of letters and minutes, which make up most of the ~1M
+  // scans. The finding aids carry no genre field, so it's a heuristic:
+  // the item's top-level collection is named as a photo/drawing/
+  // iconographic/... collection. (Not the item's own physicalDescription:
+  // in archives "photo" there is mostly "Fotokopie" or a newspaper
+  // clipping.) Catalogue records qualify by their iisgv:form (Poster,
+  // Button, ...) once biblio-etl's items get scans too. One photo collection is
+  // ~60% of that pool, so at most VISUALS_PER_COLLECTION picks each.
+  var VISUAL_KEYWORDS = "foto|photo|tekening|drawing|iconograph|picture|poster|affiche|object|button|beeld|prent|caricat|cartoon";
+  var VISUAL_FORM_KEYWORDS = "poster|affiche|button|badge|sticker|photo|foto|postcard|prent|drawing|cartoon";
+  var VISUALS_SHOWN = 18;
+  var VISUALS_PER_COLLECTION = 2;
+
+  function fetchVisualPicks() {
+    var q = "PREFIX schema: <https://schema.org/>\n" +
+      "PREFIX iisgv: <https://iisg.amsterdam/vocab/>\n" +
+      "SELECT ?r ?thumb ?name ?coll ?collName WHERE {\n" +
+      "  {\n" +
+      "    ?r iisgv:iiifManifest ?m .\n" +
+      "    BIND(IRI(STRBEFORE(STR(?r), \"#\")) AS ?coll)\n" +
+      "    ?coll schema:name ?collName .\n" +
+      "    FILTER(REGEX(LCASE(STR(?collName)), \"" + VISUAL_KEYWORDS + "\"))\n" +
+      "  } UNION {\n" +
+      "    ?r iisgv:iiifManifest ?m ; iisgv:form ?coll .\n" +
+      "    ?coll schema:name ?collName .\n" +
+      "    FILTER(REGEX(LCASE(STR(?collName)), \"" + VISUAL_FORM_KEYWORDS + "\"))\n" +
+      "  }\n" +
+      "  ?r schema:thumbnailUrl ?thumb ; schema:name ?name .\n" +
+      "} ORDER BY RAND() LIMIT 150";
+    return sparql(q).then(function (rows) {
+      var perColl = {}, seen = {}, picks = [];
+      rows.forEach(function (r) {
+        var uri = r.r.value, coll = r.coll.value;
+        if (seen[uri] || picks.length >= VISUALS_SHOWN || !isLocalUri(r.thumb.value)) return;
+        if ((perColl[coll] || 0) >= VISUALS_PER_COLLECTION) return;
+        seen[uri] = true;
+        perColl[coll] = (perColl[coll] || 0) + 1;
+        picks.push({
+          uri: uri,
+          label: tidyTitle(r.name.value),
+          collection: r.collName.value,
+          // The record-level thumbnail is 200px wide; cards show ~170px,
+          // so ask the same image for 400px on high-DPI screens.
+          thumb: r.thumb.value.replace("/full/200,/0/", "/full/400,/0/")
+        });
+      });
+      return picks;
+    });
+  }
+
+  function fillLandingVisuals(gen, section, strip) {
+    clear(strip);
+    strip.appendChild(el("div", { class: "dash-loading", text: "Picking a few things from the collections…" }));
+    fetchVisualPicks().then(function (picks) {
+      if (gen !== viewGeneration) return;
+      if (!picks.length) { section.remove(); return; }
+      clear(strip);
+      strip.scrollLeft = 0;
+      picks.forEach(function (p) {
+        var thumb = el("span", { class: "thumb" });
+        var img = el("img", { src: p.thumb, alt: "", loading: "lazy" });
+        img.onerror = function () { img.remove(); };
+        thumb.appendChild(img);
+        var card = el("button", { class: "dig-card", type: "button", title: p.label }, [
+          thumb,
+          el("span", { class: "t", text: p.label }),
+          el("span", { class: "m coll", text: p.collection })
+        ]);
+        card.addEventListener("click", function () { navigate(p.uri); });
+        strip.appendChild(card);
+      });
+    }).catch(function () {
+      if (gen === viewGeneration) section.remove();
+    });
+  }
+
   // "Recently added": the newest records per source. Archives and
   // authorities carry a real per-record date (sdo:sdDatePublished); the
   // catalogue's is stamped in record-number order on each harvest, so the
@@ -3175,6 +3346,24 @@
     exploreSec.appendChild(cards);
     wrap.appendChild(exploreSec);
 
+    // From the collections -- filled in by fillLandingVisuals (removed if
+    // the store has no scans yet)
+    var visualsSec = landingSectionEl("From the collections");
+    visualsSec.classList.add("landing-visuals");
+    var visualsStrip = el("div", { class: "dig-strip" });
+    var prevBtn = el("button", { class: "carousel-btn", type: "button", "aria-label": "Scroll back", text: "‹" });
+    var nextBtn = el("button", { class: "carousel-btn", type: "button", "aria-label": "Scroll forward", text: "›" });
+    var shuffleBtn = el("button", { class: "landing-btn ghost", type: "button", text: "Shuffle" });
+    prevBtn.addEventListener("click", function () { visualsStrip.scrollBy({ left: -visualsStrip.clientWidth * 0.8 }); });
+    nextBtn.addEventListener("click", function () { visualsStrip.scrollBy({ left: visualsStrip.clientWidth * 0.8 }); });
+    shuffleBtn.addEventListener("click", function () { fillLandingVisuals(viewGeneration, visualsSec, visualsStrip); });
+    visualsSec.appendChild(el("div", { class: "carousel-bar" }, [
+      el("p", { class: "landing-note", text: "Photos, drawings and prints from the IISG’s digitized collections." }),
+      prevBtn, nextBtn, shuffleBtn
+    ]));
+    visualsSec.appendChild(visualsStrip);
+    wrap.appendChild(visualsSec);
+
     // Events strip -- filled in by fillLandingEvents (hidden if none)
     var eventsSec = landingSectionEl("Coming up at the IISG");
     var eventsGrid = el("div", { class: "event-grid landing-events" }, [el("div", { class: "dash-loading", text: "Loading events…" })]);
@@ -3244,6 +3433,7 @@
     mainEl.appendChild(wrap);
 
     var gen = viewGeneration;
+    fillLandingVisuals(gen, visualsSec, visualsStrip);
     fillLandingEvents(gen, eventsSec, eventsGrid);
     fillFeaturedPerson(gen, featured);
     fillRecentlyAdded(gen, recentGrid);
@@ -5622,15 +5812,119 @@
       if (img.thumb && mainImg.src !== img.thumb) mainImg.src = img.thumb;
       else showUnavailable("failed");
     };
-    main.addEventListener("click", function () {
-      openImageLightbox(images, selected, ctx, function (lastIndex) {
+    function openAt(i) {
+      openImageLightbox(images, i, ctx, function (lastIndex, leaving) {
+        if (leaving) return;
         select(lastIndex);
         if (thumbs[lastIndex]) thumbs[lastIndex].scrollIntoView({ block: "nearest", inline: "nearest" });
         main.focus({ preventScroll: true });
       });
-    });
+    }
+    main.addEventListener("click", function () { openAt(selected); });
     select(0);
+    var pending = pendingLightbox;
+    pendingLightbox = null;
+    if (pending && pending.uri === ctx.uri && Date.now() - pending.at < 15000) {
+      openAt(pending.last ? images.length - 1 : 0);
+    }
   }
+
+  // ---------- Browsing across digitized records ----------
+  // Direct children of an archive node that hold scans somewhere below
+  // them, each with one representative thumbnail and a count -- a strip
+  // to walk down a collection by, one level at a time, rather than one
+  // flat list of up to ~6,700 items that couldn't be sorted sensibly
+  // (EAD component IRIs sort as text: 1-1-10 before 1-1-2). Digitized
+  // descendants are found first, then mapped to their child-of-uri
+  // ancestor: the other way round (per child, walk down) took ~10s on the
+  // largest archives, this order ~0.15s.
+  var DIGITIZED_CARD_LIMIT = 400;
+
+  function fetchDigitizedChildren(uri) {
+    var part = "(<http://schema.org/isPartOf>|<https://schema.org/isPartOf>)";
+    var q = "SELECT ?c (SAMPLE(?p0) AS ?pos) (SAMPLE(?n0) AS ?name) (SAMPLE(?t) AS ?thumb) (COUNT(DISTINCT ?d) AS ?n) WHERE {\n" +
+      "  { SELECT ?d ?t WHERE { ?d " + part + "+ " + iriRef(uri) + " . ?d <https://schema.org/thumbnailUrl> ?t } }\n" +
+      "  { ?c <http://schema.org/isPartOf> " + iriRef(uri) + " } UNION { ?c <https://schema.org/isPartOf> " + iriRef(uri) + " }\n" +
+      "  ?d " + part + "* ?c .\n" +
+      "  OPTIONAL { { ?c <http://schema.org/position> ?p0 } UNION { ?c <https://schema.org/position> ?p0 } }\n" +
+      "  OPTIONAL { { ?c <http://schema.org/name> ?n0 } UNION { ?c <https://schema.org/name> ?n0 } }\n" +
+      "} GROUP BY ?c";
+    return sparql(q).then(function (rows) {
+      var items = rows.map(function (r) {
+        return {
+          uri: r.c.value,
+          pos: r.pos ? parseFloat(r.pos.value) : Infinity,
+          label: r.name ? tidyTitle(r.name.value) : shortLabel(r.c.value),
+          thumb: r.thumb && isLocalUri(r.thumb.value) ? r.thumb.value : null,
+          n: parseInt(r.n.value, 10)
+        };
+      });
+      items.sort(function (a, b) { return a.pos - b.pos || (a.uri < b.uri ? -1 : 1); });
+      return items;
+    });
+  }
+
+  function renderDigitizedChildren(slot, uri) {
+    fetchDigitizedChildren(uri).then(function (items) {
+      if (currentUri !== uri || !items.length) return;
+      var total = items.reduce(function (s, it) { return s + it.n; }, 0);
+      var section = el("div", { class: "dig-section" });
+      section.appendChild(el("div", { class: "dig-heading" }, [
+        document.createTextNode("Digitized in this collection"),
+        el("span", { text: fmtNum(total) + (total === 1 ? " item" : " items") +
+          (items.length > 1 ? " in " + fmtNum(items.length) + " parts" : "") })
+      ]));
+      var strip = el("div", { class: "dig-strip" });
+      items.slice(0, DIGITIZED_CARD_LIMIT).forEach(function (it) {
+        var thumb = el("span", { class: "thumb" });
+        if (it.thumb) {
+          var img = el("img", { src: it.thumb, alt: "", loading: "lazy" });
+          img.onerror = function () { img.remove(); };
+          thumb.appendChild(img);
+        }
+        var card = el("button", { class: "dig-card", type: "button", title: it.label }, [
+          thumb,
+          el("span", { class: "t", text: it.label }),
+          it.n > 1 ? el("span", { class: "m", text: fmtNum(it.n) + " digitized items" }) : null
+        ]);
+        card.addEventListener("click", function () { navigate(it.uri); });
+        strip.appendChild(card);
+      });
+      section.appendChild(strip);
+      if (items.length > DIGITIZED_CARD_LIMIT) {
+        section.appendChild(el("div", { class: "column-empty", text: "Showing the first " + fmtNum(DIGITIZED_CARD_LIMIT) + " of " + fmtNum(items.length) + " parts." }));
+      }
+      slot.appendChild(section);
+    }).catch(function () { /* a nice-to-have; ignore failures */ });
+  }
+
+  // Previous/next *item* for the lightbox: this record's digitized
+  // siblings under the same parent, in sdo:position order -- so a photo
+  // series can be paged through photo after photo without closing it.
+  function fetchItemNav(uri, parentUri) {
+    var q = "PREFIX iisgv: <https://iisg.amsterdam/vocab/>\n" +
+      "SELECT ?s (SAMPLE(?p0) AS ?pos) (SAMPLE(?n0) AS ?name) WHERE {\n" +
+      "  { ?s <http://schema.org/isPartOf> " + iriRef(parentUri) + " } UNION { ?s <https://schema.org/isPartOf> " + iriRef(parentUri) + " }\n" +
+      "  ?s iisgv:iiifManifest ?m .\n" +
+      "  OPTIONAL { { ?s <http://schema.org/position> ?p0 } UNION { ?s <https://schema.org/position> ?p0 } }\n" +
+      "  OPTIONAL { { ?s <http://schema.org/name> ?n0 } UNION { ?s <https://schema.org/name> ?n0 } }\n" +
+      "} GROUP BY ?s";
+    return sparql(q).then(function (rows) {
+      var items = rows.map(function (r) {
+        return { uri: r.s.value, pos: r.pos ? parseFloat(r.pos.value) : Infinity, label: r.name ? tidyTitle(r.name.value) : shortLabel(r.s.value) };
+      });
+      items.sort(function (a, b) { return a.pos - b.pos || (a.uri < b.uri ? -1 : 1); });
+      var i = items.map(function (it) { return it.uri; }).indexOf(uri);
+      if (i === -1) return null;
+      return { prev: items[i - 1] || null, next: items[i + 1] || null, index: i, total: items.length };
+    }).catch(function () { return null; });
+  }
+
+  // Set just before navigating from one item's lightbox to the next, so
+  // that item's gallery reopens the lightbox straight away (at its first
+  // image, or its last when paging backwards). Expires quickly, so a slow
+  // or failed load never pops a lightbox open on some later visit.
+  var pendingLightbox = null;
 
   var activeLightbox = null;
 
@@ -5649,7 +5943,36 @@
     var box = el("div", { class: "lightbox", role: "dialog", "aria-modal": "true", "aria-label": "Images: " + ctx.label });
     var count = el("span", { class: "lb-count", "aria-live": "polite" });
     var closeBtn = el("button", { class: "lb-btn", type: "button", "aria-label": "Close", title: "Close (Esc)", text: "×" });
-    box.appendChild(el("div", { class: "lb-top" }, [count, el("span", { class: "lb-title", text: ctx.label }), closeBtn]));
+    var itemPrevBtn = el("button", { class: "lb-item", type: "button", hidden: "", text: "‹ Previous item" });
+    var itemNextBtn = el("button", { class: "lb-item", type: "button", hidden: "", text: "Next item ›" });
+    box.appendChild(el("div", { class: "lb-top" }, [count, el("span", { class: "lb-title", text: ctx.label }), itemPrevBtn, itemNextBtn, closeBtn]));
+
+    // Neighbouring digitized items in the same series, once known.
+    var itemNav = null;
+    if (ctx.itemNav) ctx.itemNav.then(function (nav) {
+      if (activeLightbox !== handle || !nav) return;
+      itemNav = nav;
+      if (nav.prev) { itemPrevBtn.hidden = false; itemPrevBtn.title = nav.prev.label; }
+      if (nav.next) { itemNextBtn.hidden = false; itemNextBtn.title = nav.next.label; }
+      show(index); // refresh the caption's "item n of m"
+    });
+
+    function goToItem(item, last) {
+      pendingLightbox = { uri: item.uri, last: !!last, at: Date.now() };
+      close(true);
+      navigate(item.uri, { preserveScroll: true });
+    }
+    itemPrevBtn.addEventListener("click", function () { goToItem(itemNav.prev, false); });
+    itemNextBtn.addEventListener("click", function () { goToItem(itemNav.next, false); });
+
+    // Arrow keys / swipe / ‹ › step through images, and past either end
+    // into the neighbouring item when there is one; wrap around otherwise.
+    function step(delta) {
+      var target = index + delta;
+      if (target >= images.length && itemNav && itemNav.next) return goToItem(itemNav.next, false);
+      if (target < 0 && itemNav && itemNav.prev) return goToItem(itemNav.prev, true);
+      if (images.length > 1) show(target);
+    }
 
     var stage = el("div", { class: "lb-stage" });
     var img = el("img", { class: "lb-img", alt: "", draggable: "false" });
@@ -5659,7 +5982,7 @@
     var stallTimer = null;
     stage.appendChild(img);
     stage.appendChild(unavailable.el);
-    if (images.length > 1) { stage.appendChild(prevBtn); stage.appendChild(nextBtn); }
+    if (images.length > 1 || ctx.itemNav) { stage.appendChild(prevBtn); stage.appendChild(nextBtn); }
     box.appendChild(stage);
 
     var caption = el("div", { class: "lb-caption" });
@@ -5742,7 +6065,8 @@
       });
 
       clear(caption);
-      if (images.length > 1) caption.appendChild(el("span", { text: "Image " + (index + 1) + " of " + images.length }));
+      if (images.length > 1) caption.appendChild(el("span", { text: "Image " + fmtNum(index + 1) + " of " + fmtNum(images.length) }));
+      if (itemNav && itemNav.total > 1) caption.appendChild(el("span", { text: "Item " + fmtNum(itemNav.index + 1) + " of " + fmtNum(itemNav.total) + " in this series" }));
       if (im.width && im.height) caption.appendChild(el("span", { text: "Scan " + fmtNum(im.width) + " × " + fmtNum(im.height) + " px" }));
       var note = imageAccessNote(im);
       if (note) caption.appendChild(note);
@@ -5759,8 +6083,10 @@
 
     function onKey(e) {
       if (e.key === "Escape") { e.preventDefault(); close(); }
-      else if (e.key === "ArrowLeft" && images.length > 1) { e.preventDefault(); show(index - 1); }
-      else if (e.key === "ArrowRight" && images.length > 1) { e.preventDefault(); show(index + 1); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); step(-1); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
+      else if (e.key === "PageUp" && itemNav && itemNav.prev) { e.preventDefault(); goToItem(itemNav.prev, false); }
+      else if (e.key === "PageDown" && itemNav && itemNav.next) { e.preventDefault(); goToItem(itemNav.next, false); }
       else if (e.key === "Home") { e.preventDefault(); show(0); }
       else if (e.key === "End") { e.preventDefault(); show(images.length - 1); }
       else if (e.key === "Tab") {
@@ -5773,7 +6099,9 @@
       }
     }
 
-    function close() {
+    // leaving: true when closing only to open the neighbouring item --
+    // the record page underneath is about to be replaced anyway.
+    function close(leaving) {
       if (activeLightbox !== handle) return;
       activeLightbox = null;
       clearTimeout(stallTimer);
@@ -5782,7 +6110,7 @@
       window.removeEventListener("popstate", close);
       box.remove();
       document.body.style.overflow = prevOverflow;
-      if (onClose) onClose(index);
+      if (onClose) onClose(index, leaving === true);
       else if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
     }
 
@@ -5793,12 +6121,12 @@
       if (touchX === null) return;
       var dx = e.clientX - touchX;
       touchX = null;
-      if (Math.abs(dx) > 40 && images.length > 1) show(dx < 0 ? index + 1 : index - 1);
+      if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1);
     });
     stage.addEventListener("click", function (e) { if (e.target === stage) close(); });
     closeBtn.addEventListener("click", close);
-    prevBtn.addEventListener("click", function () { show(index - 1); });
-    nextBtn.addEventListener("click", function () { show(index + 1); });
+    prevBtn.addEventListener("click", function () { step(-1); });
+    nextBtn.addEventListener("click", function () { step(1); });
 
     var handle = { close: close };
     activeLightbox = handle;
@@ -6058,7 +6386,13 @@
       fetchRecordImages(uri).then(function (images) {
         if (currentUri !== uri) return;
         if (!images.length) { mediaGallery.remove(); return; }
-        renderRecordImages(mediaGallery, images, { label: label, viewerUrl: viewerUrl || null });
+        var parentRow = (outByPred["sdo:isPartOf"] || []).filter(function (r) { return r.o.type === "uri"; })[0];
+        renderRecordImages(mediaGallery, images, {
+          uri: uri,
+          label: label,
+          viewerUrl: viewerUrl || null,
+          itemNav: parentRow ? fetchItemNav(uri, parentRow.o.value) : null
+        });
       }).catch(function () { if (currentUri === uri) mediaGallery.remove(); });
     }
 
@@ -6248,6 +6582,11 @@
     // leaf -- which may have nothing but a name and a handful of siblings --
     // still leads with what it actually asserts about itself, not with a
     // list of its neighbors' names.
+    if (view && HIERARCHICAL_TYPES[view.type]) {
+      var digitizedSlot = el("div", {});
+      mainEl.appendChild(digitizedSlot);
+      renderDigitizedChildren(digitizedSlot, uri);
+    }
     mainEl.appendChild(hierarchyTreeSlot);
     mainEl.appendChild(creatorWorksSlot);
     mainEl.appendChild(creationsSlot);
