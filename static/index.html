@@ -1405,6 +1405,124 @@
     font-weight: 600;
   }
 
+  /* ---------- Datasets view (view:datasets) -- see renderDatasetsView ---------- */
+  .ds-view { max-width: 980px; }
+  .ds-view h1 { font-family: var(--font-display); font-size: 30px; margin: 4px 0 6px; }
+  .ds-lead { color: var(--ink-soft); font-size: 15px; margin: 0 0 18px; max-width: 70ch; }
+  .ds-lead a { color: var(--accent); }
+  .dcat-panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+  }
+  .dcat-panel h2 { font-size: 14px; margin: 0 0 2px; }
+  .dcat-panel p { font-size: 13px; color: var(--ink-soft); margin: 0 0 10px; }
+  .dcat-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px 22px; }
+  .dcat-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: baseline; font-size: 13px; }
+  .dcat-row .k { font-weight: 600; }
+  .dcat-row .n { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+  .dcat-row .map { grid-column: 1 / -1; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); }
+  .dcat-bar { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: var(--surface-alt); overflow: hidden; }
+  .dcat-bar span { display: block; height: 100%; background: var(--good); }
+  .dcat-row.partial .dcat-bar span { background: var(--warn); }
+  .dcat-row.none .k { color: var(--crit); }
+  .dcat-panel details { margin-top: 12px; }
+  .dcat-panel summary { cursor: pointer; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+  .dcat-panel details .dcat-rows { margin-top: 10px; }
+
+  .ds-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .ds-toolbar input[type="search"], .ds-toolbar select {
+    font: inherit;
+    font-size: 13.5px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    min-width: 0;
+  }
+  /* width:0 -- a <select> is otherwise as wide as its longest option (some
+     catalog names are long), which widens the whole page on phones. */
+  .ds-toolbar input[type="search"] { flex: 1 1 220px; width: 0; }
+  .ds-toolbar select { flex: 1 1 150px; width: 0; }
+  .ds-toolbar .landing-btn { font-size: 13px; padding: 8px 12px; }
+  .ds-count { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin: 4px 0 12px; }
+  .ds-count button { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+  .ds-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .ds-card {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--card-color, var(--accent));
+    border-radius: 10px;
+    padding: 13px 16px;
+  }
+  .ds-card .ttl {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: left;
+    font: inherit;
+    font-weight: 600;
+    font-size: 15.5px;
+    line-height: 1.35;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .ds-card .ttl:hover { color: var(--accent-strong); text-decoration: underline; }
+  .ds-card .meta { font-size: 12.5px; color: var(--ink-soft); margin: 4px 0 6px; }
+  .ds-card .desc {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin: 0 0 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .ds-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+  .ds-chip {
+    font-size: 11.5px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    background: var(--bg);
+  }
+  .ds-chip.subject { background: var(--accent-soft); border-color: transparent; color: var(--accent-strong); }
+  .ds-foot { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+  .ds-foot a { color: var(--accent); text-decoration: none; }
+  .ds-foot a:hover { text-decoration: underline; }
+  .ds-licence { border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; color: var(--ink-soft); }
+  .ds-more { margin-top: 14px; }
+
+  /* Dataset record page: facts grouped by DCAT-AP-NL 3.0 obligation --
+     see renderDcatDatasetFacts. */
+  .dcat-group-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 14px 0 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .dcat-group-heading:first-child { margin-top: 0; }
+  .dcat-group-heading span { text-transform: none; letter-spacing: 0; }
+  .hero-group .hero-fact-val a { color: var(--accent-strong); text-decoration: none; }
+  .hero-group .hero-fact-val a:hover { text-decoration: underline; }
+  .hero-group.missing { background: transparent; border-style: dashed; }
+  .hero-group.missing .hero-fact-val { color: var(--muted); font-size: 13px; font-style: italic; }
+  .hero-group .dcat-pred { float: right; font-family: var(--font-mono); font-size: 10px; color: var(--muted); text-transform: none; letter-spacing: 0; }
+
   /* ---------- Type-specific hero facts ---------- */
 
   .hero-grid {
@@ -1926,6 +2044,7 @@
         <li><button class="rail-graph-btn" data-view="home"><span>Home</span></button></li>
         <li><button class="rail-graph-btn" data-view="archive"><span>Archive</span></button></li>
         <li><button class="rail-graph-btn" data-view="books"><span>Books</span></button></li>
+        <li><button class="rail-graph-btn" data-view="datasets"><span>Datasets</span></button></li>
         <li><button class="rail-graph-btn" data-view="person"><span>Person</span></button></li>
         <li><button class="rail-graph-btn" data-view="events"><span>Events@IISG</span></button></li>
       </ul>
@@ -2664,6 +2783,7 @@
     if (viewName === "archive") renderArchiveLanding();
     else if (viewName === "books") renderBooksLanding();
     else if (viewName === "events") renderEventsLanding();
+    else if (viewName === "datasets") renderDatasetsView();
     else if (viewName === "datascience") renderDataScience();
     else if (viewName === "growth") renderGrowth();
     else if (viewName === "person") renderPersonLanding();
@@ -2903,6 +3023,408 @@
       }
     }
     renderPage();
+  }
+
+  // ---------- Datasets view (view:datasets) ----------
+  // dataverse-etl's ~400 research datasets on one page, laid out along
+  // DCAT-AP-NL 3.0 (Geonovum, 2025): its 8 mandatory Dataset properties
+  // up front on every card, plus a panel counting how many datasets the
+  // graph actually describes each one for. dataverse-etl writes schema.org,
+  // so each DCAT property is matched to its schema.org counterpart below;
+  // where there is none (theme), the gap is shown, never filled in.
+  var DATAVERSE_GRAPH = "https://iisg.amsterdam/graph/dataverse";
+  var DCAT_SPEC_URL = "https://docs.geostandaarden.nl/dcat/dcat-ap-nl30/";
+
+  // key: the field on a fetchDatasets() item; pred/kind: how the dataset
+  // record page renders it (see renderDcatDatasetFacts).
+  var DCAT_DATASET_MANDATORY = [
+    { label: "Title", dcat: "dct:title", sdo: "sdo:name", key: "name", shownElsewhere: true },
+    { label: "Description", dcat: "dct:description", sdo: "sdo:description", key: "description", shownElsewhere: true },
+    { label: "Identifier", dcat: "dct:identifier", sdo: "sdo:identifier", key: "identifier", pred: "sdo:identifier", kind: "auto", display: doiLabel },
+    { label: "Publisher", dcat: "dct:publisher", sdo: "sdo:publisher", key: "publisher", pred: "sdo:publisher", kind: "link" },
+    { label: "Contact point", dcat: "dcat:contactPoint", sdo: "sdo:contactPoint", key: "contact", pred: "sdo:contactPoint", kind: "link" },
+    { label: "Creator", dcat: "dct:creator", sdo: "sdo:creator", key: "creators", pred: "sdo:creator", kind: "link" },
+    { label: "Theme", dcat: "dcat:theme", sdo: null, key: null, pred: null,
+      note: "No counterpart in the data. DCAT-AP-NL wants a term from the EU data-theme vocabulary; Dataverse’s subjects (“Social Sciences”, …) are the nearest thing." },
+    { label: "Access rights", dcat: "dct:accessRights", sdo: "sdo:isAccessibleForFree", key: "free", pred: "sdo:isAccessibleForFree", kind: "literal", partial: true,
+      note: "Only as schema:isAccessibleForFree, and only where it is false." }
+  ];
+
+  var DCAT_DATASET_RECOMMENDED = [
+    { label: "Keyword", dcat: "dcat:keyword", sdo: "sdo:keywords", key: "keywords", pred: "sdo:keywords", kind: "literal" },
+    { label: "Landing page", dcat: "dcat:landingPage", sdo: "iisgv:nativeViewer", key: "landing", pred: "iisgv:nativeViewer", kind: "auto", display: doiLabel },
+    { label: "Geographical coverage", dcat: "dct:spatial", sdo: "sdo:spatialCoverage", key: "places", pred: "sdo:spatialCoverage", kind: "link" },
+    { label: "Temporal coverage", dcat: "dct:temporal", sdo: "sdo:temporalCoverage", key: "temporal", pred: "sdo:temporalCoverage", kind: "literal" },
+    { label: "Language", dcat: "dct:language", sdo: "sdo:inLanguage", key: "languages", pred: "sdo:inLanguage", kind: "auto" },
+    { label: "Licence", dcat: "dct:license", sdo: "sdo:license", key: "license", pred: "sdo:license", kind: "auto", display: licenceLabel,
+      note: "DCAT-AP-NL puts the licence on each distribution (mandatory there); Dataverse gives one per dataset." }
+  ];
+
+  // Dataverse's fixed subject list -- mixed into sdo:keywords by
+  // dataverse-etl, pulled back out here as the closest thing to a theme.
+  var DATAVERSE_SUBJECTS = [
+    "Agricultural Sciences", "Arts and Humanities", "Astronomy and Astrophysics",
+    "Business and Management", "Chemistry", "Computer and Information Science",
+    "Earth and Environmental Sciences", "Engineering", "Law", "Mathematical Sciences",
+    "Medicine, Health and Life Sciences", "Physics", "Social Sciences", "Other"
+  ];
+
+  var LICENCE_LABELS = {
+    "https://creativecommons.org/publicdomain/zero/1.0/": "CC0 1.0",
+    "https://creativecommons.org/licenses/by/4.0/": "CC BY 4.0",
+    "https://creativecommons.org/licenses/by-sa/4.0/": "CC BY-SA 4.0",
+    "https://creativecommons.org/licenses/by-nc/4.0/": "CC BY-NC 4.0",
+    "https://creativecommons.org/licenses/by-nc-sa/4.0/": "CC BY-NC-SA 4.0",
+    "https://creativecommons.org/licenses/by-nc-nd/4.0/": "CC BY-NC-ND 4.0",
+    "https://creativecommons.org/licenses/by-nd/4.0/": "CC BY-ND 4.0"
+  };
+  function licenceLabel(uri) { return LICENCE_LABELS[uri] || shortLabel(uri); }
+  function doiLabel(uri) { return /doi\.org\//.test(uri) ? uri.replace(/^https?:\/\/(dx\.)?doi\.org\//, "doi:") : shortLabel(uri); }
+
+  var DS_PAGE = 40;
+  var datasetsCache = null;
+
+  // Every dataset in one query (~0.5s, ~400 rows): multi-valued fields come
+  // back GROUP_CONCAT'ed with unit/record separators, split again here.
+  function fetchDatasets() {
+    if (datasetsCache) return Promise.resolve(datasetsCache);
+    var US = "\\u001f", RS = "\\u001e";
+    var q = "PREFIX schema: <https://schema.org/>\n" +
+      "PREFIX iisgv: <https://iisg.amsterdam/vocab/>\n" +
+      "SELECT ?d (SAMPLE(?n) AS ?name) (SAMPLE(?desc) AS ?description) (SAMPLE(?id) AS ?identifier)\n" +
+      "  (SAMPLE(?pubName) AS ?publisher) (SAMPLE(?cpName) AS ?contact) (SAMPLE(?lic) AS ?license)\n" +
+      "  (SAMPLE(?dp) AS ?published) (SAMPLE(?dc) AS ?created) (SAMPLE(?tc) AS ?temporal)\n" +
+      "  (SAMPLE(?lp) AS ?landing) (SAMPLE(?free0) AS ?free)\n" +
+      "  (GROUP_CONCAT(DISTINCT ?crName; separator=\"" + US + "\") AS ?creators)\n" +
+      "  (GROUP_CONCAT(DISTINCT ?kw; separator=\"" + US + "\") AS ?keywords)\n" +
+      "  (GROUP_CONCAT(DISTINCT CONCAT(STR(?cat), \"" + RS + "\", ?catName); separator=\"" + US + "\") AS ?catalogs)\n" +
+      "  (GROUP_CONCAT(DISTINCT ?placeName; separator=\"" + US + "\") AS ?places)\n" +
+      "  (GROUP_CONCAT(DISTINCT STR(?lang); separator=\"" + US + "\") AS ?languages)\n" +
+      "WHERE { GRAPH " + iriRef(DATAVERSE_GRAPH) + " {\n" +
+      "  ?d a schema:Dataset ; schema:name ?n .\n" +
+      "  OPTIONAL { ?d schema:description ?desc }\n" +
+      "  OPTIONAL { ?d schema:identifier ?id }\n" +
+      "  OPTIONAL { ?d schema:publisher ?pub . ?pub schema:name ?pubName }\n" +
+      "  OPTIONAL { ?d schema:contactPoint ?cp . ?cp schema:name ?cpName }\n" +
+      "  OPTIONAL { ?d schema:license ?lic }\n" +
+      "  OPTIONAL { ?d schema:datePublished ?dp }\n" +
+      "  OPTIONAL { ?d schema:dateCreated ?dc }\n" +
+      "  OPTIONAL { ?d schema:temporalCoverage ?tc }\n" +
+      "  OPTIONAL { ?d iisgv:nativeViewer ?lp }\n" +
+      "  OPTIONAL { ?d schema:isAccessibleForFree ?free0 }\n" +
+      "  OPTIONAL { ?d schema:creator ?cr . ?cr schema:name ?crName }\n" +
+      "  OPTIONAL { ?d schema:keywords ?kw }\n" +
+      "  OPTIONAL { ?d schema:includedInDataCatalog ?cat . ?cat schema:name ?catName }\n" +
+      "  OPTIONAL { ?d schema:spatialCoverage ?pl . ?pl schema:name ?placeName }\n" +
+      "  OPTIONAL { ?d schema:inLanguage ?lang }\n" +
+      "} } GROUP BY ?d";
+    var filesQ = "PREFIX schema: <https://schema.org/>\n" +
+      "SELECT ?d (COUNT(?f) AS ?files) WHERE { GRAPH " + iriRef(DATAVERSE_GRAPH) + " { ?d a schema:Dataset ; schema:distribution ?f } } GROUP BY ?d";
+    return Promise.all([sparql(q), sparql(filesQ).catch(function () { return []; })]).then(function (res) {
+      var files = {};
+      res[1].forEach(function (r) { files[r.d.value] = parseInt(r.files.value, 10); });
+      // Deduplicated again here: the same name with two language tags is
+      // two distinct values to GROUP_CONCAT(DISTINCT ...).
+      var split = function (r, k) {
+        var seen = {};
+        return (r[k] && r[k].value ? r[k].value.split("\u001f") : []).filter(function (x) {
+          if (!x || seen[x]) return false;
+          seen[x] = true;
+          return true;
+        });
+      };
+      var v = function (r, k) { return r[k] ? r[k].value : null; };
+      datasetsCache = res[0].map(function (r) {
+        var subjects = [], keywords = [];
+        split(r, "keywords").forEach(function (k) {
+          if (DATAVERSE_SUBJECTS.indexOf(k) !== -1) { subjects.push(k); return; }
+          // Some keyword values arrive as one comma-joined string.
+          k.split(/\s*,\s*/).forEach(function (part) { if (part && keywords.indexOf(part) === -1) keywords.push(part); });
+        });
+        return {
+          uri: r.d.value,
+          name: tidyTitle(v(r, "name")),
+          description: (v(r, "description") || "").replace(/<br\s*\/?>/gi, " ").replace(/<\/?[a-z][^>]*>/gi, ""),
+          identifier: v(r, "identifier"),
+          publisher: v(r, "publisher"),
+          contact: v(r, "contact"),
+          license: v(r, "license"),
+          published: v(r, "published"),
+          created: v(r, "created"),
+          temporal: v(r, "temporal"),
+          landing: v(r, "landing"),
+          free: v(r, "free"),
+          creators: split(r, "creators").map(tidyName).filter(function (c, i, a) { return a.indexOf(c) === i; }),
+          subjects: subjects,
+          keywords: keywords,
+          catalogs: split(r, "catalogs").map(function (c) { var p = c.split("\u001e"); return { uri: p[0], name: p[1] }; }),
+          places: split(r, "places"),
+          languages: split(r, "languages"),
+          files: files[r.d.value] || 0
+        };
+      });
+      return datasetsCache;
+    });
+  }
+
+  function hasDcatValue(ds, key) {
+    if (!key) return false;
+    var val = ds[key];
+    return Array.isArray(val) ? val.length > 0 : !!val;
+  }
+
+  function dcatCoverageRow(def, datasets) {
+    var n = def.key === "keywords"
+      ? datasets.filter(function (d) { return d.keywords.length || d.subjects.length; }).length
+      : datasets.filter(function (d) { return hasDcatValue(d, def.key); }).length;
+    var total = datasets.length;
+    var cls = n === 0 ? "none" : (n < total || def.partial ? "partial" : "full");
+    var bar = el("span", {});
+    bar.style.width = (total ? Math.round(100 * n / total) : 0) + "%";
+    return el("div", { class: "dcat-row " + cls, title: def.note || "" }, [
+      el("span", { class: "k", text: def.label }),
+      el("span", { class: "n", text: fmtNum(n) + " / " + fmtNum(total) }),
+      el("span", { class: "dcat-bar" }, [bar]),
+      el("span", { class: "map", text: def.dcat + "  ←  " + (def.sdo || "not in the data") })
+    ]);
+  }
+
+  function dcatPanelEl(datasets) {
+    var panel = el("div", { class: "dcat-panel" });
+    panel.appendChild(el("h2", { text: "DCAT-AP-NL 3.0 · mandatory properties" }));
+    var intro = el("p", {});
+    intro.appendChild(document.createTextNode("How many datasets the graph describes each mandatory property of the Dutch "));
+    intro.appendChild(el("a", { href: DCAT_SPEC_URL, target: "_blank", rel: "noopener", text: "DCAT application profile" }));
+    intro.appendChild(document.createTextNode(" for, matched to the schema.org dataverse-etl writes. Hover a row for notes."));
+    panel.appendChild(intro);
+    var rows = el("div", { class: "dcat-rows" });
+    DCAT_DATASET_MANDATORY.forEach(function (def) { rows.appendChild(dcatCoverageRow(def, datasets)); });
+    panel.appendChild(rows);
+    var more = el("details", {}, [el("summary", { text: "Recommended properties" })]);
+    var rec = el("div", { class: "dcat-rows" });
+    DCAT_DATASET_RECOMMENDED.forEach(function (def) { rec.appendChild(dcatCoverageRow(def, datasets)); });
+    more.appendChild(rec);
+    panel.appendChild(more);
+    return panel;
+  }
+
+  function datasetCardEl(ds) {
+    var card = el("article", { class: "ds-card", style: "--card-color: " + graphInfo(DATAVERSE_GRAPH).color });
+    var title = el("button", { class: "ttl", type: "button", text: ds.name });
+    title.addEventListener("click", function () { navigate(ds.uri); });
+    card.appendChild(title);
+
+    var meta = [];
+    if (ds.creators.length) meta.push(ds.creators.slice(0, 3).join("; ") + (ds.creators.length > 3 ? " et al." : ""));
+    if (ds.publisher) meta.push(ds.publisher);
+    var date = ds.published || ds.created;
+    if (date) meta.push(date.slice(0, 4));
+    if (ds.files) meta.push(fmtNum(ds.files) + (ds.files === 1 ? " file" : " files"));
+    card.appendChild(el("div", { class: "meta", text: meta.join(" · ") }));
+    if (ds.description) card.appendChild(el("p", { class: "desc", text: ds.description }));
+
+    var chips = el("div", { class: "ds-chips" });
+    ds.subjects.forEach(function (s) { chips.appendChild(el("span", { class: "ds-chip subject", text: s })); });
+    ds.keywords.slice(0, 5).forEach(function (k) { chips.appendChild(el("span", { class: "ds-chip", text: k })); });
+    ds.places.slice(0, 3).forEach(function (p) { chips.appendChild(el("span", { class: "ds-chip", text: "○ " + p })); });
+    if (ds.temporal) chips.appendChild(el("span", { class: "ds-chip", text: ds.temporal.replace("/", "–") }));
+    if (chips.childNodes.length) card.appendChild(chips);
+
+    var foot = el("div", { class: "ds-foot" });
+    if (ds.license) foot.appendChild(el("span", { class: "ds-licence", text: licenceLabel(ds.license) }));
+    if (ds.free === "false") foot.appendChild(el("span", { class: "media-note", text: "Restricted access" }));
+    if (ds.identifier && isSafeHref(ds.identifier)) {
+      foot.appendChild(el("a", { href: ds.identifier, target: "_blank", rel: "noopener", text: ds.identifier.replace(/^https?:\/\/(dx\.)?doi\.org\//, "doi:") }));
+    }
+    if (ds.contact) foot.appendChild(el("span", { text: "Contact: " + ds.contact }));
+    card.appendChild(foot);
+    return card;
+  }
+
+  function optionEl(value, text) { var o = el("option", { value: value, text: text }); return o; }
+
+  // Distinct values of one facet, most frequent first, as <option>s.
+  function facetSelect(label, datasets, valuesOf, display) {
+    var counts = {};
+    datasets.forEach(function (d) { valuesOf(d).forEach(function (v) { counts[v] = (counts[v] || 0) + 1; }); });
+    var sel = el("select", { "aria-label": label });
+    sel.appendChild(optionEl("", label + ": all"));
+    Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || (a < b ? -1 : 1); }).forEach(function (v) {
+      sel.appendChild(optionEl(v, (display ? display(v) : v) + " (" + counts[v] + ")"));
+    });
+    return sel;
+  }
+
+  function renderDatasetsView() {
+    currentUri = null;
+    renderTrail();
+    clear(mainEl);
+    var gen = viewGeneration;
+    var wrap = el("div", { class: "ds-view" });
+    wrap.appendChild(el("p", { class: "landing-eyebrow", text: "dataverse-etl · research datasets" }));
+    wrap.appendChild(el("h1", { text: "Datasets" }));
+    var lead = el("p", { class: "ds-lead", text: "Loading datasets…" });
+    wrap.appendChild(lead);
+    mainEl.appendChild(wrap);
+
+    fetchDatasets().then(function (all) {
+      if (gen !== viewGeneration) return;
+      // A catalog every dataset is in (the Dataverse root collection)
+      // can't narrow anything down -- left out of the catalog filter.
+      var catCounts = {}, catNames = {};
+      all.forEach(function (d) { d.catalogs.forEach(function (c) { catCounts[c.uri] = (catCounts[c.uri] || 0) + 1; catNames[c.uri] = c.name; }); });
+      var catalogsOf = function (d) { return d.catalogs.map(function (c) { return c.uri; }).filter(function (u) { return catCounts[u] < all.length; }); };
+      var catalogTotal = Object.keys(catCounts).filter(function (u) { return catCounts[u] < all.length; }).length;
+
+      lead.textContent = fmtNum(all.length) + " research datasets from the IISG’s Dataverse, in " + fmtNum(catalogTotal) +
+        " catalogs. Each card leads with the properties DCAT-AP-NL 3.0 makes mandatory: title, description, creator, publisher, identifier and contact point.";
+      wrap.appendChild(dcatPanelEl(all));
+
+      var text = el("input", { type: "search", placeholder: "Filter by title, description, creator, keyword…", "aria-label": "Filter datasets" });
+      var catSel = facetSelect("Catalog", all, catalogsOf, function (u) { return catNames[u]; });
+      var subjSel = facetSelect("Subject", all, function (d) { return d.subjects; });
+      var placeSel = facetSelect("Place", all, function (d) { return d.places; });
+      var licSel = facetSelect("Licence", all, function (d) { return d.license ? [d.license] : []; }, licenceLabel);
+      var sortSel = el("select", { "aria-label": "Sort" }, [
+        optionEl("newest", "Newest first"), optionEl("oldest", "Oldest first"), optionEl("title", "Title A–Z"), optionEl("files", "Most files")
+      ]);
+      var randomBtn = el("button", { class: "landing-btn ghost", type: "button", text: "Random dataset" });
+      wrap.appendChild(el("div", { class: "ds-toolbar" }, [text, catSel, subjSel, placeSel, licSel, sortSel, randomBtn]));
+      var count = el("div", { class: "ds-count", "aria-live": "polite" });
+      var list = el("div", { class: "ds-list" });
+      var moreWrap = el("div", { class: "ds-more" });
+      wrap.appendChild(count);
+      wrap.appendChild(list);
+      wrap.appendChild(moreWrap);
+
+      var shown = DS_PAGE, matches = [];
+      function haystack(d) {
+        if (!d._hay) d._hay = [d.name, d.description, d.creators.join(" "), d.keywords.join(" "), d.subjects.join(" "), d.places.join(" "), d.publisher || ""].join(" ").toLowerCase();
+        return d._hay;
+      }
+      function apply(resetPage) {
+        if (resetPage) shown = DS_PAGE;
+        var t = text.value.trim().toLowerCase();
+        matches = all.filter(function (d) {
+          if (t && haystack(d).indexOf(t) === -1) return false;
+          if (catSel.value && catalogsOf(d).indexOf(catSel.value) === -1) return false;
+          if (subjSel.value && d.subjects.indexOf(subjSel.value) === -1) return false;
+          if (placeSel.value && d.places.indexOf(placeSel.value) === -1) return false;
+          if (licSel.value && d.license !== licSel.value) return false;
+          return true;
+        });
+        var dateOf = function (d) { return d.published || d.created || ""; };
+        var sorters = {
+          newest: function (a, b) { return dateOf(b) < dateOf(a) ? -1 : dateOf(b) > dateOf(a) ? 1 : 0; },
+          oldest: function (a, b) { return dateOf(a) < dateOf(b) ? -1 : dateOf(a) > dateOf(b) ? 1 : 0; },
+          title: function (a, b) { return a.name.localeCompare(b.name); },
+          files: function (a, b) { return b.files - a.files; }
+        };
+        matches.sort(sorters[sortSel.value]);
+        clear(list);
+        matches.slice(0, shown).forEach(function (d) { list.appendChild(datasetCardEl(d)); });
+        clear(count);
+        var filtered = matches.length !== all.length;
+        count.appendChild(document.createTextNode(fmtNum(matches.length) + (filtered ? " of " + fmtNum(all.length) : "") + " datasets"));
+        if (filtered) {
+          count.appendChild(document.createTextNode(" · "));
+          var reset = el("button", { type: "button", text: "clear filters" });
+          reset.addEventListener("click", function () {
+            text.value = ""; catSel.value = ""; subjSel.value = ""; placeSel.value = ""; licSel.value = "";
+            apply(true);
+          });
+          count.appendChild(reset);
+        }
+        clear(moreWrap);
+        if (matches.length > shown) {
+          var more = el("button", { class: "landing-btn ghost", type: "button", text: "Show " + fmtNum(Math.min(DS_PAGE, matches.length - shown)) + " more" });
+          more.addEventListener("click", function () { shown += DS_PAGE; apply(false); });
+          moreWrap.appendChild(more);
+        }
+      }
+      var typing = null;
+      text.addEventListener("input", function () { clearTimeout(typing); typing = setTimeout(function () { apply(true); }, 150); });
+      [catSel, subjSel, placeSel, licSel, sortSel].forEach(function (s) { s.addEventListener("change", function () { apply(true); }); });
+      randomBtn.addEventListener("click", function () {
+        var pool = matches.length ? matches : all;
+        navigate(pool[Math.floor(Math.random() * pool.length)].uri);
+      });
+      apply(true);
+    }).catch(function (err) {
+      if (gen !== viewGeneration) return;
+      clear(mainEl);
+      renderError("Couldn’t load datasets: " + err.message, renderDatasetsView);
+    });
+  }
+
+  // Dataset record page: the hero facts regrouped by DCAT-AP-NL 3.0
+  // obligation -- Mandatory (missing ones shown as such, dashed), then
+  // Recommended (only what's there), then whatever else DATASET_FIELDS
+  // covers. Title and description stay where every view puts them (the
+  // header and the text blocks below).
+  function renderDcatDatasetFacts(outByPred) {
+    var box = el("div", {});
+    var used = {};
+    function group(def, rows) {
+      var g = null;
+      if (rows && rows.length && def.display) {
+        // External URLs (DOI, licence) read better as "doi:10.…" or
+        // "CC BY 4.0" than as the generic last-path-segment label.
+        g = el("div", { class: "hero-group" }, [el("h3", { text: def.label })]);
+        rows.forEach(function (r) {
+          var url = r.o.type === "uri" ? r.o.value : literalUrl(r.o);
+          var val = el("div", { class: "hero-fact-val" });
+          if (url && isSafeHref(url)) val.appendChild(el("a", { href: url, target: "_blank", rel: "noopener", text: def.display(url) + " \u2197" }));
+          else val.textContent = r.o.value;
+          g.appendChild(val);
+        });
+      } else if (rows && rows.length) {
+        g = renderHeroGroup({ heading: def.label, kind: def.kind }, rows);
+      }
+      if (!g) {
+        g = el("div", { class: "hero-group missing", title: def.note || "" }, [
+          el("h3", { text: def.label }),
+          el("div", { class: "hero-fact-val", text: "Not in the data" })
+        ]);
+      }
+      g.querySelector("h3").appendChild(el("span", { class: "dcat-pred", text: def.dcat }));
+      return g;
+    }
+
+    box.appendChild(el("div", { class: "dcat-group-heading" }, [
+      document.createTextNode("DCAT-AP-NL 3.0 · Mandatory"),
+      el("span", { text: "title and description shown above and below" })
+    ]));
+    var mand = el("div", { class: "hero-grid" });
+    DCAT_DATASET_MANDATORY.forEach(function (def) {
+      if (def.shownElsewhere) return;
+      if (def.pred) used[def.pred] = true;
+      mand.appendChild(group(def, def.pred ? outByPred[def.pred] : null));
+    });
+    box.appendChild(mand);
+
+    var rec = el("div", { class: "hero-grid" });
+    DCAT_DATASET_RECOMMENDED.forEach(function (def) {
+      used[def.pred] = true;
+      var rows = outByPred[def.pred];
+      if (rows && rows.length) rec.appendChild(group(def, rows));
+    });
+    if (rec.childNodes.length) {
+      box.appendChild(el("div", { class: "dcat-group-heading", text: "DCAT-AP-NL 3.0 · Recommended" }));
+      box.appendChild(rec);
+    }
+
+    var other = el("div", { class: "hero-grid" });
+    DATASET_FIELDS.forEach(function (f) {
+      if (used[f.pred]) return;
+      var rows = outByPred[f.pred];
+      if (rows && rows.length) other.appendChild(renderHeroGroup(f, rows));
+    });
+    if (other.childNodes.length) {
+      box.appendChild(el("div", { class: "dcat-group-heading", text: "Other" }));
+      box.appendChild(other);
+    }
+    return box;
   }
 
   // ---------- Landing page (view:home) ----------
@@ -6520,15 +7042,19 @@
     // already rendered above as the identity header -- skip the generic
     // grid for it so nothing repeats.)
     if (view && view.type !== "sdo:Person") {
-      var grid = el("div", { class: "hero-grid" });
-      var any = false;
-      view.fields.forEach(function (f) {
-        var rows = outByPred[f.pred];
-        if (!rows || !rows.length) return;
-        any = true;
-        grid.appendChild(renderHeroGroup(f, rows));
-      });
-      if (any) factsTarget.appendChild(grid);
+      if (view.type === "sdo:Dataset") {
+        factsTarget.appendChild(renderDcatDatasetFacts(outByPred));
+      } else {
+        var grid = el("div", { class: "hero-grid" });
+        var any = false;
+        view.fields.forEach(function (f) {
+          var rows = outByPred[f.pred];
+          if (!rows || !rows.length) return;
+          any = true;
+          grid.appendChild(renderHeroGroup(f, rows));
+        });
+        if (any) factsTarget.appendChild(grid);
+      }
 
       if (!view.linkOutPrimary) {
         for (var lo = 0; lo < LINKOUT_FIELDS.length; lo++) {

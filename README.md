@@ -66,6 +66,19 @@ URL for a differently-hosted store.
     no `alternateName`) -- one field list, rows with no data just skipped,
     same reconciliation `ARCHIVE_FIELDS` already does for archive-etl vs
     findingaid-etl.
+- **Datasets view** (sidebar "Datasets"): all of dataverse-etl's research
+  datasets on one page, laid out along
+  [DCAT-AP-NL 3.0](https://docs.geostandaarden.nl/dcat/dcat-ap-nl30/)
+  (Geonovum, 2025). A panel counts, for each of the profile's 8 mandatory
+  Dataset properties, how many datasets the graph describes it for,
+  matched to the schema.org dataverse-etl writes (`dct:title` <- `sdo:name`,
+  `dcat:contactPoint` <- `sdo:contactPoint`, ...); `dcat:theme` has no
+  counterpart and `dct:accessRights` only a partial one
+  (`sdo:isAccessibleForFree`), and the panel says so rather than filling
+  them in. Cards lead with the mandatory fields; filters by catalog,
+  Dataverse subject, place and licence, a text filter, sorting and a
+  random pick. A dataset's own page groups its facts the same way:
+  Mandatory (missing ones shown dashed), Recommended, Other.
 - **Hierarchy breadcrumbs**: findingaid-etl's nested archive components
   (collection > series > ... > file, up to 12 levels via `sdo:isPartOf`) get
   a clickable trail on the record page and a read-only path on matching
