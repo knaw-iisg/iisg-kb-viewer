@@ -5617,7 +5617,7 @@
       index = (i + images.length) % images.length;
       var im = images[index];
       var token = ++loadToken;
-      count.textContent = (index + 1) + " / " + images.length;
+      count.textContent = fmtNum(index + 1) + " / " + fmtNum(images.length);
       img.alt = ctx.label + " — image " + (index + 1) + " of " + images.length;
       var large = iiifSizedUrl(im, stageSize());
       if (im.thumb) {
