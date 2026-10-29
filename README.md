@@ -145,3 +145,8 @@ URL for a differently-hosted store.
   search (`NON_CONTENT_GRAPHS`), so they don't swamp real records. A
   record's links to its own scans are also left out of its neighbourhood
   graph.
+
+## License
+
+[MIT](LICENSE). The viewer is meant as an example: feel free to reuse it to
+build your own interface on a SPARQL endpoint.
