@@ -2226,17 +2226,49 @@
   }
 
   /* ---- archive boxes, trolley ---- */
-  .rr-trolley { position: relative; padding: 0 14px; }
-  .rr-shelf {
-    /* rows 182px (a box plus headroom) + 28px gap; a 12px board sits in
-       the top of each gap */
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-    grid-auto-rows: 182px; gap: 28px 12px; align-items: end; padding: 0 12px;
-    background: repeating-linear-gradient(180deg, transparent 0 182px, #8a949a 182px 191px, #5f696f 191px 194px, transparent 194px 210px);
-    margin-bottom: 4px;
+  .rr-trolley {
+    --rr-steel: #c3cacd; --rr-steel-dark: #7f898e;
+    position: relative; margin: 0 auto; padding: 0 52px 0 14px;
   }
-  .rr-trolley-base { display: flex; justify-content: space-between; padding: 0 30px; height: 24px; }
-  .rr-wheel { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(#777 30%, #222 32%); }
+  .rr-shelves {
+    /* the two uprights, drawn as the shelves' side borders */
+    border-left: 9px solid var(--rr-steel); border-right: 9px solid var(--rr-steel);
+    box-shadow: inset 2px 0 0 var(--rr-steel-dark), inset -2px 0 0 var(--rr-steel-dark);
+    padding-top: 6px; min-height: 120px;
+  }
+  .rr-shelf {
+    display: flex; justify-content: center; align-items: flex-end; gap: 22px 12px;
+    padding: 16px 10px 0;
+    border-bottom: 11px solid var(--rr-steel);
+    box-shadow: 0 3px 0 var(--rr-steel-dark);
+    margin-bottom: 6px;
+  }
+  .rr-shelf .rr-box { flex: 0 1 132px; min-width: 0; }
+  .rr-trolley-handle {
+    /* push bar: out from the right upright and back, with a rubber grip */
+    position: absolute; right: 8px; top: -14px; width: 48px; height: 112px;
+    border: 8px solid var(--rr-steel); border-left: none; border-radius: 0 22px 22px 0;
+    filter: drop-shadow(0 2px 0 var(--rr-steel-dark));
+  }
+  .rr-trolley-handle::after {
+    content: ""; position: absolute; right: -12px; top: 24px; width: 16px; height: 48px;
+    border-radius: 8px; background: #2b2f31; box-shadow: inset 3px 0 0 #4a5054;
+  }
+  .rr-trolley-base {
+    position: relative; display: flex; justify-content: space-between;
+    margin: 0 22px; height: 46px; padding: 0 6px;
+    border-top: 12px solid var(--rr-steel-dark);
+  }
+  .rr-wheel {
+    position: relative; width: 36px; height: 36px; margin-top: 10px; border-radius: 50%;
+    background: radial-gradient(circle, #c9cdd0 0 5px, #6b7377 5px 9px, #2a2d2f 9px 13px, #17191a 13px);
+    box-shadow: 0 3px 4px rgba(0, 0, 0, 0.35);
+  }
+  .rr-wheel::before {
+    /* caster fork up to the frame */
+    content: ""; position: absolute; left: 50%; top: -12px; width: 12px; height: 26px; margin-left: -6px;
+    background: var(--rr-steel); border-radius: 2px; z-index: -1;
+  }
 
   .rr-box {
     position: relative; height: 168px; border: none; padding: 0; cursor: pointer;
@@ -2500,11 +2532,17 @@
   }
   .rr-open-btn:hover { border-color: var(--accent); }
 
-  @media (max-width: 900px) {
+  /* A narrow room (by its own width, whatever the rail takes): the card
+     and notepad go in a row above the scene, so the trolley and folder
+     get the full desk. */
+  .rr-room { container-type: inline-size; }
+  @container (max-width: 900px) {
     .rr-desk { grid-template-columns: minmax(0, 1fr); padding: 18px 14px 26px; }
-    .rr-props { flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
+    .rr-props { order: -1; flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
     .rr-tent { flex: 0 0 150px; }
     .rr-notepad { flex: 1 1 220px; }
+  }
+  @media (max-width: 900px) {
     .rr-openfolder { grid-template-columns: minmax(0, 1fr); padding: 8px; }
     .rr-leaf-left { border-right: none; border-bottom: 2px solid var(--rr-manila-dark); box-shadow: none; order: 2; animation: none; }
     .rr-pages { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); max-height: 150px; }
@@ -2515,8 +2553,11 @@
     .rr-crumbs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
     .rr-crumb { flex: none; max-width: 180px; }
     .rr-record-link { flex: none; }
-    .rr-shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 6px; }
-    .rr-trolley { padding: 0; }
+    .rr-trolley { padding: 0 38px 0 0; }
+    .rr-trolley-handle { right: 4px; width: 38px; height: 92px; }
+    .rr-box-title { font-size: 12px; }
+    .rr-shelf { padding: 12px 6px 0; gap: 18px 8px; }
+    .rr-trolley-base { margin: 0 10px; }
     .rr-file { padding-right: 60px; }
     .rr-caption-main { font-size: 17px; }
   }
@@ -8448,14 +8489,54 @@
     return b;
   }
 
+  // A book trolley: side posts, a push handle, shelves and four casters.
+  // The boxes are spread evenly over as few shelves as fit across (6
+  // boxes three-and-three, not four-and-two), re-spread when the width
+  // changes.
+  var RR_BOX_W = 132, RR_BOX_MIN_W = 104, RR_BOX_GAP = 12;
+
   function rrTrolleyEl(boxes) {
-    // One grid; the shelf boards are drawn under each row in CSS, so
-    // however many boxes fit across, every row stands on one.
     var trolley = el("div", { class: "rr-trolley" });
-    var shelf = el("div", { class: "rr-shelf" });
-    boxes.forEach(function (b) { shelf.appendChild(b); });
-    trolley.appendChild(shelf);
-    trolley.appendChild(el("div", { class: "rr-trolley-base", "aria-hidden": "true" }, [el("span", { class: "rr-wheel" }), el("span", { class: "rr-wheel" })]));
+    trolley.appendChild(el("span", { class: "rr-trolley-handle", "aria-hidden": "true" }));
+    var shelves = el("div", { class: "rr-shelves" });
+    trolley.appendChild(shelves);
+    var base = el("div", { class: "rr-trolley-base", "aria-hidden": "true" });
+    for (var w = 0; w < 4; w++) base.appendChild(el("span", { class: "rr-wheel" }));
+    trolley.appendChild(base);
+
+    var cols = 0;
+    function layout() {
+      // Frame around the boxes: the trolley's padding (handle side
+      // included), the two uprights and the shelves' own padding.
+      var cs = getComputedStyle(trolley);
+      var frame = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + 18 + 20;
+      var room = (trolley.parentNode ? trolley.parentNode.clientWidth : 0) - frame;
+      if (room <= 0) return;
+      var fit = Math.floor((room + RR_BOX_GAP) / (RR_BOX_W + RR_BOX_GAP));
+      // Narrow desks (phones): slimmer boxes, two to a shelf, rather than
+      // a tower of one.
+      if (fit < 2) fit = Math.max(1, Math.floor((room + RR_BOX_GAP) / (RR_BOX_MIN_W + RR_BOX_GAP)));
+      var rows = Math.ceil(boxes.length / fit);
+      var c = Math.ceil(boxes.length / rows);
+      if (c === cols) return;
+      cols = c;
+      // The trolley is as wide as its widest shelf, not the whole desk.
+      trolley.style.maxWidth = (c * (RR_BOX_W + RR_BOX_GAP) - RR_BOX_GAP + frame) + "px";
+      clear(shelves);
+      for (var r = 0; r < rows; r++) {
+        var shelf = el("div", { class: "rr-shelf" });
+        boxes.slice(r * cols, (r + 1) * cols).forEach(function (b) { shelf.appendChild(b); });
+        shelves.appendChild(shelf);
+      }
+    }
+    // Lay out once it's in the page (needs a width), then on resize.
+    requestAnimationFrame(layout);
+    // Watch the desk, not the trolley: the trolley's own width follows
+    // the layout.
+    requestAnimationFrame(function () {
+      if (window.ResizeObserver && trolley.parentNode) new ResizeObserver(layout).observe(trolley.parentNode);
+      else window.addEventListener("resize", layout);
+    });
     return trolley;
   }
 
