@@ -79,6 +79,23 @@ URL for a differently-hosted store.
   Dataverse subject, place and licence, a text filter, sorting and a
   random pick. A dataset's own page groups its facts the same way:
   Mandatory (missing ones shown dashed), Recommended, Other.
+- **Reading room** (sidebar "Reading room", `#reading:<uri>`): a finding
+  aid the way you'd consult it at IISG's actual reading room. A request
+  slip finds a collection (by name or call number; scanned ones first),
+  or take one of the digitized archives waiting on the trolley. The
+  collection arrives as boxes (its series); a box opens onto the folders
+  standing in it, sub-series as tied bundles, single letters as loose
+  sheets; a folder opens on the desk with an inventory slip on the inside
+  cover and its scanned pages, turned one at a time (all of them, read
+  from the item's own IIIF manifest -- the graph only holds the first
+  page's thumbnail). Previous/next folder, put back (Esc), and a pencil
+  tick on whatever you've handled (kept in the browser). A reservation
+  card and a notepad keep where you are in the hierarchy in view. Long
+  series are packed into numbered boxes of 24. There are no physical box
+  numbers in the data: what is drawn as a box, bundle, folder, letter or
+  volume comes from the node's place in the tree and its
+  `iisgv:physicalDescription` ("1 map", "3 Briefe", "1 doos", ...).
+  Every archive record page links into it.
 - **Hierarchy breadcrumbs**: findingaid-etl's nested archive components
   (collection > series > ... > file, up to 12 levels via `sdo:isPartOf`) get
   a clickable trail on the record page and a read-only path on matching
