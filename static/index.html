@@ -6328,22 +6328,15 @@
     meta.appendChild(el("span", { text: countText }));
     var noteSlot = el("span", {});
     meta.appendChild(noteSlot);
-    // Both links follow the selected image (select()), since each preview
-    // can be a manifest of its own.
-    var viewerLink = images[0].preview
-      ? el("a", { target: "_blank", rel: "noopener", text: "All pages in Universal Viewer ↗" })
-      : null;
+    // Follows the selected image (select()), since each preview can be a
+    // manifest of its own. The way to every page is the lightbox's
+    // Universal Viewer link.
     var manifestLink = el("a", { target: "_blank", rel: "noopener", title: "IIIF Presentation manifest -- open in any IIIF viewer", text: "IIIF manifest ↗" });
-    if (viewerLink) meta.appendChild(viewerLink);
     meta.appendChild(manifestLink);
     function linkManifest(m) {
       var ok = !!m && isSafeHref(m);
       manifestLink.hidden = !ok;
       if (ok) manifestLink.href = m;
-      if (viewerLink) {
-        viewerLink.hidden = !ok;
-        if (ok) viewerLink.href = UNIVERSAL_VIEWER + m;
-      }
     }
     container.appendChild(meta);
 
@@ -6644,8 +6637,11 @@
       if (im.level === "open" && im.full && isSafeHref(im.full)) {
         caption.appendChild(el("a", { href: im.full, target: "_blank", rel: "noopener", text: "Full-size image ↗" }));
       }
-      if (ctx.viewerUrl && isSafeHref(ctx.viewerUrl)) {
-        caption.appendChild(el("a", { href: ctx.viewerUrl, target: "_blank", rel: "noopener", text: "Universal Viewer ↗" }));
+      // The image's own manifest in the Universal Viewer; the record's
+      // linkout (often IISG's catalogue page, not a viewer) only without one.
+      var viewer = im.manifest && isSafeHref(im.manifest) ? UNIVERSAL_VIEWER + im.manifest : ctx.viewerUrl;
+      if (viewer && isSafeHref(viewer)) {
+        caption.appendChild(el("a", { href: viewer, target: "_blank", rel: "noopener", text: im.preview ? "All pages in Universal Viewer ↗" : "Universal Viewer ↗" }));
       }
       thumbs.forEach(function (t, j) { t.setAttribute("aria-current", j === index ? "true" : "false"); });
       if (thumbs[index]) thumbs[index].scrollIntoView({ block: "nearest", inline: "nearest" });
