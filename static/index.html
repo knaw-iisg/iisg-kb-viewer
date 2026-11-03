@@ -6,7 +6,7 @@
 <title>IISG Knowledge Base Explorer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #eef2f5;
@@ -2028,6 +2028,501 @@
     }
     .search-box label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   }
+
+  /* ---------- Reading room (renderReading / renderReadingDesk) ----------
+     Its own little world, coloured after IISG's reading room: a grey-teal
+     desk with a wooden lip by the harbour windows, brown archive boxes,
+     manila folders, off-white paper. Evening tones in dark mode, but the
+     paper stays light so scans read as scans. */
+
+  .main:has(> .rr) { max-width: 1280px; min-width: 0; }
+
+  .rr {
+    --rr-sky-top: #c9dfeb;
+    --rr-sky-bottom: #eaf2f5;
+    --rr-city: #9fb3bf;
+    --rr-water: #6f8f9c;
+    --rr-water-hi: #8fadb8;
+    --rr-frame: #2c3438;
+    --rr-desk: #6c8a90;
+    --rr-desk-hi: #7f9ca2;
+    --rr-desk-lip: #b08655;
+    --rr-desk-lip-dark: #8a6640;
+    --rr-card: #b98a58;
+    --rr-card-dark: #9c7146;
+    --rr-card-light: #cfa274;
+    --rr-label: #f7f3e8;
+    --rr-manila: #e6cd94;
+    --rr-manila-dark: #cdb070;
+    --rr-bundle: #8c9aa6;
+    --rr-bundle-dark: #6f7e8a;
+    --rr-paper: #fbf8ef;
+    --rr-paper-edge: #e4dccb;
+    --rr-ink: #2a2620;
+    --rr-ink-soft: #625a4c;
+    --rr-pencil: #4a4a52;
+    --rr-scan: #b5452f;
+    --rr-shadow: rgba(20, 30, 35, 0.35);
+    --font-hand: "Caveat", "Segoe Print", "Bradley Hand", cursive;
+    color: var(--rr-ink);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .rr {
+      --rr-sky-top: #121b2b; --rr-sky-bottom: #2a3550; --rr-city: #0c1320;
+      --rr-water: #1b2a36; --rr-water-hi: #2f4656; --rr-frame: #090c0e;
+      --rr-desk: #33494d; --rr-desk-hi: #3c5559; --rr-desk-lip: #7a5a38; --rr-desk-lip-dark: #5c4329;
+      --rr-card: #8a6744; --rr-card-dark: #6f5236; --rr-card-light: #a07b55;
+      --rr-label: #e8e2d2; --rr-manila: #c9b07a; --rr-manila-dark: #a89060;
+      --rr-bundle: #6d7a85; --rr-bundle-dark: #57636d;
+      --rr-paper: #ece6d6; --rr-paper-edge: #c9c0ab; --rr-shadow: rgba(0, 0, 0, 0.55);
+    }
+  }
+  :root[data-theme="dark"] .rr {
+    --rr-sky-top: #121b2b; --rr-sky-bottom: #2a3550; --rr-city: #0c1320;
+    --rr-water: #1b2a36; --rr-water-hi: #2f4656; --rr-frame: #090c0e;
+    --rr-desk: #33494d; --rr-desk-hi: #3c5559; --rr-desk-lip: #7a5a38; --rr-desk-lip-dark: #5c4329;
+    --rr-card: #8a6744; --rr-card-dark: #6f5236; --rr-card-light: #a07b55;
+    --rr-label: #e8e2d2; --rr-manila: #c9b07a; --rr-manila-dark: #a89060;
+    --rr-bundle: #6d7a85; --rr-bundle-dark: #57636d;
+    --rr-paper: #ece6d6; --rr-paper-edge: #c9c0ab; --rr-shadow: rgba(0, 0, 0, 0.55);
+  }
+
+  .rr button { font: inherit; color: inherit; }
+  .rr-ic { display: inline-flex; width: 15px; height: 15px; flex: none; }
+  .rr-ic svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* trail above the room */
+  .rr-crumbs {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px;
+    margin-bottom: 12px; color: var(--ink-soft); font-size: 13px;
+  }
+  .rr-crumb {
+    background: none; border: none; padding: 2px 4px; border-radius: 4px; cursor: pointer;
+    max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--accent) !important; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--line);
+  }
+  .rr-crumb:hover { text-decoration-color: currentColor; }
+  .rr-crumb.current { color: var(--ink) !important; text-decoration: none; cursor: default; font-weight: 600; }
+  .rr-crumb-sep { color: var(--muted); }
+  .rr-record-link {
+    margin-left: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+    padding: 4px 10px; font-size: 12px !important; cursor: pointer; color: var(--ink-soft) !important;
+  }
+  .rr-record-link:hover { border-color: var(--accent); }
+
+  /* the room */
+  .rr-room {
+    border-radius: 14px; overflow: hidden; box-shadow: var(--shadow);
+    background: var(--rr-desk);
+  }
+  .rr-window {
+    position: relative; height: 92px; overflow: hidden;
+    background: linear-gradient(var(--rr-sky-top), var(--rr-sky-bottom) 55%);
+  }
+  .rr-skyline { position: absolute; left: 0; right: 0; bottom: 34px; width: 100%; height: 26px; fill: var(--rr-city); }
+  .rr-water {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 36px;
+    background:
+      repeating-linear-gradient(180deg, transparent 0 5px, var(--rr-water-hi) 5px 6px),
+      var(--rr-water);
+    opacity: 0.95;
+  }
+  .rr-boat {
+    position: absolute; bottom: 22px; left: 62%; width: 56px; height: 10px; border-radius: 0 0 8px 8px;
+    background: var(--rr-label); box-shadow: 14px -6px 0 -2px var(--rr-label);
+    animation: rr-drift 60s linear infinite alternate;
+  }
+  @keyframes rr-drift { from { transform: translateX(-40px); } to { transform: translateX(60px); } }
+  .rr-mullions {
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, var(--rr-frame) 0 7px, transparent 7px 20%);
+    border-bottom: 9px solid var(--rr-frame);
+  }
+
+  .rr-desk {
+    position: relative;
+    display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 22px;
+    padding: 26px 26px 34px;
+    background:
+      radial-gradient(ellipse at 30% 0%, var(--rr-desk-hi), transparent 65%),
+      var(--rr-desk);
+    border-bottom: 14px solid var(--rr-desk-lip);
+    box-shadow: inset 0 -3px 0 var(--rr-desk-lip-dark);
+  }
+  .rr-stage { min-width: 0; }
+
+  .rr-props { display: flex; flex-direction: column; gap: 20px; align-items: stretch; }
+
+  /* reservation card on a stand */
+  .rr-tent {
+    position: relative; background: var(--rr-paper); color: var(--rr-ink);
+    padding: 10px 12px 12px; border-radius: 3px; text-align: center;
+    display: flex; flex-direction: column; gap: 1px;
+    box-shadow: 0 10px 0 -4px #59666a, 0 12px 14px var(--rr-shadow);
+    transform: perspective(500px) rotateX(8deg);
+  }
+  .rr-tent-desk { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--rr-ink-soft); }
+  .rr-tent strong { font-family: var(--font-mono); font-size: 17px; letter-spacing: 0.04em; }
+  .rr-tent-name { font-family: var(--font-display); font-size: 12px; line-height: 1.3; color: var(--rr-ink-soft); }
+
+  /* notepad with the path jotted on it */
+  .rr-notepad {
+    position: relative; padding: 16px 14px 18px 14px; transform: rotate(-1.2deg);
+    background:
+      repeating-linear-gradient(180deg, transparent 0 25px, rgba(70, 110, 160, 0.25) 25px 26px),
+      #fdfbf3;
+    background-position: 0 30px;
+    color: #333; border-radius: 2px;
+    box-shadow: 0 1px 0 #e8e2d0, 0 2px 0 #fdfbf3, 0 3px 0 #e8e2d0, 0 8px 14px var(--rr-shadow);
+    border-top: 10px solid #9b4a3c;
+    font-family: var(--font-hand); font-size: 19px; line-height: 26px;
+  }
+  .rr-pad-head { font-weight: 700; color: #9b4a3c; }
+  .rr-pad-path { list-style: none; margin: 0; padding: 0; }
+  .rr-pad-path li { padding-left: calc(var(--d) * 9px); }
+  .rr-pad-path button {
+    display: flex; align-items: center; gap: 5px; width: 100%; text-align: left;
+    background: none; border: none; padding: 0; cursor: pointer; color: #2d4f7c !important;
+    font-family: var(--font-hand) !important; font-size: 19px !important; line-height: 26px;
+  }
+  .rr-pad-path button span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rr-pad-path button:hover span:last-child { text-decoration: underline; }
+  .rr-pad-path button.current { color: #222 !important; cursor: default; font-weight: 700; }
+  .rr-pad-path button.current:hover span:last-child { text-decoration: none; }
+  .rr-pad-path .rr-ic { width: 13px; height: 13px; opacity: 0.7; }
+  .rr-pad-rules { margin: 0; padding-left: 18px; }
+  .rr-pad-tally { margin-top: 6px; color: #3c6e3c; }
+  .rr-pad-keys { margin-top: 4px; white-space: pre-line; font-size: 16px; color: #777; line-height: 22px; }
+  .rr-pencil {
+    position: absolute; right: -10px; bottom: -14px; width: 120px; height: 9px; transform: rotate(-24deg);
+    background: linear-gradient(90deg, #333 0 6px, #e7c48d 6px 18px, #e1a52a 18px 108px, #c9c9c9 108px 112px, #e18f8f 112px);
+    clip-path: polygon(0 50%, 18px 0, 100% 0, 100% 100%, 18px 100%);
+    box-shadow: 0 2px 3px var(--rr-shadow);
+  }
+
+  /* captions: what's in front of you */
+  .rr-caption { margin-bottom: 18px; color: #f4f7f6; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }
+  .rr-caption-main { margin: 0; font-family: var(--font-display); font-size: 19px; font-weight: 600; line-height: 1.35; }
+  .rr-caption-sub { margin: 3px 0 0; font-size: 13.5px; opacity: 0.9; }
+  .rr-subhead { margin: 26px 0 10px; font-family: var(--font-display); font-size: 16px; color: #f4f7f6; }
+
+  .rr-btn {
+    background: var(--rr-paper); border: 1px solid rgba(0, 0, 0, 0.15); border-radius: 6px;
+    padding: 7px 14px; cursor: pointer; font-size: 14px !important; color: var(--rr-ink) !important;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+  }
+  .rr-btn:hover:not(:disabled) { transform: translateY(-1px); }
+  .rr-btn:disabled { opacity: 0.45; cursor: default; }
+  .rr-btn.primary { background: #2f4a50; color: #f4f7f6 !important; border-color: #22383d; }
+
+  .rr-scan {
+    position: absolute; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.02em;
+    background: var(--rr-scan); color: #fff; border-radius: 9px; padding: 1px 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); pointer-events: none;
+  }
+  .rr-tick {
+    position: absolute; font-family: var(--font-hand); font-size: 26px; line-height: 1; color: var(--rr-pencil);
+    transform: rotate(-8deg); pointer-events: none;
+  }
+
+  /* ---- archive boxes, trolley ---- */
+  .rr-trolley { position: relative; padding: 0 14px; }
+  .rr-shelf {
+    /* rows 182px (a box plus headroom) + 28px gap; a 12px board sits in
+       the top of each gap */
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    grid-auto-rows: 182px; gap: 28px 12px; align-items: end; padding: 0 12px;
+    background: repeating-linear-gradient(180deg, transparent 0 182px, #8a949a 182px 191px, #5f696f 191px 194px, transparent 194px 210px);
+    margin-bottom: 4px;
+  }
+  .rr-trolley-base { display: flex; justify-content: space-between; padding: 0 30px; height: 24px; }
+  .rr-wheel { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(#777 30%, #222 32%); }
+
+  .rr-box {
+    position: relative; height: 168px; border: none; padding: 0; cursor: pointer;
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.08), transparent 12%, transparent 88%, rgba(0, 0, 0, 0.1)),
+      var(--rr-card);
+    border-top: 9px solid var(--rr-card-light);
+    border-radius: 2px;
+    box-shadow: inset 0 -4px 0 var(--rr-card-dark), 0 6px 10px var(--rr-shadow);
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    animation: rr-rise 0.45s ease both; animation-delay: calc(var(--i) * 45ms);
+  }
+  .rr-box:hover, .rr-box:focus-visible { transform: translateY(-8px) rotate(-0.6deg); box-shadow: inset 0 -4px 0 var(--rr-card-dark), 0 16px 20px var(--rr-shadow); }
+  .rr-box-label {
+    margin: 12px 10px 0; padding: 6px 7px 7px; background: var(--rr-label); color: var(--rr-ink);
+    width: calc(100% - 20px); display: flex; flex-direction: column; gap: 2px; text-align: left;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2); border-radius: 1px;
+  }
+  .rr-box-no { font-family: var(--font-mono); font-size: 11px; font-weight: 500; color: var(--rr-ink-soft); }
+  .rr-box-title {
+    font-family: var(--font-display); font-size: 13px; font-weight: 600; line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .rr-box-meta { font-size: 11px; color: var(--rr-ink-soft); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .rr-box-hand {
+    position: absolute; bottom: 16px; left: 50%; width: 38px; height: 12px; margin-left: -19px;
+    border-radius: 6px; background: var(--rr-card-dark); box-shadow: inset 0 3px 3px rgba(0, 0, 0, 0.45);
+  }
+  .rr-box .rr-scan { right: 8px; bottom: 34px; }
+  .rr-box .rr-tick { left: 8px; bottom: 28px; color: #2a2a2a; }
+  .rr-box.rr-returned { animation: rr-putback 0.6s ease both; outline: 3px solid rgba(255, 255, 255, 0.6); outline-offset: 3px; }
+
+  @keyframes rr-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  @keyframes rr-putback { 0% { transform: translateY(-26px); } 70% { transform: translateY(2px); } 100% { transform: none; } }
+
+  .rr-inventory {
+    margin-top: 20px; background: var(--rr-paper); color: var(--rr-ink); border-radius: 3px;
+    padding: 10px 14px; box-shadow: 0 6px 12px var(--rr-shadow); font-size: 14px;
+  }
+  .rr-inventory summary { cursor: pointer; font-family: var(--font-display); font-weight: 600; }
+  .rr-inventory p { margin: 8px 0 2px; white-space: pre-line; max-height: 320px; overflow: auto; }
+
+  /* ---- an open box ---- */
+  .rr-boxrow {
+    display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px 10px; margin-bottom: 8px;
+    scrollbar-width: thin;
+  }
+  .rr-boxend {
+    flex: none; min-width: 64px; padding: 5px 8px 6px; border: none; cursor: pointer; border-radius: 2px;
+    background: var(--rr-card); border-top: 5px solid var(--rr-card-light);
+    box-shadow: inset 0 -3px 0 var(--rr-card-dark), 0 3px 5px var(--rr-shadow);
+    display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px !important;
+    color: #2b2117 !important;
+  }
+  .rr-boxend strong { font-family: var(--font-mono); font-size: 13px; background: var(--rr-label); padding: 0 6px; }
+  .rr-boxend span { font-family: var(--font-mono); }
+  .rr-boxend i { font-style: normal; color: #fff; background: var(--rr-scan); border-radius: 6px; padding: 0 4px; font-size: 9.5px; }
+  .rr-boxend.current { transform: translateY(-4px); outline: 2px solid #f4f7f6; outline-offset: 2px; }
+  .rr-boxend:hover:not(.current) { transform: translateY(-2px); }
+
+  .rr-boxarea { perspective: 1400px; }
+  .rr-openbox {
+    position: relative; max-width: 760px; margin: 34px auto 0;
+    background: var(--rr-card-dark); border-radius: 3px;
+    padding: 18px 18px 0;
+    box-shadow: 0 18px 28px var(--rr-shadow);
+  }
+  .rr-openbox.is-bundle { background: var(--rr-bundle-dark); }
+  .rr-openbox::before {
+    /* the box's far inner wall, in shadow */
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 26px; border-radius: 3px 3px 0 0;
+    background: linear-gradient(rgba(0, 0, 0, 0.35), transparent);
+  }
+  .rr-lid {
+    position: absolute; left: -2%; right: -2%; top: -30px; height: 34px; border-radius: 3px;
+    background: var(--rr-card-light); box-shadow: inset 0 -5px 0 var(--rr-card), 0 6px 10px var(--rr-shadow);
+    transform-origin: 50% 100%;
+    transform: translate(10%, -14px) rotate(4deg) scale(0.92); opacity: 0;
+  }
+  .rr-openbox.is-bundle .rr-lid { display: none; }
+  .rr-openbox.opening .rr-lid { animation: rr-lid 0.7s ease both; }
+  @keyframes rr-lid {
+    0% { transform: none; opacity: 1; }
+    45% { transform: translateY(-34px); opacity: 1; }
+    100% { transform: translate(10%, -14px) rotate(4deg) scale(0.92); opacity: 0; }
+  }
+  .rr-openbox-inner {
+    position: relative; display: flex; flex-direction: column;
+    max-height: 560px; overflow-y: auto; padding: 22px 6px 26px; scrollbar-width: thin;
+  }
+  .rr-openbox-front {
+    position: relative; height: 70px; margin: 0 -18px; border-radius: 0 0 3px 3px;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.08), transparent 10%, transparent 90%, rgba(0, 0, 0, 0.1)), var(--rr-card);
+    border-top: 4px solid var(--rr-card-light);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 -10px 18px rgba(0, 0, 0, 0.25);
+  }
+  .rr-openbox.is-bundle .rr-openbox-front { background: var(--rr-bundle); border-top-color: #a4b0ba; }
+  .rr-box-label.small { width: auto; max-width: 70%; margin: 0; }
+  .rr-box-label.small .rr-box-title { -webkit-line-clamp: 1; }
+
+  /* folders standing in the box, looked down on: a tab and a top edge each */
+  .rr-file {
+    position: relative; display: block; width: 100%; text-align: left; cursor: pointer;
+    margin-top: 19px; padding: 9px 76px 9px 14px; border: none; border-radius: 2px 2px 0 0;
+    background: var(--rr-manila);
+    box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.12), 0 -5px 8px -4px rgba(0, 0, 0, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    animation: rr-rise 0.4s ease both; animation-delay: calc(0.25s + var(--i) * 22ms);
+  }
+  .rr-file:hover, .rr-file:focus-visible {
+    transform: translateY(-9px); z-index: 2;
+    box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.12), 0 10px 14px -4px rgba(0, 0, 0, 0.45);
+  }
+  .rr-file:focus-visible { outline: 2px solid #f4f7f6; outline-offset: 1px; }
+  .rr-tab {
+    position: absolute; top: -15px; left: calc(14px + var(--tab) * 31%); height: 16px; min-width: 42px; padding: 0 9px;
+    border-radius: 5px 5px 0 0; background: inherit; font-family: var(--font-mono); font-size: 11px; line-height: 17px;
+    color: var(--rr-ink-soft); text-align: center;
+    box-shadow: 0 -2px 3px -1px rgba(0, 0, 0, 0.18);
+  }
+  .rr-file-body { display: flex; flex-direction: column; min-width: 0; }
+  .rr-file-title { font-size: 14px; line-height: 1.3; color: var(--rr-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rr-file:hover .rr-file-title, .rr-file:focus-visible .rr-file-title { white-space: normal; }
+  .rr-file-meta { font-size: 11.5px; color: var(--rr-ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rr-file .rr-scan { right: 10px; top: 10px; }
+  .rr-file .rr-tick { right: 52px; top: 4px; }
+  .rr-file.kind-letter, .rr-file.kind-photo {
+    background: var(--rr-paper); width: 96%; margin-left: 1.5%; border-radius: 0;
+    transform: rotate(calc((var(--tab) - 1) * 0.35deg));
+  }
+  .rr-file.kind-letter .rr-tab, .rr-file.kind-photo .rr-tab { display: none; }
+  .rr-file.kind-letter, .rr-file.kind-photo, .rr-file.kind-volume { margin-top: 7px; }
+  .rr-file.kind-photo::after {
+    content: ""; position: absolute; right: 44px; top: 7px; width: 22px; height: 16px;
+    background: linear-gradient(#9aa7ad, #56656c); border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc;
+  }
+  .rr-file.kind-volume { background: #4d3a33; border-radius: 3px; }
+  .rr-file.kind-volume .rr-file-title { color: #e9d9a8; font-family: var(--font-display); }
+  .rr-file.kind-volume .rr-file-meta { color: #c7b78f; }
+  .rr-file.kind-volume .rr-tab { display: none; }
+  .rr-file.kind-bundle { background: var(--rr-bundle); padding-top: 12px; padding-bottom: 12px; }
+  .rr-file.kind-bundle .rr-tab { background: #a4b0ba; }
+  .rr-file.kind-bundle .rr-file-title { font-weight: 600; }
+  .rr-file.kind-bundle .rr-file-meta { color: #2f3a42; }
+  .rr-file.kind-box { background: var(--rr-card); padding-top: 14px; padding-bottom: 14px; }
+  .rr-file.kind-box .rr-tab { background: var(--rr-label); }
+  .rr-string {
+    /* the cotton tape a bundle is tied with */
+    position: absolute; top: 0; bottom: 0; right: 30%; width: 5px;
+    background: repeating-linear-gradient(180deg, #f2ecdc 0 4px, #d8cfb8 4px 6px);
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+  }
+  .rr-file.rr-returned { animation: rr-putback 0.6s ease both; outline: 2px dashed rgba(255, 255, 255, 0.85); outline-offset: 2px; }
+
+  /* ---- a folder open on the desk ---- */
+  .scene-desk { perspective: 1800px; }
+  .rr-openfolder {
+    display: grid; grid-template-columns: minmax(200px, 0.8fr) minmax(0, 1.4fr);
+    background: var(--rr-manila); border-radius: 4px; padding: 14px;
+    box-shadow: 0 16px 26px var(--rr-shadow);
+    transform-style: preserve-3d;
+  }
+  .rr-openfolder.kind-bundle, .rr-openfolder.kind-box { background: var(--rr-bundle); }
+  .rr-leaf { min-width: 0; padding: 10px; }
+  .rr-leaf-left {
+    border-right: 2px solid var(--rr-manila-dark); box-shadow: inset -10px 0 12px -10px rgba(0, 0, 0, 0.35);
+    transform-origin: 100% 50%; animation: rr-cover 0.7s cubic-bezier(.2, .7, .3, 1) both;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  @keyframes rr-cover { from { transform: rotateY(-140deg); opacity: 0.4; } to { transform: none; opacity: 1; } }
+  .rr-slip {
+    background: var(--rr-paper); padding: 10px 12px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transform: rotate(-0.8deg);
+  }
+  .rr-slip-head { display: flex; justify-content: space-between; gap: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--rr-ink-soft); border-bottom: 1px solid var(--rr-paper-edge); padding-bottom: 4px; margin-bottom: 6px; }
+  .rr-slip-title { font-family: var(--font-mono); font-size: 13.5px; line-height: 1.4; color: var(--rr-ink); overflow-wrap: anywhere; }
+  .rr-slip-meta { margin-top: 6px; font-family: var(--font-mono); font-size: 11.5px; color: var(--rr-ink-soft); }
+  .rr-slip-links { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; }
+  .rr-slip-links a { color: #2d4f7c; }
+  .rr-pages {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 6px;
+    max-height: 260px; overflow-y: auto; scrollbar-width: thin;
+  }
+  .rr-pagethumb {
+    position: relative; aspect-ratio: 3 / 4; padding: 0; border: none; cursor: pointer; overflow: hidden;
+    background: var(--rr-paper); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  .rr-pagethumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rr-pagethumb span { position: absolute; right: 2px; bottom: 1px; font-family: var(--font-mono); font-size: 9.5px; background: rgba(255, 255, 255, 0.85); padding: 0 3px; }
+  .rr-pagethumb[aria-current="true"] { outline: 3px solid var(--rr-scan); outline-offset: 1px; }
+
+  .rr-leaf-right { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .rr-sheetstack {
+    --stack: 0;
+    position: relative; width: 100%; display: flex; justify-content: center;
+  }
+  .rr-sheet {
+    position: relative; background: var(--rr-paper); border: none; padding: 8px; cursor: zoom-in;
+    box-shadow:
+      calc(var(--stack) * 1px) calc(var(--stack) * 1px) 0 var(--rr-paper-edge),
+      calc(var(--stack) * 2px) calc(var(--stack) * 2px) 0 var(--rr-paper),
+      calc(var(--stack) * 2px) calc(var(--stack) * 2px) 0 1px var(--rr-paper-edge),
+      0 10px 18px var(--rr-shadow);
+    transform: rotate(0.5deg);
+    animation: rr-rise 0.5s ease both;
+  }
+  .rr-page img { display: block; max-width: 100%; max-height: min(640px, 72vh); min-height: 200px; min-width: 150px; object-fit: contain; transition: filter 0.3s; }
+  .rr-page.loading img { filter: blur(3px); }
+  .rr-turning { position: absolute; top: 0; pointer-events: none; z-index: 3; }
+  .rr-turning.out-left { animation: rr-out-left 0.45s ease-in both; }
+  .rr-turning.out-right { animation: rr-out-right 0.45s ease-in both; }
+  @keyframes rr-out-left { to { transform: translateX(-70%) rotate(-9deg); opacity: 0; } }
+  @keyframes rr-out-right { to { transform: translateX(70%) rotate(9deg); opacity: 0; } }
+  .rr-pager { display: flex; align-items: center; gap: 10px; }
+  .rr-pageno { font-family: var(--font-hand); font-size: 20px; color: var(--rr-ink); min-width: 110px; text-align: center; }
+  .rr-notscanned {
+    cursor: default; max-width: 380px; margin: 30px auto; padding: 22px 24px; text-align: left; color: var(--rr-ink);
+    background: repeating-linear-gradient(180deg, transparent 0 23px, rgba(70, 110, 160, 0.18) 23px 24px), var(--rr-paper);
+  }
+  .rr-notscanned strong { font-family: var(--font-display); font-size: 17px; }
+  .rr-notscanned p { margin: 8px 0 12px; font-size: 14px; }
+  .rr-notscanned a { color: #2d4f7c; font-size: 14px; }
+
+  .rr-deskbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin-top: 20px; }
+  .rr-deskbar-pos { flex-basis: 100%; text-align: center; color: #eef3f2; font-size: 12.5px; }
+
+  /* ---- request desk ---- */
+  .rr-request {
+    max-width: 640px; background: #fff8e2; color: var(--rr-ink); padding: 16px 18px 18px; border-radius: 2px;
+    box-shadow: 0 10px 18px var(--rr-shadow); transform: rotate(-0.4deg);
+    border-left: 4px solid #d9b25c;
+  }
+  .rr-request-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px dashed #c9b07a; padding-bottom: 6px; margin-bottom: 10px; }
+  .rr-request-head strong { font-family: var(--font-display); font-size: 17px; }
+  .rr-request-head span { font-family: var(--font-mono); font-size: 12px; color: var(--rr-ink-soft); }
+  .rr-request label { display: block; font-size: 12px; color: var(--rr-ink-soft); margin-bottom: 4px; }
+  .rr-request-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .rr-request input {
+    flex: 1 1 220px; min-width: 0; font-family: var(--font-hand); font-size: 22px; padding: 2px 6px; color: #23406a;
+    background: transparent; border: none; border-bottom: 1.5px solid #8c7a54; outline: none;
+  }
+  .rr-request input:focus { border-bottom-color: #23406a; }
+  .rr-slips { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; max-height: 360px; overflow-y: auto; }
+  .rr-slips:empty { display: none; }
+  .rr-slips-note { font-size: 13px; color: var(--rr-ink-soft); }
+  .rr-slipbtn {
+    display: grid; grid-template-columns: 92px 1fr; gap: 0 10px; text-align: left; cursor: pointer;
+    background: #fff; border: 1px solid #e6dcc0; border-radius: 2px; padding: 6px 10px;
+  }
+  .rr-slipbtn:hover { border-color: #8c7a54; }
+  .rr-slipbtn-no { grid-row: span 2; font-family: var(--font-mono); font-size: 12px; color: var(--rr-ink-soft); padding-top: 2px; }
+  .rr-slipbtn-t { font-weight: 600; font-size: 14px; }
+  .rr-slipbtn-m { font-size: 12px; color: var(--rr-ink-soft); }
+  .rr-slipbtn.has-scans .rr-slipbtn-no::after { content: " ●"; color: var(--rr-scan); }
+
+  .rr-open-btn {
+    margin: 10px 0 2px; background: var(--accent-soft); color: var(--accent-strong); border: 1px solid var(--line);
+    border-radius: 6px; padding: 5px 12px; font: inherit; font-size: 13px; cursor: pointer;
+  }
+  .rr-open-btn:hover { border-color: var(--accent); }
+
+  @media (max-width: 900px) {
+    .rr-desk { grid-template-columns: minmax(0, 1fr); padding: 18px 14px 26px; }
+    .rr-props { flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
+    .rr-tent { flex: 0 0 150px; }
+    .rr-notepad { flex: 1 1 220px; }
+    .rr-openfolder { grid-template-columns: minmax(0, 1fr); padding: 8px; }
+    .rr-leaf-left { border-right: none; border-bottom: 2px solid var(--rr-manila-dark); box-shadow: none; order: 2; animation: none; }
+    .rr-pages { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); max-height: 150px; }
+    .rr-window { height: 64px; }
+  }
+  @media (max-width: 520px) {
+    /* the notepad already shows the full path; the trail stays one line */
+    .rr-crumbs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .rr-crumb { flex: none; max-width: 180px; }
+    .rr-record-link { flex: none; }
+    .rr-shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 6px; }
+    .rr-trolley { padding: 0; }
+    .rr-file { padding-right: 60px; }
+    .rr-caption-main { font-size: 17px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rr *, .rr *::before, .rr *::after { animation: none !important; transition: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -2043,6 +2538,7 @@
       <ul class="rail-graphs">
         <li><button class="rail-graph-btn" data-view="home"><span>Home</span></button></li>
         <li><button class="rail-graph-btn" data-view="archive"><span>Archive</span></button></li>
+        <li><button class="rail-graph-btn" data-view="readingroom"><span>Reading room</span></button></li>
         <li><button class="rail-graph-btn" data-view="books"><span>Books</span></button></li>
         <li><button class="rail-graph-btn" data-view="datasets"><span>Datasets</span></button></li>
         <li><button class="rail-graph-btn" data-view="person"><span>Person</span></button></li>
@@ -2787,6 +3283,7 @@
     else if (viewName === "datascience") renderDataScience();
     else if (viewName === "growth") renderGrowth();
     else if (viewName === "person") renderPersonLanding();
+    else if (viewName === "readingroom") renderReadingDesk();
     else renderLanding(); // "home", and the fallback default
   }
 
@@ -3996,6 +4493,7 @@
     if (raw === currentUri) return;
     if (raw.indexOf("view:") === 0) { currentUri = null; renderTrail(); renderView(raw.slice(5)); return; }
     if (raw.indexOf("search:") === 0) { searchInput.value = raw.slice(7); runSearch(raw.slice(7), { fromHash: true }); return; }
+    if (raw.indexOf("reading:") === 0) { currentUri = null; renderTrail(); renderReading(raw.slice(8)); return; }
     if (raw && /^https?:\/\//i.test(raw)) { currentUri = raw; loadEntity(raw); }
     else { currentUri = null; renderTrail(); renderView("home"); }
   }
@@ -6859,6 +7357,14 @@
       header.appendChild(el("h1", { class: "record-title", text: label }));
     }
 
+    // Archive components: the same place in the finding aid, as boxes and
+    // folders on a reading-room desk (renderReading).
+    if (view && HIERARCHICAL_TYPES[view.type] && /\/id\/collection\//.test(uri)) {
+      var rrBtn = el("button", { type: "button", class: "rr-open-btn", text: "Open in the reading room" });
+      rrBtn.addEventListener("click", function () { readingNavigate(uri); });
+      header.appendChild(rrBtn);
+    }
+
     var uriLine = el("div", { class: "record-uri" });
     if (isSafeHref(uri)) {
       uriLine.appendChild(el("a", { href: uri, target: "_blank", rel: "noopener", text: uri }));
@@ -7505,6 +8011,912 @@
     return row;
   }
 
+  // ---------- Reading room: a finding aid as boxes, folders and pages ----------
+  // A second way into findingaid-etl's hierarchy, next to the record page,
+  // modelled on what a visitor to IISG's actual reading room does (see
+  // "Plan uw bezoek" on iisg.amsterdam): the collection arrives on a
+  // trolley as boxes (its top-level series), a box opens onto the folders
+  // standing in it, and a folder is laid open on the desk to read its
+  // scanned pages one by one, then put back. The finding aid records no
+  // physical box numbers, so what gets drawn as what comes from a node's
+  // place in the tree and, where present, its iisgv:physicalDescription
+  // ("1 map", "3 Briefe", "1 doos", ...). Pages come from the item's own
+  // IIIF manifest (access.iisg.amsterdam serves it with open CORS); the
+  // graph itself only holds the first page's thumbnail.
+  //
+  // Hash: #reading:<uri> for a place in an archive; #view:readingroom is
+  // the request desk where you pick one.
+
+  var RR_PART = "(<http://schema.org/isPartOf>|<https://schema.org/isPartOf>)";
+  // Folders per drawn box. A series with 2,289 letters (Kautsky's "Briefe
+  // an Karl Kautsky") becomes a row of numbered boxes to pick from, the
+  // way it would fill a shelf, rather than one endless box.
+  var RR_PER_BOX = 24;
+  var RR_ON_TROLLEY = 12;
+
+  // Earliest match wins, so "1 omslag met 3 brieven" is a folder.
+  var RR_PHYS_KINDS = [
+    ["box", /\b(doos|dozen|box(es)?|pak(ken)?|kartons?|bo[iî]tes?|cajas?|schachteln?)\b/i],
+    ["volume", /\b(deel|delen|vols?|volumes?|b[äa]nde?|registers?|cahiers?|notebooks?|tomes?|schriften?)\b/i],
+    ["photo", /\b(foto'?s?|photos?|photographs?|fotografi\w*|negatie\w*|dia'?s)\b/i],
+    ["letter", /\b(brie[fv]e?n?|letters?|lettres?|cartas?|stuk(ken)?|st[üu]cke?|pieces?|pi[eè]ces?|feuillets?|bl[äa]tter|blatt|telegram\w*|postcards?|briefkaart\w*)\b/i],
+    ["folder", /\b(maps?|mappen?|folders?|omslag(en)?|umschl[äa]ge?|umschlag|covers?|chemises?|carpetas?|portefeuilles?|dossiers?)\b/i]
+  ];
+
+  var RR_KIND_NAMES = {
+    box: "box", bundle: "bundle", folder: "folder", letter: "letter",
+    photo: "photo", volume: "volume", collection: "archive"
+  };
+
+  function rrPhysKind(phys) {
+    if (!phys) return null;
+    var best = null, bestAt = Infinity;
+    RR_PHYS_KINDS.forEach(function (k) {
+      var m = k[1].exec(phys);
+      if (m && m.index < bestAt) { best = k[0]; bestAt = m.index; }
+    });
+    return best;
+  }
+
+  // What a child is drawn as inside its parent's scene.
+  function rrItemKind(it) {
+    var pk = rrPhysKind(it.phys);
+    if (it.kids > 0) return pk === "box" ? "box" : "bundle";
+    return pk === "box" ? "folder" : (pk || "folder");
+  }
+
+  function rrRootOf(uri) { return uri.split("#")[0]; }
+  function rrCallNumber(uri) { return rrRootOf(uri).replace(/^.*\//, ""); }
+
+  // Desk number for the reservation card: stable per archive, purely
+  // decorative.
+  function rrDeskNo(uri) {
+    var h = 0, s = rrRootOf(uri);
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return 1 + (h % 24);
+  }
+
+  // Items you've opened, ticked in pencil wherever they show up again.
+  // Per browser only (a convenience, not a record); fine if it's empty.
+  var RR_HANDLED_KEY = "rr-handled";
+  var rrHandled = {};
+  try {
+    (JSON.parse(localStorage.getItem(RR_HANDLED_KEY) || "[]") || []).forEach(function (u) { rrHandled[u] = true; });
+  } catch (e) { /* storage blocked: ticks just don't persist */ }
+
+  function rrMarkHandled(uri) {
+    if (rrHandled[uri]) return;
+    rrHandled[uri] = true;
+    try {
+      var all = Object.keys(rrHandled);
+      localStorage.setItem(RR_HANDLED_KEY, JSON.stringify(all.slice(-3000)));
+    } catch (e) { /* ignore */ }
+  }
+
+  function rrHandledIn(rootUri) {
+    var prefix = rootUri + "#";
+    return Object.keys(rrHandled).filter(function (u) { return u.indexOf(prefix) === 0; }).length;
+  }
+
+  // Per-session caches: walking back up to a box you just came from
+  // shouldn't refetch it.
+  var rrNodeCache = {}, rrKidsCache = {}, rrChainCache = {}, rrManifestCache = {};
+  var rrDigitizedRoots = null;
+
+  function rrCached(cache, key, fetcher) {
+    if (!cache[key]) cache[key] = fetcher().catch(function (e) { delete cache[key]; throw e; });
+    return cache[key];
+  }
+
+  function rrFetchNode(uri) {
+    return rrCached(rrNodeCache, uri, function () {
+      var q = "SELECT (SAMPLE(?n0) AS ?name) (SAMPLE(?pd0) AS ?phys) (SAMPLE(?t0) AS ?dates) (SAMPLE(?id0) AS ?ident)\n" +
+        "       (SAMPLE(?m0) AS ?manifest) (SAMPLE(?th0) AS ?thumb) (SAMPLE(?ab0) AS ?abstract) (SAMPLE(?nv0) AS ?native) WHERE {\n" +
+        "  VALUES ?s { " + iriRef(uri) + " }\n" +
+        "  OPTIONAL { ?s (<http://schema.org/name>|<https://schema.org/name>) ?n0 }\n" +
+        "  OPTIONAL { ?s <https://iisg.amsterdam/vocab/physicalDescription> ?pd0 }\n" +
+        "  OPTIONAL { ?s (<http://schema.org/temporalCoverage>|<https://schema.org/temporalCoverage>) ?t0 }\n" +
+        "  OPTIONAL { ?s (<http://schema.org/identifier>|<https://schema.org/identifier>) ?id0 }\n" +
+        "  OPTIONAL { ?s <https://iisg.amsterdam/vocab/iiifManifest> ?m0 }\n" +
+        "  OPTIONAL { ?s <https://schema.org/thumbnailUrl> ?th0 }\n" +
+        "  OPTIONAL { ?s (<http://schema.org/abstract>|<https://schema.org/abstract>) ?ab0 }\n" +
+        "  OPTIONAL { ?s <https://iisg.amsterdam/vocab/nativeViewer> ?nv0 }\n" +
+        "} GROUP BY ?s";
+      return sparql(q).then(function (rows) {
+        var r = rows[0] || {};
+        var v = function (k) { return r[k] ? r[k].value : null; };
+        return {
+          uri: uri, label: v("name") ? tidyTitle(v("name")) : shortLabel(uri),
+          phys: v("phys"), dates: v("dates"), ident: v("ident"), manifest: v("manifest"),
+          thumb: v("thumb") && isLocalUri(v("thumb")) ? v("thumb") : null,
+          abstract: v("abstract"), native: v("native")
+        };
+      });
+    });
+  }
+
+  // Children with what each is drawn from, plus a count of its own
+  // children (to tell a bundle from a single folder) and, in a second
+  // query, how many scanned items sit anywhere below it (same
+  // descendants-first order as fetchDigitizedChildren, for speed).
+  function rrFetchKids(uri) {
+    return rrCached(rrKidsCache, uri, function () {
+      var q = "SELECT ?c (SAMPLE(?n0) AS ?name) (SAMPLE(?p0) AS ?pos) (SAMPLE(?pd0) AS ?phys) (SAMPLE(?t0) AS ?dates)\n" +
+        "       (SAMPLE(?id0) AS ?ident) (SAMPLE(?th0) AS ?thumb) (SAMPLE(?m0) AS ?manifest) (COUNT(DISTINCT ?g) AS ?kids) WHERE {\n" +
+        "  ?c " + RR_PART + " " + iriRef(uri) + " .\n" +
+        "  OPTIONAL { ?c (<http://schema.org/name>|<https://schema.org/name>) ?n0 }\n" +
+        "  OPTIONAL { ?c (<http://schema.org/position>|<https://schema.org/position>) ?p0 }\n" +
+        "  OPTIONAL { ?c <https://iisg.amsterdam/vocab/physicalDescription> ?pd0 }\n" +
+        "  OPTIONAL { ?c (<http://schema.org/temporalCoverage>|<https://schema.org/temporalCoverage>) ?t0 }\n" +
+        "  OPTIONAL { ?c (<http://schema.org/identifier>|<https://schema.org/identifier>) ?id0 }\n" +
+        "  OPTIONAL { ?c <https://schema.org/thumbnailUrl> ?th0 }\n" +
+        "  OPTIONAL { ?c <https://iisg.amsterdam/vocab/iiifManifest> ?m0 }\n" +
+        "  OPTIONAL { ?g " + RR_PART + " ?c }\n" +
+        "} GROUP BY ?c LIMIT 5000";
+      var dq = "SELECT ?c (COUNT(DISTINCT ?d) AS ?n) WHERE {\n" +
+        "  { SELECT ?d WHERE { ?d " + RR_PART + "+ " + iriRef(uri) + " . ?d <https://iisg.amsterdam/vocab/iiifManifest> ?m } }\n" +
+        "  ?c " + RR_PART + " " + iriRef(uri) + " .\n" +
+        "  ?d " + RR_PART + "* ?c .\n" +
+        "} GROUP BY ?c";
+      return Promise.all([sparql(q), sparql(dq).catch(function () { return []; })]).then(function (res) {
+        var scanned = {};
+        res[1].forEach(function (r) { scanned[r.c.value] = parseInt(r.n.value, 10); });
+        var items = res[0].map(function (r) {
+          var v = function (k) { return r[k] ? r[k].value : null; };
+          var pos = v("pos") !== null ? parseFloat(v("pos")) : NaN;
+          var it = {
+            uri: r.c.value, label: v("name") ? tidyTitle(v("name")) : shortLabel(r.c.value),
+            pos: isNaN(pos) ? Infinity : pos, phys: v("phys"), dates: v("dates"), ident: v("ident"),
+            thumb: v("thumb") && isLocalUri(v("thumb")) ? v("thumb") : null,
+            manifest: v("manifest"), kids: parseInt(v("kids") || "0", 10),
+            scanned: scanned[r.c.value] || 0
+          };
+          it.kind = rrItemKind(it);
+          return it;
+        });
+        items.sort(function (a, b) { return a.pos - b.pos || a.label.localeCompare(b.label); });
+        return items;
+      });
+    });
+  }
+
+  function rrFetchChain(uri) {
+    return rrCached(rrChainCache, uri, function () {
+      return fetchAncestorChains([uri]).then(function (chains) { return chains[uri] || []; });
+    });
+  }
+
+  // Every page of an item, from its IIIF manifest (Presentation 3, with a
+  // fallback for 2). Shaped like fetchRecordImages' output, so the shared
+  // lightbox (openImageLightbox) can show them full screen.
+  function rrFetchPages(manifestUrl) {
+    if (!manifestUrl || !isSafeHref(manifestUrl) || !isLocalUri(manifestUrl)) return Promise.resolve([]);
+    return rrCached(rrManifestCache, manifestUrl, function () {
+      return fetch(manifestUrl).then(function (r) {
+        if (!r.ok) throw new Error("manifest " + r.status);
+        return r.json();
+      }).then(function (m) {
+        var pages = [];
+        function svcId(s) { s = Array.isArray(s) ? s[0] : s; return s ? (s["@id"] || s.id) : null; }
+        if (Array.isArray(m.items)) {
+          m.items.forEach(function (canvas, i) {
+            var body = null;
+            try { body = canvas.items[0].items[0].body; } catch (e) { body = null; }
+            var svc = body ? svcId(body.service) : null;
+            if (!svc && canvas.thumbnail) svc = svcId(canvas.thumbnail[0] && canvas.thumbnail[0].service);
+            if (svc) pages.push({ canvas: canvas.id, svc: svc, w: canvas.width, h: canvas.height });
+          });
+        } else if (m.sequences && m.sequences[0]) {
+          (m.sequences[0].canvases || []).forEach(function (canvas) {
+            var res = canvas.images && canvas.images[0] && canvas.images[0].resource;
+            var svc = res ? svcId(res.service) : null;
+            if (svc) pages.push({ canvas: canvas["@id"], svc: svc, w: canvas.width, h: canvas.height });
+          });
+        }
+        return pages.filter(function (p) { return isLocalUri(p.svc); }).map(function (p, i) {
+          var service = p.svc.replace(/\/+$/, "");
+          return {
+            canvas: p.canvas, manifest: manifestUrl, pos: i, service: service,
+            thumb: service + "/full/200,/0/default.jpg", full: null,
+            width: p.w || null, height: p.h || null, level: null, conditions: null, credit: null
+          };
+        });
+      });
+    });
+  }
+
+  // The 520-odd archives with anything scanned, biggest first -- the
+  // trolley on the request desk and "Surprise me" draw from these.
+  function rrFetchDigitizedRoots() {
+    if (rrDigitizedRoots) return rrDigitizedRoots;
+    var q = "SELECT ?root (COUNT(?d) AS ?n) (SAMPLE(?nm) AS ?name) (SAMPLE(?dt) AS ?dates) WHERE {\n" +
+      "  ?d <https://iisg.amsterdam/vocab/iiifManifest> ?m ; " + RR_PART + " ?x .\n" +
+      "  BIND(IRI(STRBEFORE(STR(?d), \"#\")) AS ?root)\n" +
+      "  ?root (<http://schema.org/name>|<https://schema.org/name>) ?nm .\n" +
+      "  OPTIONAL { ?root (<http://schema.org/temporalCoverage>|<https://schema.org/temporalCoverage>) ?dt }\n" +
+      "} GROUP BY ?root ORDER BY DESC(?n)";
+    rrDigitizedRoots = sparql(q).then(function (rows) {
+      return rows.map(function (r) {
+        return { uri: r.root.value, label: tidyTitle(r.name.value), dates: r.dates ? r.dates.value : null, scanned: parseInt(r.n.value, 10) };
+      });
+    }).catch(function (e) { rrDigitizedRoots = null; throw e; });
+    return rrDigitizedRoots;
+  }
+
+  function rrSearchCollections(term) {
+    var t = term.trim();
+    var callNo = /^(ARCH|COLL)\s*0*(\d+)$/i.exec(t);
+    var filter = callNo
+      ? "FILTER(STRENDS(STR(?c), \"/" + callNo[1].toUpperCase() + ("00000" + callNo[2]).slice(-5) + "\"))"
+      : "FILTER(CONTAINS(LCASE(?nm), \"" + escLiteral(t.toLowerCase()) + "\"))";
+    var q = "SELECT ?c (SAMPLE(?nm) AS ?name) (SAMPLE(?dt) AS ?dates) (SAMPLE(?pd) AS ?phys) WHERE {\n" +
+      "  ?c <https://schema.org/additionalType> <https://www.ica.org/standards/RiC/vocabularies/recordSetTypes#Collection> ;\n" +
+      "     (<http://schema.org/name>|<https://schema.org/name>) ?nm .\n" +
+      "  " + filter + "\n" +
+      "  OPTIONAL { ?c (<http://schema.org/temporalCoverage>|<https://schema.org/temporalCoverage>) ?dt }\n" +
+      "  OPTIONAL { ?c <https://iisg.amsterdam/vocab/physicalDescription> ?pd }\n" +
+      "} GROUP BY ?c ORDER BY ?name LIMIT 40";
+    return sparql(q).then(function (rows) {
+      return rows.map(function (r) {
+        return { uri: r.c.value, label: tidyTitle(r.name.value), dates: r.dates ? r.dates.value : null, phys: r.phys ? r.phys.value : null };
+      });
+    });
+  }
+
+  // ---- Navigation ----
+
+  var rrLastUri = null;   // where we were, to tell "put back" from "take out"
+  var rrKeys = null;      // the current scene's keyboard handlers
+  var rrGen = 0;
+
+  function readingNavigate(uri) {
+    currentUri = null;
+    history.pushState({ reading: uri }, "", "#reading:" + encodeURIComponent(uri));
+    renderReading(uri);
+  }
+
+  function rrUp(uri, chain) {
+    if (chain.length) readingNavigate(chain[chain.length - 1].uri);
+    else navigateToView("readingroom");
+  }
+
+  // One listener for the whole app; only acts while a reading-room scene
+  // is showing and nothing else (the lightbox, a text field) wants keys.
+  document.addEventListener("keydown", function (e) {
+    if (!rrKeys || !document.querySelector(".rr")) return;
+    if (activeLightbox || e.altKey || e.ctrlKey || e.metaKey) return;
+    var t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    var fn = rrKeys[e.key];
+    if (fn) { e.preventDefault(); fn(); }
+  });
+
+  // ---- The room: window, desk, reservation card and notepad ----
+
+  var RR_ICONS = {
+    box: '<svg viewBox="0 0 24 24"><path d="M3 8h18v12H3Z"/><path d="M2 4h20v4H2Z"/><path d="M9 12h6"/></svg>',
+    bundle: '<svg viewBox="0 0 24 24"><path d="M3 6h18v13H3Z"/><path d="M12 6v13"/><path d="M3 12h18"/></svg>',
+    folder: '<svg viewBox="0 0 24 24"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/></svg>',
+    letter: '<svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6Z"/><path d="M9 10h7M9 14h7M9 18h4"/></svg>',
+    photo: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/><path d="M4 16l5-5 4 4 2-2 5 5"/></svg>',
+    volume: '<svg viewBox="0 0 24 24"><path d="M6 3h12v18H6Z"/><path d="M9 3v18"/></svg>',
+    collection: '<svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M5 20V8h4v12M10 20V5h4v15M15 20v-9h4v9"/></svg>'
+  };
+
+  function rrIcon(kind) {
+    var s = el("span", { class: "rr-ic", "aria-hidden": "true" });
+    s.innerHTML = RR_ICONS[kind] || RR_ICONS.folder;
+    return s;
+  }
+
+  function rrWindowEl() {
+    var w = el("div", { class: "rr-window", "aria-hidden": "true" });
+    w.innerHTML = '<svg class="rr-skyline" viewBox="0 0 600 40" preserveAspectRatio="none">' +
+      '<path d="M0 40V26h30v-8h22v10h40V14h18v14h36V20h50v-6h14v6h30v8h40V10h24v18h60v-8h28v8h44V18h30v10h40v-6h26v18Z"/></svg>' +
+      '<div class="rr-water"></div><div class="rr-boat"></div><div class="rr-mullions"></div>';
+    return w;
+  }
+
+  // ctx: { root, chain (root-first ancestors), node, here (label of the
+  // current scene's object kind) }
+  function rrShell(ctx) {
+    var section = el("section", { class: "rr", "aria-label": "Reading room" });
+
+    // Plain trail above the scene: the same path as the notepad, for
+    // quick jumps and screen readers.
+    var crumbs = el("nav", { class: "rr-crumbs", "aria-label": "Where you are" });
+    var deskBtn = el("button", { type: "button", class: "rr-crumb", text: "Reading room" });
+    deskBtn.addEventListener("click", function () { navigateToView("readingroom"); });
+    crumbs.appendChild(deskBtn);
+    var path = ctx.node ? ctx.chain.concat([{ uri: ctx.node.uri, label: ctx.node.label }]) : [];
+    path.forEach(function (p, i) {
+      crumbs.appendChild(el("span", { class: "rr-crumb-sep", "aria-hidden": "true", text: "›" }));
+      var last = i === path.length - 1;
+      var b = el("button", { type: "button", class: "rr-crumb" + (last ? " current" : ""), title: p.label,
+        text: i === 0 ? rrCallNumber(p.uri) + " · " + p.label : p.label });
+      if (last) b.setAttribute("aria-current", "location");
+      else b.addEventListener("click", function () { readingNavigate(p.uri); });
+      crumbs.appendChild(b);
+    });
+    if (ctx.node) {
+      var rec = el("button", { type: "button", class: "rr-record-link", text: "Catalogue record" });
+      rec.addEventListener("click", function () { navigate(ctx.node.uri); });
+      crumbs.appendChild(rec);
+    }
+    section.appendChild(crumbs);
+
+    var room = el("div", { class: "rr-room" });
+    room.appendChild(rrWindowEl());
+    var desk = el("div", { class: "rr-desk" });
+    var stage = el("div", { class: "rr-stage" });
+    var props = el("div", { class: "rr-props" });
+
+    // Reservation card on its stand: which archive is on this desk.
+    var tent = el("div", { class: "rr-tent" });
+    if (ctx.root) {
+      tent.appendChild(el("span", { class: "rr-tent-desk", text: "Desk " + rrDeskNo(ctx.root.uri) }));
+      tent.appendChild(el("strong", { text: rrCallNumber(ctx.root.uri) }));
+      tent.appendChild(el("span", { class: "rr-tent-name", text: ctx.root.label }));
+    } else {
+      tent.appendChild(el("span", { class: "rr-tent-desk", text: "Desk free" }));
+      tent.appendChild(el("strong", { text: "IISG" }));
+      tent.appendChild(el("span", { class: "rr-tent-name", text: "Reading room, Cruquiusweg 31" }));
+    }
+    props.appendChild(tent);
+
+    // Notepad: the hierarchy, jotted down as you go in.
+    var pad = el("div", { class: "rr-notepad" });
+    if (ctx.node) {
+      pad.appendChild(el("div", { class: "rr-pad-head", text: "Where I am" }));
+      var list = el("ol", { class: "rr-pad-path" });
+      path.forEach(function (p, i) {
+        var last = i === path.length - 1;
+        var kind = i === 0 ? "collection" : (last ? ctx.kind : (i === 1 ? "box" : "bundle"));
+        var li = el("li", { style: "--d:" + Math.min(i, 6) });
+        var b = el("button", { type: "button", class: last ? "current" : "" }, [rrIcon(kind), el("span", { text: i === 0 ? rrCallNumber(p.uri) : p.label })]);
+        b.title = p.label;
+        if (!last) b.addEventListener("click", function () { readingNavigate(p.uri); });
+        li.appendChild(b);
+        list.appendChild(li);
+      });
+      pad.appendChild(list);
+      var handled = rrHandledIn(ctx.root.uri);
+      pad.appendChild(el("div", { class: "rr-pad-tally", text: handled ? "✓ " + handled + " handled in this archive" : "Nothing handled yet" }));
+      pad.appendChild(el("div", { class: "rr-pad-keys", text: ctx.keysHint || "Esc  put back" }));
+    } else {
+      pad.appendChild(el("div", { class: "rr-pad-head", text: "House rules" }));
+      var rules = el("ul", { class: "rr-pad-rules" });
+      ["Pencils only, no pens", "One box on the desk at a time", "Keep folders in their order", "Put back what you take out"].forEach(function (t) {
+        rules.appendChild(el("li", { text: t }));
+      });
+      pad.appendChild(rules);
+      var total = Object.keys(rrHandled).length;
+      if (total) pad.appendChild(el("div", { class: "rr-pad-tally", text: "✓ " + total + " items handled so far" }));
+    }
+    pad.appendChild(el("span", { class: "rr-pencil", "aria-hidden": "true" }));
+    props.appendChild(pad);
+
+    desk.appendChild(stage);
+    desk.appendChild(props);
+    room.appendChild(desk);
+    section.appendChild(room);
+    return { section: section, stage: stage };
+  }
+
+  function rrCaption(text, sub) {
+    var c = el("div", { class: "rr-caption" }, [el("p", { class: "rr-caption-main", text: text })]);
+    if (sub) c.appendChild(el("p", { class: "rr-caption-sub", text: sub }));
+    return c;
+  }
+
+  function rrCount(n, one, many) { return fmtNum(n) + " " + (n === 1 ? one : many); }
+
+  function rrItemMeta(it) {
+    var bits = [];
+    if (it.dates) bits.push(it.dates);
+    if (it.phys) bits.push(it.phys);
+    if (it.kids) bits.push(rrCount(it.kids, "part", "parts"));
+    return bits.join(" · ");
+  }
+
+  function rrScanBadge(it) {
+    if (!it.scanned) return null;
+    return el("span", { class: "rr-scan", title: it.manifest ? "Scanned" : fmtNum(it.scanned) + " scanned inside",
+      text: it.manifest && it.kids === 0 ? "scan" : fmtNum(it.scanned) + " scan" + (it.scanned === 1 ? "" : "s") });
+  }
+
+  function rrTick(uri) {
+    return rrHandled[uri] ? el("span", { class: "rr-tick", title: "You've handled this", text: "✓" }) : null;
+  }
+
+  // ---- Scene: archive boxes on a trolley ----
+
+  function rrBoxEl(it, i, opts) {
+    opts = opts || {};
+    var label = el("span", { class: "rr-box-label" }, [
+      el("span", { class: "rr-box-no", text: opts.no || (it.ident || (isFinite(it.pos) ? String(it.pos) : String(i + 1))) }),
+      el("span", { class: "rr-box-title", text: it.label }),
+      el("span", { class: "rr-box-meta", text: opts.meta !== undefined ? opts.meta : rrItemMeta(it) })
+    ]);
+    var b = el("button", { type: "button", class: "rr-box" + (opts.cls ? " " + opts.cls : ""), style: "--i:" + i, title: it.label }, [
+      label, el("span", { class: "rr-box-hand", "aria-hidden": "true" })
+    ]);
+    var badge = rrScanBadge(it);
+    if (badge) b.appendChild(badge);
+    var tick = rrTick(it.uri);
+    if (tick) b.appendChild(tick);
+    return b;
+  }
+
+  function rrTrolleyEl(boxes) {
+    // One grid; the shelf boards are drawn under each row in CSS, so
+    // however many boxes fit across, every row stands on one.
+    var trolley = el("div", { class: "rr-trolley" });
+    var shelf = el("div", { class: "rr-shelf" });
+    boxes.forEach(function (b) { shelf.appendChild(b); });
+    trolley.appendChild(shelf);
+    trolley.appendChild(el("div", { class: "rr-trolley-base", "aria-hidden": "true" }, [el("span", { class: "rr-wheel" }), el("span", { class: "rr-wheel" })]));
+    return trolley;
+  }
+
+  function rrTrolleyScene(stage, node, kids, cameFrom) {
+    var scanned = kids.reduce(function (s, k) { return s + k.scanned; }, 0);
+    stage.appendChild(rrCaption(
+      "Your archive has arrived: " + rrCount(kids.length, "box", "boxes") + " on the trolley.",
+      [node.dates, node.phys, scanned ? fmtNum(scanned) + " items scanned" : "nothing scanned yet"].filter(Boolean).join(" · ") + ". Take a box to your desk."
+    ));
+    var boxes = kids.map(function (it, i) {
+      var b = rrBoxEl(it, i, { cls: it.uri === cameFrom ? "rr-returned" : "" });
+      b.addEventListener("click", function () { readingNavigate(it.uri); });
+      return b;
+    });
+    stage.appendChild(rrTrolleyEl(boxes));
+    if (node.abstract) {
+      stage.appendChild(el("details", { class: "rr-inventory" }, [
+        el("summary", { text: "Read the inventory’s introduction" }),
+        el("p", { text: node.abstract })
+      ]));
+    }
+  }
+
+  // ---- Scene: an open box, folders standing in it ----
+
+  function rrFileEl(it, i) {
+    var kind = it.kind;
+    var no = it.ident || (isFinite(it.pos) ? String(it.pos) : "");
+    var b = el("button", { type: "button", class: "rr-file kind-" + kind, style: "--i:" + i + ";--tab:" + (i % 3),
+      "aria-label": RR_KIND_NAMES[kind] + " " + no + ": " + it.label + (it.dates ? ", " + it.dates : "") }, [
+      el("span", { class: "rr-tab", "aria-hidden": "true", text: no || "·" }),
+      el("span", { class: "rr-file-body" }, [
+        el("span", { class: "rr-file-title", text: it.label }),
+        el("span", { class: "rr-file-meta", text: rrItemMeta(it) })
+      ])
+    ]);
+    if (kind === "bundle") b.appendChild(el("span", { class: "rr-string", "aria-hidden": "true" }));
+    var badge = rrScanBadge(it);
+    if (badge) b.appendChild(badge);
+    var tick = rrTick(it.uri);
+    if (tick) b.appendChild(tick);
+    return b;
+  }
+
+  // Remembered per box, so coming back from a folder reopens the same
+  // numbered box of a long series.
+  var rrChunkOf = {};
+
+  function rrBoxScene(stage, node, kids, chain, cameFrom) {
+    var isBundle = chain.length > 1;
+    var chunks = Math.ceil(kids.length / RR_PER_BOX);
+    var chunk = rrChunkOf[node.uri] || 0;
+    if (cameFrom) {
+      var at = kids.map(function (k) { return k.uri; }).indexOf(cameFrom);
+      if (at >= 0) chunk = Math.floor(at / RR_PER_BOX);
+    }
+    if (chunk >= chunks) chunk = 0;
+
+    var sheets = kids.filter(function (k) { return k.kind === "letter" || k.kind === "photo"; }).length;
+    var noun = sheets * 2 > kids.length ? ["letter or sheet", "letters and sheets"] : ["folder", "folders"];
+    var scanned = kids.reduce(function (s, k) { return s + k.scanned; }, 0);
+    stage.appendChild(rrCaption(
+      (isBundle ? "You untie the bundle: " : "You lift the lid: ") + rrCount(kids.length, noun[0], noun[1]) +
+        (chunks > 1 ? ", packed in " + chunks + " boxes" : "") + ".",
+      [node.dates, scanned ? fmtNum(scanned) + " scanned" : "none of it scanned yet"].filter(Boolean).join(" · ") + ". Pull one out to read it."
+    ));
+
+    var area = el("div", { class: "rr-boxarea" });
+    stage.appendChild(area);
+
+    var shelf = null;
+    if (chunks > 1) {
+      shelf = el("div", { class: "rr-boxrow", role: "tablist", "aria-label": "Boxes in this series" });
+      stage.insertBefore(shelf, area);
+    }
+
+    function draw(c, animate) {
+      chunk = c;
+      rrChunkOf[node.uri] = c;
+      clear(area);
+      if (shelf) {
+        clear(shelf);
+        for (var k = 0; k < chunks; k++) (function (k) {
+          var part = kids.slice(k * RR_PER_BOX, (k + 1) * RR_PER_BOX);
+          var first = part[0], last = part[part.length - 1];
+          // Positions, not inventory numbers: those can run to "D_I_A_1_276".
+          var range = isFinite(first.pos) && isFinite(last.pos) ? first.pos + "–" + last.pos : (k * RR_PER_BOX + 1) + "–" + (k * RR_PER_BOX + part.length);
+          var sc = part.reduce(function (s, x) { return s + x.scanned; }, 0);
+          var end = el("button", { type: "button", role: "tab", class: "rr-boxend" + (k === c ? " current" : ""),
+            "aria-selected": k === c ? "true" : "false", title: first.label + " … " + last.label }, [
+            el("strong", { text: String(k + 1) }), el("span", { text: range }),
+            sc ? el("i", { text: sc + " scans" }) : null
+          ]);
+          end.addEventListener("click", function () { draw(k, true); });
+          shelf.appendChild(end);
+        })(k);
+        var cur = shelf.children[c];
+        if (cur) cur.scrollIntoView({ block: "nearest", inline: "center" });
+      }
+
+      var box = el("div", { class: "rr-openbox" + (isBundle ? " is-bundle" : "") + (animate ? " opening" : "") });
+      box.appendChild(el("div", { class: "rr-lid", "aria-hidden": "true" }));
+      var inner = el("div", { class: "rr-openbox-inner" });
+      var part = kids.slice(c * RR_PER_BOX, (c + 1) * RR_PER_BOX);
+      part.forEach(function (it, i) {
+        var f = rrFileEl(it, i);
+        if (it.uri === cameFrom) f.classList.add("rr-returned");
+        f.addEventListener("click", function () { readingNavigate(it.uri); });
+        inner.appendChild(f);
+      });
+      box.appendChild(inner);
+      box.appendChild(el("div", { class: "rr-openbox-front" }, [
+        el("span", { class: "rr-box-label small" }, [
+          el("span", { class: "rr-box-no", text: rrCallNumber(node.uri) + (chunks > 1 ? " · box " + (c + 1) + "/" + chunks : "") }),
+          el("span", { class: "rr-box-title", text: node.label })
+        ])
+      ]));
+      area.appendChild(box);
+      var ret = inner.querySelector(".rr-returned");
+      if (ret) setTimeout(function () { ret.scrollIntoView({ block: "nearest" }); }, 50);
+    }
+    draw(chunk, true);
+
+    return {
+      ArrowRight: function () { if (chunk < chunks - 1) draw(chunk + 1, true); },
+      ArrowLeft: function () { if (chunk > 0) draw(chunk - 1, true); }
+    };
+  }
+
+  // ---- Scene: a folder open on the desk ----
+
+  function rrDeskScene(stage, node, kind, siblings, chain) {
+    var folder = el("div", { class: "rr-openfolder kind-" + kind });
+    var left = el("div", { class: "rr-leaf rr-leaf-left" });
+    var right = el("div", { class: "rr-leaf rr-leaf-right" });
+    folder.appendChild(left);
+    folder.appendChild(right);
+
+    // Inside cover: the archivist's slip.
+    var slip = el("div", { class: "rr-slip" });
+    slip.appendChild(el("div", { class: "rr-slip-head" }, [
+      el("span", { text: rrCallNumber(node.uri) }),
+      el("span", { text: node.ident ? "inv. no. " + node.ident : RR_KIND_NAMES[kind] })
+    ]));
+    slip.appendChild(el("div", { class: "rr-slip-title", text: node.label }));
+    var facts = [node.dates, node.phys].filter(Boolean);
+    if (facts.length) slip.appendChild(el("div", { class: "rr-slip-meta", text: facts.join(" · ") }));
+    left.appendChild(slip);
+    var pagesStrip = el("div", { class: "rr-pages", role: "list", "aria-label": "Pages" });
+    left.appendChild(pagesStrip);
+    var links = el("div", { class: "rr-slip-links" });
+    left.appendChild(links);
+    if (node.manifest && isSafeHref(node.manifest)) {
+      links.appendChild(el("a", { href: UNIVERSAL_VIEWER + node.manifest, target: "_blank", rel: "noopener", text: "Universal Viewer ↗" }));
+    }
+    var native = node.native && isSafeHref(node.native) ? node.native : null;
+    if (native) links.appendChild(el("a", { href: native, target: "_blank", rel: "noopener", text: "IISG catalogue ↗" }));
+
+    stage.appendChild(rrCaption(
+      "On your desk: " + RR_KIND_NAMES[kind] + (node.ident ? " " + node.ident : "") + ", " + node.label,
+      node.manifest ? "Turn the pages with ← →, click a page to look closer." : null
+    ));
+    stage.appendChild(folder);
+
+    // Desk controls: previous / put back / next, through the box's order.
+    var idx = siblings.map(function (s) { return s.uri; }).indexOf(node.uri);
+    var prev = idx > 0 ? siblings[idx - 1] : null;
+    var next = idx >= 0 && idx < siblings.length - 1 ? siblings[idx + 1] : null;
+    var bar = el("div", { class: "rr-deskbar" });
+    function navBtn(text, item, cls) {
+      var b = el("button", { type: "button", class: "rr-btn " + (cls || ""), text: text });
+      if (item) { b.title = item.label; b.addEventListener("click", function () { readingNavigate(item.uri); }); }
+      else b.disabled = true;
+      return b;
+    }
+    bar.appendChild(navBtn("‹ Previous " + RR_KIND_NAMES[prev ? prev.kind : kind], prev, ""));
+    var putBack = el("button", { type: "button", class: "rr-btn primary", text: "Put back" });
+    putBack.addEventListener("click", function () { rrUp(node.uri, chain); });
+    bar.appendChild(putBack);
+    bar.appendChild(navBtn(next ? "Next " + RR_KIND_NAMES[next.kind] + " ›" : "End of the box", next, ""));
+    if (idx >= 0 && siblings.length > 1) bar.appendChild(el("span", { class: "rr-deskbar-pos", text: fmtNum(idx + 1) + " of " + fmtNum(siblings.length) + " in this " + (chain.length > 1 ? "box" : "archive") }));
+    stage.appendChild(bar);
+
+    var keys = {
+      PageUp: function () { if (prev) readingNavigate(prev.uri); },
+      PageDown: function () { if (next) readingNavigate(next.uri); }
+    };
+
+    if (!node.manifest) {
+      right.appendChild(el("div", { class: "rr-sheet rr-notscanned" }, [
+        el("strong", { text: "Not scanned" }),
+        el("p", { text: "This " + RR_KIND_NAMES[kind] + " hasn’t been digitized. To read it, request it for the IISG reading room in Amsterdam." }),
+        native ? el("a", { href: native, target: "_blank", rel: "noopener", text: "Request via the IISG catalogue ↗" }) : null
+      ]));
+      keys.ArrowRight = keys.PageDown;
+      keys.ArrowLeft = keys.PageUp;
+      return keys;
+    }
+
+    var sheetWrap = el("div", { class: "rr-sheetstack" });
+    var sheet = el("button", { type: "button", class: "rr-sheet rr-page" });
+    var img = el("img", { alt: "", draggable: "false" });
+    sheet.appendChild(img);
+    sheetWrap.appendChild(sheet);
+    right.appendChild(sheetWrap);
+    var pager = el("div", { class: "rr-pager" });
+    var prevPage = el("button", { type: "button", class: "rr-btn", "aria-label": "Previous page", text: "‹" });
+    var pageNo = el("span", { class: "rr-pageno", "aria-live": "polite", text: "Opening…" });
+    var nextPage = el("button", { type: "button", class: "rr-btn", "aria-label": "Next page", text: "›" });
+    pager.appendChild(prevPage); pager.appendChild(pageNo); pager.appendChild(nextPage);
+    right.appendChild(pager);
+
+    var pages = [], page = 0, thumbs = [];
+    // While the manifest loads (or if it can't), the first-page thumbnail.
+    if (node.thumb) { img.src = node.thumb; sheet.classList.add("loading"); }
+
+    function show(i, dir) {
+      if (!pages.length) return;
+      i = Math.max(0, Math.min(pages.length - 1, i));
+      if (dir && i !== page) {
+        // The page you're leaving slides off the stack.
+        var ghost = sheet.cloneNode(true);
+        ghost.classList.add("rr-turning", dir > 0 ? "out-left" : "out-right");
+        ghost.removeAttribute("id");
+        ghost.setAttribute("aria-hidden", "true");
+        ghost.tabIndex = -1;
+        sheetWrap.appendChild(ghost);
+        setTimeout(function () { ghost.remove(); }, 450);
+      }
+      page = i;
+      var p = pages[i];
+      var w = sheetWrap.clientWidth || 420;
+      sheet.classList.add("loading");
+      img.src = p.thumb;
+      var big = new Image();
+      big.onload = function () { if (pages[page] === p) { img.src = big.src; sheet.classList.remove("loading"); } };
+      // A rights-restricted scan can refuse anything bigger than its
+      // thumbnail (401): show that unblurred rather than waiting forever.
+      big.onerror = function () { if (pages[page] === p) sheet.classList.remove("loading"); };
+      big.src = iiifSizedUrl(p, w);
+      if (pages[i + 1]) new Image().src = iiifSizedUrl(pages[i + 1], w);
+      img.alt = node.label + " — page " + (i + 1) + " of " + pages.length;
+      sheet.setAttribute("aria-label", "Page " + (i + 1) + " of " + pages.length + ", open full screen");
+      pageNo.textContent = "page " + (i + 1) + " of " + pages.length;
+      prevPage.disabled = i === 0;
+      nextPage.disabled = i === pages.length - 1 && !next;
+      nextPage.setAttribute("aria-label", i === pages.length - 1 && next ? "Next " + RR_KIND_NAMES[next.kind] : "Next page");
+      thumbs.forEach(function (t, j) { t.setAttribute("aria-current", j === i ? "true" : "false"); });
+      if (thumbs[i]) thumbs[i].scrollIntoView({ block: "nearest", inline: "nearest" });
+      sheetWrap.style.setProperty("--stack", Math.min(pages.length - 1 - i, 4));
+    }
+    function turn(d) {
+      if (!pages.length) return;
+      if (d > 0 && page === pages.length - 1) { if (next) readingNavigate(next.uri); return; }
+      if (d < 0 && page === 0) return;
+      show(page + d, d);
+    }
+    prevPage.addEventListener("click", function () { turn(-1); });
+    nextPage.addEventListener("click", function () { turn(1); });
+    sheet.addEventListener("click", function () {
+      if (!pages.length) return;
+      openImageLightbox(pages, page, { label: node.label, uri: node.uri, viewerUrl: null }, function (last) {
+        show(last);
+        sheet.focus({ preventScroll: true });
+      });
+    });
+    // Swipe on touch screens.
+    var touchX = null;
+    sheet.addEventListener("pointerdown", function (e) { if (e.pointerType !== "mouse") touchX = e.clientX; });
+    sheet.addEventListener("pointerup", function (e) {
+      if (touchX === null) return;
+      var dx = e.clientX - touchX; touchX = null;
+      if (Math.abs(dx) > 40) { e.preventDefault(); turn(dx < 0 ? 1 : -1); }
+    });
+
+    var gen = rrGen;
+    rrFetchPages(node.manifest).then(function (ps) {
+      if (gen !== rrGen) return;
+      if (!ps.length) throw new Error("no pages");
+      pages = ps;
+      ps.forEach(function (p, i) {
+        var t = el("button", { type: "button", class: "rr-pagethumb", role: "listitem", "aria-label": "Page " + (i + 1) });
+        var ti = el("img", { src: p.thumb, alt: "", loading: "lazy" });
+        ti.onerror = function () { ti.remove(); };
+        t.appendChild(ti);
+        t.appendChild(el("span", { text: String(i + 1) }));
+        t.addEventListener("click", function () { show(i, i > page ? 1 : -1); });
+        thumbs.push(t);
+        pagesStrip.appendChild(t);
+      });
+      show(0);
+    }).catch(function () {
+      if (gen !== rrGen) return;
+      sheet.classList.remove("loading");
+      pageNo.textContent = node.thumb ? "first page only — the full scan is in the Universal Viewer" : "The scans couldn’t be loaded right now.";
+      prevPage.disabled = nextPage.disabled = true;
+    });
+
+    keys.ArrowRight = function () { turn(1); };
+    keys.ArrowLeft = function () { turn(-1); };
+    keys.Home = function () { show(0, -1); };
+    keys.End = function () { show(pages.length - 1, 1); };
+    return keys;
+  }
+
+  // ---- Putting a scene together ----
+
+  function renderReading(uri) {
+    viewGeneration++;
+    var gen = ++rrGen;
+    rrKeys = null;
+    var cameFrom = rrLastUri;
+    rrLastUri = uri;
+    var loadingTimer = setTimeout(function () {
+      if (gen !== rrGen || location.hash.indexOf("#reading:") !== 0) return;
+      clear(mainEl);
+      mainEl.appendChild(el("div", { class: "results-heading", text: "Fetching it from the stacks…" }));
+    }, 500);
+
+    Promise.all([rrFetchNode(uri), rrFetchChain(uri), rrFetchKids(uri)]).then(function (res) {
+      var node = res[0], chain = res[1], kids = res[2];
+      var parentUri = chain.length ? chain[chain.length - 1].uri : null;
+      var root = chain.length ? { uri: chain[0].uri, label: tidyTitle(chain[0].label) } : { uri: uri, label: node.label };
+      // A leaf needs its siblings, for previous/next through the box.
+      var sibs = !kids.length && parentUri ? rrFetchKids(parentUri) : Promise.resolve([]);
+      return sibs.then(function (siblings) {
+        // Superseded by another scene, or left for a record page meanwhile.
+        if (gen !== rrGen || location.hash.indexOf("#reading:") !== 0) return;
+        clearTimeout(loadingTimer);
+        clear(mainEl);
+        chain = chain.map(function (c) { return { uri: c.uri, label: tidyTitle(c.label) }; });
+
+        var scene, kind;
+        if (!kids.length) {
+          var self = siblings.filter(function (s) { return s.uri === uri; })[0];
+          kind = self ? self.kind : (rrPhysKind(node.phys) || "folder");
+          if (kind === "box") kind = "folder";
+          scene = "desk";
+        } else if (!chain.length && kids.some(function (k) { return k.kids > 0; })) {
+          kind = "collection"; scene = "trolley";
+        } else {
+          kind = chain.length > 1 ? "bundle" : "box"; scene = "box";
+        }
+
+        // Ticked before the notepad is drawn, so its tally counts this one.
+        if (scene === "desk") rrMarkHandled(uri);
+        var hint = scene === "desk" ? "← →  turn pages\nPgUp PgDn  previous / next\nEsc  put back"
+          : scene === "box" ? "← →  other boxes\nEsc  put back" : "Esc  back to the desk";
+        var shell = rrShell({ root: root, chain: chain, node: node, kind: kind, keysHint: hint });
+        shell.stage.classList.add("scene-" + scene);
+        mainEl.appendChild(shell.section);
+
+        var keys = {};
+        if (scene === "trolley") rrTrolleyScene(shell.stage, node, kids, rrChildOnPath(uri, cameFrom));
+        else if (scene === "box") keys = rrBoxScene(shell.stage, node, kids, chain, rrChildOnPath(uri, cameFrom)) || {};
+        else keys = rrDeskScene(shell.stage, node, kind, siblings, chain) || {};
+        keys.Escape = function () { rrUp(uri, chain); };
+        rrKeys = keys;
+        if (window.scrollY > mainEl.offsetTop) window.scrollTo(0, 0);
+      });
+    }).catch(function () {
+      if (gen !== rrGen || location.hash.indexOf("#reading:") !== 0) return;
+      clearTimeout(loadingTimer);
+      renderError("Couldn’t fetch this from the stacks.", function () { renderReading(uri); });
+    });
+  }
+
+  // The child of uri that leads down to `from`, when coming back up --
+  // so the box or folder you just put back is the one that's marked.
+  // Finding-aid IRIs nest by fragment (ARCH00018#1-1-1-4 under #1-1-1),
+  // which is all this needs.
+  function rrChildOnPath(uri, from) {
+    if (!from || from === uri) return null;
+    var base = uri.indexOf("#") === -1 ? uri + "#" : uri + "-";
+    if (from.indexOf(base) !== 0) return null;
+    var rest = from.slice(base.length).split("-");
+    return base + rest[0];
+  }
+
+  // ---- The request desk (#view:readingroom) ----
+
+  function renderReadingDesk() {
+    var gen = ++rrGen;
+    rrLastUri = null;
+    var shell = rrShell({ root: null, chain: [], node: null });
+    shell.stage.classList.add("scene-request");
+    mainEl.appendChild(shell.section);
+    var stage = shell.stage;
+    rrKeys = {};
+
+    stage.appendChild(rrCaption("Welcome to the reading room.", "Fill in a request slip for an archive, or take one of the boxes already waiting on the trolley."));
+
+    var form = el("form", { class: "rr-request", role: "search" });
+    form.appendChild(el("div", { class: "rr-request-head" }, [el("strong", { text: "Request slip" }), el("span", { text: "No. " + (1000 + Math.floor(Math.random() * 9000)) })]));
+    var label = el("label", { for: "rr-request-input", text: "Archive (name or call number)" });
+    var input = el("input", { id: "rr-request-input", type: "text", placeholder: "e.g. Bakunin, Kautsky, ARCH00018", autocomplete: "off", spellcheck: "false" });
+    var submit = el("button", { type: "submit", class: "rr-btn primary", text: "Request" });
+    var surprise = el("button", { type: "button", class: "rr-btn", text: "Surprise me" });
+    form.appendChild(label);
+    form.appendChild(el("div", { class: "rr-request-row" }, [input, submit, surprise]));
+    var results = el("div", { class: "rr-slips", "aria-live": "polite" });
+    form.appendChild(results);
+    stage.appendChild(form);
+
+    var trolleySlot = el("div", { class: "rr-waiting" });
+    stage.appendChild(trolleySlot);
+
+    var scannedByRoot = {};
+    function slipEl(c) {
+      var sc = scannedByRoot[c.uri];
+      var b = el("button", { type: "button", class: "rr-slipbtn" }, [
+        el("span", { class: "rr-slipbtn-no", text: rrCallNumber(c.uri) }),
+        el("span", { class: "rr-slipbtn-t", text: c.label }),
+        el("span", { class: "rr-slipbtn-m", text: [c.dates, c.phys, sc ? fmtNum(sc) + " scanned" : "not scanned"].filter(Boolean).join(" · ") })
+      ]);
+      if (sc) b.classList.add("has-scans");
+      b.addEventListener("click", function () { readingNavigate(c.uri); });
+      return b;
+    }
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var term = input.value.trim();
+      if (term.length < 2) return;
+      clear(results);
+      results.appendChild(el("div", { class: "rr-slips-note", text: "The archivist is looking…" }));
+      rrSearchCollections(term).then(function (found) {
+        if (gen !== rrGen) return;
+        clear(results);
+        if (!found.length) { results.appendChild(el("div", { class: "rr-slips-note", text: "No archive by that name. Try a person, organisation or call number." })); return; }
+        // Scanned ones first: those are the ones you can actually read here.
+        found.sort(function (a, b) { return (scannedByRoot[b.uri] || 0) - (scannedByRoot[a.uri] || 0); });
+        found.forEach(function (c) { results.appendChild(slipEl(c)); });
+      }).catch(function () {
+        if (gen !== rrGen) return;
+        clear(results);
+        results.appendChild(el("div", { class: "rr-slips-note", text: "The request desk can’t be reached right now." }));
+      });
+    });
+
+    rrFetchDigitizedRoots().then(function (roots) {
+      if (gen !== rrGen || !roots.length) return;
+      roots.forEach(function (r) { scannedByRoot[r.uri] = r.scanned; });
+      surprise.addEventListener("click", function () {
+        readingNavigate(roots[Math.floor(Math.random() * roots.length)].uri);
+      });
+      var pool = roots.slice();
+      var picks = [];
+      while (picks.length < RR_ON_TROLLEY && pool.length) picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+      trolleySlot.appendChild(el("h3", { class: "rr-subhead", text: "Waiting on the trolley" }));
+      var boxes = picks.map(function (r, i) {
+        var b = rrBoxEl({ uri: r.uri, label: r.label, scanned: r.scanned, kids: 1 }, i, { no: rrCallNumber(r.uri), meta: r.dates || "" });
+        b.addEventListener("click", function () { readingNavigate(r.uri); });
+        return b;
+      });
+      trolleySlot.appendChild(rrTrolleyEl(boxes));
+    }).catch(function () { surprise.disabled = true; });
+
+    input.focus({ preventScroll: true });
+  }
+
   // ---------- Init ----------
 
   var initialHash = decodeURIComponent(location.hash.replace(/^#/, ""));
@@ -7515,6 +8927,9 @@
   } else if (initialHash.indexOf("search:") === 0) {
     searchInput.value = initialHash.slice(7);
     runSearch(initialHash.slice(7), { fromHash: true });
+  } else if (initialHash.indexOf("reading:") === 0) {
+    history.replaceState({ reading: initialHash.slice(8) }, "", "#reading:" + encodeURIComponent(initialHash.slice(8)));
+    renderReading(initialHash.slice(8));
   } else if (initialHash.indexOf("view:") === 0) {
     history.replaceState({ view: initialHash.slice(5) }, "", "#" + initialHash);
     renderView(initialHash.slice(5));
@@ -7523,7 +8938,10 @@
     // renderLanding().
     renderView("home");
   }
-  searchInput.focus({ preventScroll: true });
+  // Not in the reading room: there the keys turn pages and put things
+  // back (and the request desk focuses its own slip), while Esc in the
+  // search box would leave for the home page.
+  if (!/^(reading:|view:readingroom$)/.test(initialHash)) searchInput.focus({ preventScroll: true });
 })();
 </script>
 </body>
