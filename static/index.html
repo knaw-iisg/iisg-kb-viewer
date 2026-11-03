@@ -6158,14 +6158,44 @@
 
   // ---------- IIIF images (iisg-iiif) ----------
   // A findingaid-etl or biblio-etl record that's been digitized carries
-  // iisgv:iiifManifest plus one sdo:image per page; each page is an
-  // sdo:ImageObject with an IIIF Image API base (iisgv:iiifImageService),
-  // a 200px sdo:thumbnailUrl, pixel width/height (QuantitativeValue nodes)
-  // and an iisgv:accessLevel. Requiring the image service is what keeps
-  // events-etl's plain poster images (sdo:image too, no service) out of
-  // this path. Also matches a page itself, so landing on one from the
-  // statement list still shows the picture.
+  // iisgv:iiifManifest and a 200px sdo:thumbnailUrl. iisg-iiif's
+  // manifest-harvest version also gave one sdo:image per page; each page
+  // an sdo:ImageObject with an IIIF Image API base (iisgv:iiifImageService),
+  // pixel width/height (QuantitativeValue nodes) and an iisgv:accessLevel.
+  // Requiring the image service is what keeps events-etl's plain poster
+  // images (sdo:image too, no service) out of this path. Also matches a
+  // page itself, so landing on one from the statement list still shows
+  // the picture. Without pages (the current iisg-iiif), the record's
+  // thumbnail stands in: one preview per manifest (fetchRecordPreviews).
   var IIIF_SIZE_STEPS = [400, 800, 1200, 1600, 2400];
+  var IIIF_THUMB_SUFFIX = /\/full\/[^/]+\/0\/default\.jpg$/;
+  var UNIVERSAL_VIEWER = "https://access.iisg.amsterdam/universalviewer/#?manifest=";
+
+  // The record's thumbnail is itself an IIIF Image API URL
+  // (.../iiif/image/{id}/full/200,/0/default.jpg), so its base serves any
+  // other size of that first image too. A record with several manifests
+  // (a biblio item with more than one 856) has a thumbnail per manifest,
+  // paired up by the {id} both are named after.
+  function fetchRecordPreviews(uri) {
+    var q = "PREFIX schema: <https://schema.org/>\n" +
+      "PREFIX iisgv: <https://iisg.amsterdam/vocab/>\n" +
+      "SELECT ?m ?thumb WHERE {\n" +
+      "  " + iriRef(uri) + " iisgv:iiifManifest ?m ; schema:thumbnailUrl ?thumb .\n" +
+      "} ORDER BY ?m";
+    return sparql(q).then(function (rows) {
+      return rows.filter(function (r) {
+        var id = r.m.value.match(/\/presentation\/([^/]+)\/manifest$/);
+        return id && r.thumb.value.indexOf("/image/" + id[1] + "/") !== -1 && IIIF_THUMB_SUFFIX.test(r.thumb.value);
+      }).map(function (r) {
+        return {
+          canvas: null, manifest: r.m.value, pos: 0,
+          service: r.thumb.value.replace(IIIF_THUMB_SUFFIX, ""),
+          thumb: r.thumb.value, full: null, width: null, height: null,
+          level: null, conditions: null, credit: null, preview: true
+        };
+      }).filter(function (img) { return isLocalUri(img.service); });
+    });
+  }
 
   function fetchRecordImages(uri) {
     var q = "PREFIX schema: <https://schema.org/>\n" +
@@ -6208,7 +6238,7 @@
         if (a.manifest !== b.manifest) return (a.manifest || "") < (b.manifest || "") ? -1 : 1;
         return a.pos - b.pos;
       });
-      return images;
+      return images.length ? images : fetchRecordPreviews(uri);
     });
   }
 
@@ -6290,13 +6320,30 @@
     }
 
     var meta = el("div", { class: "media-meta" });
-    var countText = images.length === 1 ? "1 image" : fmtNum(images.length) + " images";
+    // Previews (fetchRecordPreviews) are each manifest's first image only,
+    // not a page count: every page is in the viewer.
+    var countText = images[0].preview
+      ? (images.length === 1 ? "First image" : "First image of " + fmtNum(images.length) + " scanned items")
+      : images.length === 1 ? "1 image" : fmtNum(images.length) + " images";
     meta.appendChild(el("span", { text: countText }));
     var noteSlot = el("span", {});
     meta.appendChild(noteSlot);
-    var manifest = images[0].manifest;
-    if (manifest && isSafeHref(manifest)) {
-      meta.appendChild(el("a", { href: manifest, target: "_blank", rel: "noopener", title: "IIIF Presentation manifest -- open in any IIIF viewer", text: "IIIF manifest ↗" }));
+    // Both links follow the selected image (select()), since each preview
+    // can be a manifest of its own.
+    var viewerLink = images[0].preview
+      ? el("a", { target: "_blank", rel: "noopener", text: "All pages in Universal Viewer ↗" })
+      : null;
+    var manifestLink = el("a", { target: "_blank", rel: "noopener", title: "IIIF Presentation manifest -- open in any IIIF viewer", text: "IIIF manifest ↗" });
+    if (viewerLink) meta.appendChild(viewerLink);
+    meta.appendChild(manifestLink);
+    function linkManifest(m) {
+      var ok = !!m && isSafeHref(m);
+      manifestLink.hidden = !ok;
+      if (ok) manifestLink.href = m;
+      if (viewerLink) {
+        viewerLink.hidden = !ok;
+        if (ok) viewerLink.href = UNIVERSAL_VIEWER + m;
+      }
     }
     container.appendChild(meta);
 
@@ -6325,6 +6372,7 @@
       clear(noteSlot);
       var note = imageAccessNote(img);
       if (note) noteSlot.appendChild(note);
+      linkManifest(img.manifest);
       thumbs.forEach(function (t, j) { t.setAttribute("aria-current", j === i ? "true" : "false"); });
     }
     mainImg.onload = function () { showUnavailable(null); };
