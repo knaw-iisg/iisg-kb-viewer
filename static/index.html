@@ -4967,15 +4967,19 @@
         "  { ?node <http://schema.org/isPartOf> " + iriRef(parentUri) + " } UNION { ?node <https://schema.org/isPartOf> " + iriRef(parentUri) + " }\n" +
         "}");
     }
-    var q = "SELECT ?scope ?node (SAMPLE(?lbl) AS ?label) (SAMPLE(?type) AS ?typeUri) (GROUP_CONCAT(?formNameLit; separator=\"|\") AS ?formName) WHERE {\n" +
+    // In the finding aid's own order (sdo:position), so the LIMIT keeps
+    // the first 400 of the series rather than the first 400 by name;
+    // unpositioned nodes after the rest, by name.
+    var q = "SELECT ?scope ?node (SAMPLE(?lbl) AS ?label) (MIN(?p0) AS ?pos) (SAMPLE(?type) AS ?typeUri) (GROUP_CONCAT(?formNameLit; separator=\"|\") AS ?formName) WHERE {\n" +
       "  " + blocks.join(" UNION ") + "\n" +
       "  OPTIONAL { ?node <http://schema.org/name> ?n1 }\n" +
       "  OPTIONAL { ?node <https://schema.org/name> ?n2 }\n" +
       "  OPTIONAL { ?node <http://www.w3.org/2000/01/rdf-schema#label> ?n3 }\n" +
       "  BIND(COALESCE(?n1, ?n2, ?n3) AS ?lbl)\n" +
+      "  OPTIONAL { { ?node <http://schema.org/position> ?p0 } UNION { ?node <https://schema.org/position> ?p0 } }\n" +
       "  OPTIONAL { ?node a ?type }\n" +
       formLookupFragment("?node") +
-      "} GROUP BY ?scope ?node ORDER BY ?scope ?label LIMIT 400";
+      "} GROUP BY ?scope ?node ORDER BY ?scope (!BOUND(?pos)) ?pos ?label LIMIT 400";
 
     return sparql(q).then(function (rows) {
       var children = [], siblings = [];
@@ -6175,20 +6179,22 @@
   // (.../iiif/image/{id}/full/200,/0/default.jpg), so its base serves any
   // other size of that first image too. A record with several manifests
   // (a biblio item with more than one 856) has a thumbnail per manifest,
-  // paired up by the {id} both are named after.
+  // paired up by the {id} both are named after, and shown in the order
+  // the catalogue lists them (the manifest's sdo:position: volume 1, 2, ...).
   function fetchRecordPreviews(uri) {
     var q = "PREFIX schema: <https://schema.org/>\n" +
       "PREFIX iisgv: <https://iisg.amsterdam/vocab/>\n" +
-      "SELECT ?m ?thumb WHERE {\n" +
+      "SELECT ?m ?thumb ?pos WHERE {\n" +
       "  " + iriRef(uri) + " iisgv:iiifManifest ?m ; schema:thumbnailUrl ?thumb .\n" +
-      "} ORDER BY ?m";
+      "  OPTIONAL { ?m schema:position ?pos }\n" +
+      "} ORDER BY (!BOUND(?pos)) ?pos ?m";
     return sparql(q).then(function (rows) {
       return rows.filter(function (r) {
         var id = r.m.value.match(/\/presentation\/([^/]+)\/manifest$/);
         return id && r.thumb.value.indexOf("/image/" + id[1] + "/") !== -1 && IIIF_THUMB_SUFFIX.test(r.thumb.value);
       }).map(function (r) {
         return {
-          canvas: null, manifest: r.m.value, pos: 0,
+          canvas: null, manifest: r.m.value, pos: r.pos ? parseInt(r.pos.value, 10) : 0,
           service: r.thumb.value.replace(IIIF_THUMB_SUFFIX, ""),
           thumb: r.thumb.value, full: null, width: null, height: null,
           level: null, conditions: null, credit: null, preview: true
