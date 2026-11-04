@@ -2536,7 +2536,21 @@
   .rr-openfolder.is-audio { background: #2e383d; }
   .rr-openfolder.is-audio .rr-leaf-left { border-right-color: #1f272b; }
   .rr-openfolder.is-audio .rr-slip-links a { color: #bcd6ea; }
-  .rr-recorder { position: relative; width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 12px; }
+  .rr-recorder {
+    --rr-vu-face: linear-gradient(#f5ecd0, #e6d7aa); --rr-vu-inner: rgba(120, 90, 20, 0.35);
+    --rr-vu-glow: transparent; --rr-vu-glow-size: 0px;
+    position: relative; width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .rr-recorder {
+      --rr-vu-face: radial-gradient(ellipse at 50% 85%, #ffd27a, #f0a640 55%, #b8661c);
+      --rr-vu-inner: rgba(90, 40, 0, 0.6); --rr-vu-glow: rgba(255, 166, 60, 0.55); --rr-vu-glow-size: 16px;
+    }
+  }
+  :root[data-theme="dark"] .rr-recorder {
+    --rr-vu-face: radial-gradient(ellipse at 50% 85%, #ffd27a, #f0a640 55%, #b8661c);
+    --rr-vu-inner: rgba(90, 40, 0, 0.6); --rr-vu-glow: rgba(255, 166, 60, 0.55); --rr-vu-glow-size: 16px;
+  }
   .rr-deck svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 10px 14px var(--rr-shadow)); }
   .rr-deck-plate { fill: #c9cdd0; stroke: #8e9498; stroke-width: 1.5; }
   .rr-deck-inset { fill: #24282b; }
@@ -2564,12 +2578,25 @@
     min-width: 92px; text-align: center;
   }
   .rr-counter-total { font-family: var(--font-mono); font-size: 11px; color: #3b4246; padding-left: 2px; }
-  .rr-vu { grid-area: vu; width: 88px; background: #f1e6c4; border: 2px solid #6e757a; border-radius: 4px; box-shadow: inset 0 0 8px rgba(120, 90, 20, 0.35); }
+  /* VU meter: a cream face by day; at night it's lit from behind, warm
+     amber, the way a recorder's meter glows in a dark room */
+  .rr-vu {
+    grid-area: vu; width: 128px; overflow: hidden; border-radius: 5px;
+    border: 3px solid #2a2d30; outline: 1px solid #8e9498;
+    background: var(--rr-vu-face); box-shadow: inset 0 0 10px var(--rr-vu-inner), 0 0 var(--rr-vu-glow-size) var(--rr-vu-glow);
+  }
   .rr-vu svg { display: block; width: 100%; height: auto; }
-  .rr-vu-scale { fill: none; stroke: #2b2b2b; stroke-width: 1.5; }
-  .rr-vu-red { fill: none; stroke: #c0392b; stroke-width: 3; }
-  .rr-vu-label { font-family: var(--font-mono); font-size: 10px; text-anchor: middle; fill: #2b2b2b; }
-  .rr-vu-needle { stroke: #1a1a1a; stroke-width: 1.6; stroke-linecap: round; }
+  .rr-vu-scale { fill: none; stroke: #1f1c18; stroke-width: 1.2; }
+  .rr-vu-scale.thick { stroke-width: 2.6; }
+  .rr-vu-red { fill: none; stroke: #c3271c; stroke-width: 2.6; }
+  .rr-vu-tick { stroke: #1f1c18; stroke-width: 0.9; }
+  .rr-vu-tick.red { stroke: #c3271c; }
+  .rr-vu-num { font-family: var(--font-body); font-size: 6.5px; text-anchor: middle; fill: #1f1c18; }
+  .rr-vu-num.red { fill: #c3271c; }
+  .rr-vu-dot { fill: #c3271c; }
+  .rr-vu-label { font-family: var(--font-body); font-weight: 600; font-size: 9px; letter-spacing: 0.08em; text-anchor: middle; fill: #1f1c18; }
+  .rr-vu-needle { stroke: #1a1a1a; stroke-width: 0.9; stroke-linecap: round; }
+  .rr-vu-housing { fill: #2f2b27; }
   .rr-keys { grid-area: keys; display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
   .rr-key {
     min-width: 46px; height: 38px; border: 1px solid #6e757a; border-radius: 4px 4px 6px 6px; cursor: pointer;
@@ -9143,6 +9170,43 @@
     return (h ? h + ":" + pad2(m) : pad2(m)) + ":" + pad2(s);
   }
 
+  // A VU meter face drawn the way real ones are: one arc around the
+  // needle's pivot (below the face, under its little housing), marked
+  // -20 … -1 in black and 0 … +3 in red, 0 VU about three quarters of
+  // the way across. Positions are fractions of the needle's sweep.
+  var RR_VU_PIVOT = [60, 98], RR_VU_R = 66, RR_VU_SWEEP = 46;
+  var RR_VU_MARKS = [["20", 0], ["10", 0.17], ["7", 0.28], ["5", 0.38], ["3", 0.51], ["2", 0.59], ["1", 0.67], ["0", 0.76], ["1", 0.84], ["2", 0.92], ["3", 1]];
+
+  function rrVuSvg() {
+    var cx = RR_VU_PIVOT[0], cy = RR_VU_PIVOT[1];
+    function at(f, r) {
+      var a = (-RR_VU_SWEEP + f * 2 * RR_VU_SWEEP) * Math.PI / 180;
+      return [cx + r * Math.sin(a), cy - r * Math.cos(a)];
+    }
+    function arc(f0, f1, r) {
+      var p0 = at(f0, r), p1 = at(f1, r);
+      return "M" + p0[0].toFixed(2) + " " + p0[1].toFixed(2) + "A" + r + " " + r + " 0 0 1 " + p1[0].toFixed(2) + " " + p1[1].toFixed(2);
+    }
+    var zero = 0.76, out = [];
+    out.push('<path d="' + arc(0, zero, RR_VU_R) + '" class="rr-vu-scale"/>');
+    out.push('<path d="' + arc(0.45, zero, RR_VU_R + 1.2) + '" class="rr-vu-scale thick"/>');
+    out.push('<path d="' + arc(zero, 1, RR_VU_R + 1.2) + '" class="rr-vu-red"/>');
+    RR_VU_MARKS.forEach(function (m) {
+      var red = m[1] >= zero, a = at(m[1], RR_VU_R + 0.5), b = at(m[1], RR_VU_R + 6), t = at(m[1], RR_VU_R + 12);
+      out.push('<line x1="' + a[0].toFixed(2) + '" y1="' + a[1].toFixed(2) + '" x2="' + b[0].toFixed(2) + '" y2="' + b[1].toFixed(2) + '" class="rr-vu-tick' + (red ? " red" : "") + '"/>');
+      out.push('<text x="' + t[0].toFixed(2) + '" y="' + (t[1] + 2.5).toFixed(2) + '" class="rr-vu-num' + (red ? " red" : "") + '">' + m[0] + "</text>");
+    });
+    var minus = at(-0.06, RR_VU_R + 1), plus = at(1.07, RR_VU_R + 1), dot = at(zero + 0.03, RR_VU_R - 9);
+    out.push('<text x="' + minus[0].toFixed(1) + '" y="' + (minus[1] + 2).toFixed(1) + '" class="rr-vu-num">−</text>');
+    out.push('<text x="' + plus[0].toFixed(1) + '" y="' + (plus[1] + 2).toFixed(1) + '" class="rr-vu-num red">+</text>');
+    out.push('<circle cx="' + dot[0].toFixed(1) + '" cy="' + dot[1].toFixed(1) + '" r="1.6" class="rr-vu-dot"/>');
+    out.push('<text x="' + cx + '" y="54" class="rr-vu-label">VU</text>');
+    out.push('<line x1="' + cx + '" y1="' + cy + '" x2="' + cx + '" y2="' + (cy - RR_VU_R - 9) + '" class="rr-vu-needle"/>');
+    // the needle's pivot housing along the bottom edge
+    out.push('<path d="M36 70L42 61H78L84 70Z" class="rr-vu-housing"/>');
+    return '<svg viewBox="0 0 120 70">' + out.join("") + "</svg>";
+  }
+
   function rrReelSvg(id) {
     // flange with three cut-outs over the wound tape; hub in the middle
     function pt(a, rr) { var t = a * Math.PI / 180; return (rr * Math.cos(t)).toFixed(1) + " " + (rr * Math.sin(t)).toFixed(1); }
@@ -9184,9 +9248,7 @@
     var counter = el("div", { class: "rr-counter", "aria-live": "off", text: "00:00" });
     var total = el("span", { class: "rr-counter-total", text: "/ 00:00" });
     var vu = el("div", { class: "rr-vu", "aria-hidden": "true" });
-    vu.innerHTML = '<svg viewBox="0 0 100 56"><path d="M12 48A44 44 0 0 1 88 48" class="rr-vu-scale"/>' +
-      '<path d="M70 18A44 44 0 0 1 88 48" class="rr-vu-red"/><text x="50" y="40" class="rr-vu-label">VU</text>' +
-      '<line x1="50" y1="52" x2="50" y2="12" class="rr-vu-needle"/></svg>';
+    vu.innerHTML = rrVuSvg();
     var needle = vu.querySelector(".rr-vu-needle");
     function key(label, aria, cls) { return el("button", { type: "button", class: "rr-key " + (cls || ""), "aria-label": aria, title: aria, text: label }); }
     var kBack = key("◀◀", "Back 10 seconds (←)");
@@ -9356,7 +9418,7 @@
         }
       }
       level += (target - level) * (target > level ? 0.5 : 0.12);
-      needle.setAttribute("transform", "rotate(" + (-48 + level * 96).toFixed(1) + " 50 52)");
+      needle.setAttribute("transform", "rotate(" + (-RR_VU_SWEEP + level * 2 * RR_VU_SWEEP).toFixed(1) + " " + RR_VU_PIVOT[0] + " " + RR_VU_PIVOT[1] + ")");
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
