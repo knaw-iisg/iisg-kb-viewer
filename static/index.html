@@ -2926,7 +2926,7 @@
 <div class="app">
   <aside class="rail">
     <div class="brand">
-      <span class="brand-mark" id="brand-home" title="Overview">IISG Knowledge Base Explorer</span>
+      <span class="brand-mark" id="brand-home" title="Reading room">IISG Knowledge Base Explorer</span>
     </div>
     <div class="brand-sub">IISH knowledge graph</div>
 
@@ -4882,8 +4882,9 @@
   }
 
   // Brand/logo click -- back to the landing page, same as the bare site
-  // with no hash.
-  function navigateHome() { navigateToView("home"); }
+  // with no hash: the reading room's request desk. The former home page
+  // is the "Overview" view (#view:home).
+  function navigateHome() { navigateToView("readingroom"); }
 
   function syncFromHash() {
     var raw = decodeURIComponent(location.hash.replace(/^#/, ""));
@@ -4892,7 +4893,7 @@
     if (raw.indexOf("search:") === 0) { searchInput.value = raw.slice(7); runSearch(raw.slice(7), { fromHash: true }); return; }
     if (raw.indexOf("reading:") === 0) { currentUri = null; renderTrail(); renderReading(raw.slice(8)); return; }
     if (raw && /^https?:\/\//i.test(raw)) { currentUri = raw; loadEntity(raw); }
-    else { currentUri = null; renderTrail(); renderView("home"); }
+    else { currentUri = null; renderTrail(); renderView("readingroom"); }
   }
 
   window.addEventListener("popstate", syncFromHash);
@@ -10559,14 +10560,14 @@
     history.replaceState({ view: initialHash.slice(5) }, "", "#" + initialHash);
     renderView(initialHash.slice(5));
   } else {
-    // Default landing, no hash at all: the landing page -- see
-    // renderLanding().
-    renderView("home");
+    // Default landing, no hash at all: the reading room (renderReadingDesk).
+    // The overview dashboard is #view:home.
+    renderView("readingroom");
   }
   // Not in the reading room: there the keys turn pages and put things
   // back (and the request desk focuses its own slip), while Esc in the
   // search box would leave for the home page.
-  if (!/^(reading:|view:readingroom$)/.test(initialHash)) searchInput.focus({ preventScroll: true });
+  if (initialHash && !/^(reading:|view:readingroom$)/.test(initialHash)) searchInput.focus({ preventScroll: true });
 })();
 </script>
 </body>

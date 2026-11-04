@@ -48,7 +48,7 @@ URL for a differently-hosted store.
 
 ## Features
 
-- **Home dashboard**: live per-graph and per-kind-of-item counts, fetched
+- **Overview dashboard** (`#view:home`): live per-graph and per-kind-of-item counts, fetched
   from the store on load, clickable to browse.
 - **Search**: matches `schema:name`/`rdfs:label`. Mixed-type result sets
   show as compact count-and-icon tiles (like the home dashboard) rather than
@@ -79,7 +79,8 @@ URL for a differently-hosted store.
   Dataverse subject, place and licence, a text filter, sorting and a
   random pick. A dataset's own page groups its facts the same way:
   Mandatory (missing ones shown dashed), Recommended, Other.
-- **Reading room** (sidebar "Reading room", `#reading:<uri>`): a finding
+- **Reading room** (the landing page, sidebar "Reading room",
+  `#reading:<uri>`; the dashboard below is "Overview", `#view:home`): a finding
   aid the way you'd consult it at IISG's actual reading room. A request
   slip finds a collection (by name or call number; scanned ones first),
   or take one of the digitized archives waiting on the trolley. The
