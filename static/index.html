@@ -2118,7 +2118,9 @@
     position: relative; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow);
     background: var(--rr-desk);
   }
-  .rr-window { position: relative; height: 150px; overflow: hidden; background: var(--rr-sky-bottom); }
+  /* not clipped: the poster taped to it grows over the desk on hover
+     (the harbour SVG clips itself) */
+  .rr-window { position: relative; height: 150px; background: var(--rr-sky-bottom); }
   .rr-harbour { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   /* the reflection is strongest by the lamp (right) and gone on the left:
      the dimmed copy of the view and the glass's reflections share one
@@ -2818,6 +2820,25 @@
   .rr-tapebox.is-can .rr-tapebox-reel { display: none; }
   .rr-tapebox.is-can .rr-tapebox-label { justify-content: center; height: 100%; padding: 0; }
 
+  /* the event poster, taped inside the glass on the second pane */
+  .rr-poster {
+    position: absolute; z-index: 3; left: calc(20% + 22px); top: 10px; width: 92px; padding: 5px 5px 6px;
+    border: none; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 3px;
+    background: #f7f3ea; color: #1f1c18 !important; transform: rotate(-2deg); transform-origin: 50% 0;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35); transition: transform 0.2s;
+  }
+  .rr-poster:hover, .rr-poster:focus-visible { transform: rotate(0deg) scale(2.1); z-index: 6; }
+  .rr-poster img { display: block; width: 100%; aspect-ratio: 12 / 7; object-fit: cover; background: #ccc; }
+  .rr-poster-noimg { display: block; width: 100%; aspect-ratio: 12 / 7; background: linear-gradient(135deg, #b5452f, #2f5c8a); }
+  .rr-poster-title { font-family: var(--font-display); font-weight: 600; font-size: 7.5px !important; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .rr-poster-date { font-family: var(--font-mono); font-size: 6.5px !important; color: #b5452f; }
+  .rr-poster-org { font-family: var(--font-mono); font-size: 5.5px !important; color: #6b6458; letter-spacing: 0.04em; }
+  .rr-tape { position: absolute; width: 22px; height: 8px; background: rgba(240, 232, 200, 0.75); box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1); }
+  .rr-tape.a { left: -8px; top: -2px; transform: rotate(-35deg); }
+  .rr-tape.b { right: -8px; top: -2px; transform: rotate(35deg); }
+  /* at night the lamp catches it a little */
+  .rr.is-night .rr-poster { filter: brightness(0.82) sepia(0.15); }
+
   /* ---- request desk ---- */
   .rr-request {
     max-width: 640px; background: #fff8e2; color: var(--rr-ink); padding: 16px 18px 18px; border-radius: 2px;
@@ -2861,6 +2882,9 @@
     .rr-desk { grid-template-columns: minmax(0, 1fr); padding: 18px 14px 26px; }
     .rr-props { order: -1; flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
     .rr-window { height: 96px; }
+    .rr-poster { width: 62px; top: 6px; padding: 3px 3px 4px; gap: 2px; }
+    .rr-poster-title { -webkit-line-clamp: 3; font-size: 6px !important; }
+    .rr-poster-org { display: none; }
     .rr-window::after {
       background:
         radial-gradient(ellipse 60px 40px at calc(100% - 92px) 40%, rgba(255, 228, 165, 0.5), rgba(255, 205, 125, 0.16) 60%, transparent),
@@ -8648,6 +8672,120 @@
 
   // The 520-odd archives with anything scanned, biggest first -- the
   // trolley on the request desk and "Surprise me" draw from these.
+  // ---- What's on at the institute: the event poster and its theme ----
+  // events-etl's next event (or, between seasons, the latest one) is
+  // taped to the reading-room window, and the request desk's library
+  // shelf and trolley are picked to its theme. Events carry no subject
+  // links, so the theme is the event's own words: stems from its title
+  // (weighted up) and description, generic ones left out, word forms
+  // folded together ("slavery", "enslaved", "enslavement" -> "slave").
+  var rrEventPromise = null;
+
+  function rrFetchFeaturedEvent() {
+    if (rrEventPromise) return rrEventPromise;
+    var q = "SELECT ?e (SAMPLE(?n0) AS ?name) (SAMPLE(?s0) AS ?start) (SAMPLE(?en0) AS ?end) (SAMPLE(?d0) AS ?desc)\n" +
+      "       (SAMPLE(?img0) AS ?img) (SAMPLE(?th0) AS ?thumb) WHERE {\n" +
+      "  GRAPH <https://iisg.amsterdam/graph/events> { ?e a <https://schema.org/Event> ; <https://schema.org/startDate> ?s0 ; <https://schema.org/name> ?n0 .\n" +
+      "    OPTIONAL { ?e <https://schema.org/endDate> ?en0 }\n" +
+      "    OPTIONAL { ?e <https://schema.org/description> ?d0 }\n" +
+      "    OPTIONAL { ?e <https://schema.org/image> ?i . ?i <https://schema.org/contentUrl> ?img0 .\n" +
+      "      OPTIONAL { ?i <https://schema.org/thumbnail>/<https://schema.org/contentUrl> ?th0 } } }\n" +
+      "} GROUP BY ?e";
+    rrEventPromise = sparql(q).then(function (rows) {
+      var now = new Date().toISOString().slice(0, 16);
+      var evs = rows.map(function (r) {
+        var v = function (k) { return r[k] ? r[k].value : null; };
+        return {
+          uri: r.e.value, name: tidyTitle(v("name") || ""), start: v("start"), end: v("end") || v("start"),
+          desc: v("desc") || "",
+          img: [v("thumb"), v("img")].filter(function (u) { return u && isLocalUri(u); })[0] || null
+        };
+      }).filter(function (e) { return e.start && e.name; });
+      // the next one still to come (or running now); else the latest past
+      var coming = evs.filter(function (e) { return e.end >= now; }).sort(function (a, b) { return a.start < b.start ? -1 : 1; });
+      if (coming.length) return coming[0];
+      evs.sort(function (a, b) { return a.start < b.start ? 1 : -1; });
+      return evs[0] || null;
+    }).catch(function () { rrEventPromise = null; return null; });
+    return rrEventPromise;
+  }
+
+  var RR_THEME_STOP = ("about after against again also among archiv around before being between book books bring century centur conference " +
+    "discuss during early edited event events every exhibition first focus from history histor institut interna international into issues lecture " +
+    "modern netherland other over paper part presen presentation programme project research seminar social society speaker their there " +
+    "these thing those through together towards under until where which while will with within without workshop world years " +
+    "amsterdam iisg iish talk talks today dutch").split(" ");
+
+  function rrThemeStems(ev) {
+    var weights = {};
+    function add(text, w) {
+      (text.toLowerCase().match(/[a-zà-ÿ]{5,}/g) || []).forEach(function (word) {
+        // fold a negating/causative prefix (enslave, unpaid, ...) onto its root
+        if (word.length > 8 && /^(en|un|re|de)/.test(word)) word = word.slice(2);
+        var stem = word.slice(0, 5);
+        if (RR_THEME_STOP.some(function (st) { return stem === st.slice(0, 5); })) return;
+        weights[stem] = (weights[stem] || 0) + w;
+      });
+    }
+    add(ev.name, 3);
+    add(ev.desc, 1);
+    return Object.keys(weights).map(function (k) { return { stem: k, w: weights[k] }; })
+      .sort(function (a, b) { return b.w - a.w; }).slice(0, 6);
+  }
+
+  function rrThemeScore(label, stems) {
+    var l = (label || "").toLowerCase();
+    return stems.reduce(function (sc, st) { return sc + (l.indexOf(st.stem) !== -1 ? st.w : 0); }, 0);
+  }
+
+  function rrThemedLibrary(stems) {
+    if (!stems.length) return Promise.resolve([]);
+    // one query per theme word, so a common one ("united") can't crowd
+    // out the telling one ("anarchist") under a shared LIMIT
+    return Promise.all(stems.slice(0, 4).map(function (st) {
+      var q = RR_LIB_SELECT + RR_LIB_ROW + "  FILTER(CONTAINS(LCASE(?n), \"" + escLiteral(st.stem) + "\"))\n" + RR_LIB_EXTRA + "} GROUP BY ?s LIMIT 120";
+      return sparql(q).then(rrLibRows).catch(function () { return []; });
+    })).then(function (lists) {
+      var seen = {}, items = [];
+      lists.forEach(function (l) { l.forEach(function (it) { if (!seen[it.uri]) { seen[it.uri] = true; items.push(it); } }); });
+      return items;
+    }).then(function (items) {
+      items.forEach(function (it) { it.score = rrThemeScore(it.label, stems); });
+      items.sort(function (a, b) { return b.score - a.score || (Math.random() - 0.5); });
+      // a shelf, not a list: no more than four books, then whatever else matched
+      var books = 0, out = [];
+      items.forEach(function (it) {
+        if (out.length >= 7) return;
+        if (it.kind === "book" && books >= 4) return;
+        if (it.kind === "book") books++;
+        out.push(it);
+      });
+      return out;
+    });
+  }
+
+  // A printed poster, taped inside the glass: the event's picture, title
+  // and date. Hover to look closer; click for the event's own page.
+  function rrPosterEl(ev) {
+    // a single day, or the whole run of an exhibition
+    var when = ev.start ? fmtEventDate(ev.start) : "";
+    if (ev.end && ev.start && ev.end.slice(0, 10) !== ev.start.slice(0, 10)) {
+      var a = fmtEventDate(ev.start), b = fmtEventDate(ev.end);
+      when = (a.slice(-4) === b.slice(-4) ? a.slice(0, -5) : a) + " – " + b;
+    }
+    var b = el("button", { type: "button", class: "rr-poster", title: ev.name + (when ? " — " + when : ""), "aria-label": "Event poster: " + ev.name + (when ? ", " + when : "") }, [
+      el("span", { class: "rr-tape a", "aria-hidden": "true" }), el("span", { class: "rr-tape b", "aria-hidden": "true" }),
+      ev.img ? el("img", { src: ev.img, alt: "", loading: "lazy" }) : el("span", { class: "rr-poster-noimg", "aria-hidden": "true" }),
+      el("span", { class: "rr-poster-title", text: ev.name }),
+      el("span", { class: "rr-poster-date", text: when }),
+      el("span", { class: "rr-poster-org", text: "IISG · Cruquiusweg 31" })
+    ]);
+    var im = b.querySelector("img");
+    if (im) im.onerror = function () { im.remove(); };
+    b.addEventListener("click", function () { navigate(ev.uri); });
+    return b;
+  }
+
   function rrFetchDigitizedRoots() {
     if (rrDigitizedRoots) return rrDigitizedRoots;
     var q = "SELECT ?root (COUNT(DISTINCT ?d) AS ?n) (SAMPLE(?nm) AS ?name) (SAMPLE(?dt) AS ?dates) WHERE {\n" +
@@ -8972,7 +9110,9 @@
     section.appendChild(crumbs);
 
     var room = el("div", { class: "rr-room" });
-    room.appendChild(rrWindowEl());
+    var win = rrWindowEl();
+    room.appendChild(win);
+    rrFetchFeaturedEvent().then(function (ev) { if (ev && win.isConnected !== false) win.appendChild(rrPosterEl(ev)); });
     // The reading lamp stands at the back of the desk, against the window.
     var lamp = rrLampEl();
     rrLampState(lamp, rrIsNight());
@@ -10289,16 +10429,32 @@
       });
     });
 
-    rrFetchDigitizedRoots().then(function (roots) {
+    // Both the shelf and the trolley follow the event on the window.
+    var themeP = rrFetchFeaturedEvent().then(function (ev) { return { ev: ev, stems: ev ? rrThemeStems(ev) : [] }; });
+    function themeNote(ev, n) { return n && ev ? " — picked for “" + ev.name + "”" : ""; }
+
+    Promise.all([rrFetchDigitizedRoots(), themeP]).then(function (res) {
+      var roots = res[0], theme = res[1];
       if (gen !== rrGen || !roots.length) return;
       roots.forEach(function (r) { scannedByRoot[r.uri] = r.scanned; });
       surprise.addEventListener("click", function () {
         readingNavigate(roots[Math.floor(Math.random() * roots.length)].uri);
       });
-      var pool = roots.slice();
-      var picks = [];
+      // archives the event names outright ("ARCH00405 - digitized") first,
+      // then those on its theme (best match first), the rest at random
+      var named = ((theme.ev && theme.ev.desc) || "").match(/\b(ARCH|COLL)\d{5}\b/g) || [];
+      var themed = roots.map(function (r) {
+        var sc = rrThemeScore(r.label, theme.stems);
+        if (named.indexOf(rrCallNumber(r.uri)) !== -1) sc += 1000;
+        return { r: r, sc: sc };
+      })
+        .filter(function (x) { return x.sc > 0; })
+        .sort(function (a, b) { return b.sc - a.sc || b.r.scanned - a.r.scanned; })
+        .slice(0, RR_ON_TROLLEY).map(function (x) { return x.r; });
+      var pool = roots.filter(function (r) { return themed.indexOf(r) === -1; });
+      var picks = themed.slice();
       while (picks.length < RR_ON_TROLLEY && pool.length) picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-      trolleySlot.appendChild(el("h3", { class: "rr-subhead", text: "Waiting on the trolley" }));
+      trolleySlot.appendChild(el("h3", { class: "rr-subhead", text: "Waiting on the trolley" + themeNote(theme.ev, themed.length) }));
       var boxes = picks.map(function (r, i) {
         var b = rrBoxEl({ uri: r.uri, label: r.label, scanned: r.scanned, kids: 1 }, i, { no: rrCallNumber(r.uri), meta: r.dates || "" });
         b.addEventListener("click", function () { readingNavigate(r.uri); });
@@ -10307,9 +10463,19 @@
       trolleySlot.appendChild(rrTrolleyEl(boxes));
     }).catch(function () { surprise.disabled = true; });
 
-    rrFetchLibraryPicks().then(function (items) {
+    themeP.then(function (theme) {
+      return rrThemedLibrary(theme.stems).catch(function () { return []; }).then(function (themed) {
+        if (themed.length >= 4) return { items: themed, ev: theme.ev, themed: true };
+        // too little on theme: top up with the usual random mix
+        return rrFetchLibraryPicks().then(function (rnd) {
+          var have = themed.map(function (x) { return x.uri; });
+          return { items: themed.concat(rnd.filter(function (x) { return have.indexOf(x.uri) === -1; })).slice(0, 7), ev: theme.ev, themed: themed.length > 0 };
+        });
+      });
+    }).then(function (res) {
+      var items = res.items;
       if (gen !== rrGen || !items.length) return;
-      libSlot.appendChild(el("h3", { class: "rr-subhead", text: "Up from the library stacks" }));
+      libSlot.appendChild(el("h3", { class: "rr-subhead", text: "Up from the library stacks" + themeNote(res.ev, res.themed) }));
       var shelf = el("div", { class: "rr-bookshelf" });
       items.forEach(function (it, i) { shelf.appendChild(rrLibObjEl(it, i)); });
       libSlot.appendChild(shelf);

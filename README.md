@@ -105,6 +105,14 @@ URL for a differently-hosted store.
   recorder, or a film on a small viewer (`Video` canvases, `<video>`).
   Some catalogue manifests aren't on IISG's IIIF server (seen on
   multi-volume works and periodicals' `Z…` collections); the desk says so.
+  What's on at the institute sets the theme: the next (or running)
+  event from events-etl hangs on the window as a taped-up poster (its
+  picture, title and dates; hover to look closer, click for the event),
+  and the request desk's library shelf and trolley are picked to it.
+  Events have no subject links, so the theme is the event's own words --
+  stems from its title (weighted up) and description, generic ones left
+  out -- matched against digitized library titles and archive names;
+  archives the description names by call number ("ARCH00405") go first.
   Every archive record page links into it. Boxes and bundles carry
   stickers for what's digitized inside -- "12 scans", "2 audio", "1 video"
   -- split by each item's `physicalDescription` (or its folder's, when it
