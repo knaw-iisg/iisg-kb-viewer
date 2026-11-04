@@ -2038,11 +2038,16 @@
   .main:has(> .rr) { max-width: 1280px; min-width: 0; }
 
   .rr {
-    --rr-sky-top: #c9dfeb;
-    --rr-sky-bottom: #eaf2f5;
-    --rr-city: #9fb3bf;
-    --rr-water: #6f8f9c;
-    --rr-water-hi: #8fadb8;
+    --rr-sky-top: #b9d3e4;
+    --rr-sky-bottom: #e8f0f3;
+    --rr-far: #b4c2cb; --rr-tower: #9aa7af;
+    --rr-house1: #a4523e; --rr-house2: #b9714f; --rr-house3: #8d4a3b; --rr-house4: #d6cab4;
+    --rr-roof: #5b4a44; --rr-win: #3e4b53; --rr-win-lit: #3e4b53;
+    --rr-tree: #5c8a46; --rr-tree2: #6f9a52; --rr-quay: #6d655b;
+    --rr-water-far: #7c9ca8; --rr-ripple: #a5c0c9; --rr-refl: 0;
+    --rr-hull1: #f1f0ea; --rr-hull2: #4f6f8a; --rr-hull3: #3f6b4e; --rr-hullbase: #2d3236;
+    --rr-jetty: #8d7357; --rr-jettyedge: #5e4a36; --rr-night: 0;
+    --rr-water: #4f7887;
     --rr-frame: #2c3438;
     --rr-desk: #6c8a90;
     --rr-desk-hi: #7f9ca2;
@@ -2068,8 +2073,15 @@
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) .rr {
-      --rr-sky-top: #121b2b; --rr-sky-bottom: #2a3550; --rr-city: #0c1320;
-      --rr-water: #1b2a36; --rr-water-hi: #2f4656; --rr-frame: #090c0e;
+      --rr-sky-top: #0b1426; --rr-sky-bottom: #26344f;
+      --rr-far: #1a2334; --rr-tower: #222c3b;
+      --rr-house1: #3a2724; --rr-house2: #43302a; --rr-house3: #31221e; --rr-house4: #4a463f;
+      --rr-roof: #15120f; --rr-win: #1b2127; --rr-win-lit: #ffcf73;
+      --rr-tree: #15211a; --rr-tree2: #1b2a20; --rr-quay: #1f1d1a;
+      --rr-water-far: #1a2c3a; --rr-ripple: #2e4a5c; --rr-refl: 0.55;
+      --rr-hull1: #7d8186; --rr-hull2: #2b3d4d; --rr-hull3: #233a2c; --rr-hullbase: #0d0f11;
+      --rr-jetty: #3a3026; --rr-jettyedge: #221b14; --rr-night: 1;
+      --rr-water: #0f1d27; --rr-frame: #090c0e;
       --rr-desk: #33494d; --rr-desk-hi: #3c5559; --rr-desk-lip: #7a5a38; --rr-desk-lip-dark: #5c4329;
       --rr-card: #8a6744; --rr-card-dark: #6f5236; --rr-card-light: #a07b55;
       --rr-label: #e8e2d2; --rr-manila: #c9b07a; --rr-manila-dark: #a89060;
@@ -2078,8 +2090,15 @@
     }
   }
   :root[data-theme="dark"] .rr {
-    --rr-sky-top: #121b2b; --rr-sky-bottom: #2a3550; --rr-city: #0c1320;
-    --rr-water: #1b2a36; --rr-water-hi: #2f4656; --rr-frame: #090c0e;
+    --rr-sky-top: #0b1426; --rr-sky-bottom: #26344f;
+    --rr-far: #1a2334; --rr-tower: #222c3b;
+    --rr-house1: #3a2724; --rr-house2: #43302a; --rr-house3: #31221e; --rr-house4: #4a463f;
+    --rr-roof: #15120f; --rr-win: #1b2127; --rr-win-lit: #ffcf73;
+    --rr-tree: #15211a; --rr-tree2: #1b2a20; --rr-quay: #1f1d1a;
+    --rr-water-far: #1a2c3a; --rr-ripple: #2e4a5c; --rr-refl: 0.55;
+    --rr-hull1: #7d8186; --rr-hull2: #2b3d4d; --rr-hull3: #233a2c; --rr-hullbase: #0d0f11;
+    --rr-jetty: #3a3026; --rr-jettyedge: #221b14; --rr-night: 1;
+    --rr-water: #0f1d27; --rr-frame: #090c0e;
     --rr-desk: #33494d; --rr-desk-hi: #3c5559; --rr-desk-lip: #7a5a38; --rr-desk-lip-dark: #5c4329;
     --rr-card: #8a6744; --rr-card-dark: #6f5236; --rr-card-light: #a07b55;
     --rr-label: #e8e2d2; --rr-manila: #c9b07a; --rr-manila-dark: #a89060;
@@ -2115,28 +2134,41 @@
     border-radius: 14px; overflow: hidden; box-shadow: var(--shadow);
     background: var(--rr-desk);
   }
-  .rr-window {
-    position: relative; height: 92px; overflow: hidden;
-    background: linear-gradient(var(--rr-sky-top), var(--rr-sky-bottom) 55%);
-  }
-  .rr-skyline { position: absolute; left: 0; right: 0; bottom: 34px; width: 100%; height: 26px; fill: var(--rr-city); }
-  .rr-water {
-    position: absolute; left: 0; right: 0; bottom: 0; height: 36px;
-    background:
-      repeating-linear-gradient(180deg, transparent 0 5px, var(--rr-water-hi) 5px 6px),
-      var(--rr-water);
-    opacity: 0.95;
-  }
-  .rr-boat {
-    position: absolute; bottom: 22px; left: 62%; width: 56px; height: 10px; border-radius: 0 0 8px 8px;
-    background: var(--rr-label); box-shadow: 14px -6px 0 -2px var(--rr-label);
-    animation: rr-drift 60s linear infinite alternate;
-  }
-  @keyframes rr-drift { from { transform: translateX(-40px); } to { transform: translateX(60px); } }
+  .rr-window { position: relative; height: 150px; overflow: hidden; background: var(--rr-sky-bottom); }
+  .rr-harbour { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .rr-harbour .rr-far { fill: var(--rr-far); }
+  .rr-harbour .rr-tower { fill: var(--rr-tower); }
+  .rr-harbour .rr-house1 { fill: var(--rr-house1); }
+  .rr-harbour .rr-house2 { fill: var(--rr-house2); }
+  .rr-harbour .rr-house3 { fill: var(--rr-house3); }
+  .rr-harbour .rr-house4 { fill: var(--rr-house4); }
+  .rr-harbour .rr-roof { fill: var(--rr-roof); }
+  .rr-harbour .rr-win { fill: var(--rr-win); }
+  .rr-harbour .rr-win.lit { fill: var(--rr-win-lit); }
+  .rr-harbour .rr-tree { fill: var(--rr-tree); }
+  .rr-harbour .rr-tree2 { fill: var(--rr-tree2); }
+  .rr-harbour .rr-quay { fill: var(--rr-quay); }
+  .rr-harbour .rr-ripple { fill: var(--rr-ripple); opacity: 0.7; }
+  .rr-harbour .rr-refl { fill: var(--rr-win-lit); opacity: var(--rr-refl); }
+  .rr-harbour .rr-hull1 { fill: var(--rr-hull1); }
+  .rr-harbour .rr-hull2 { fill: var(--rr-hull2); }
+  .rr-harbour .rr-hull3 { fill: var(--rr-hull3); }
+  .rr-harbour .rr-hullbase { fill: var(--rr-hullbase); }
+  .rr-harbour .rr-cabin { fill: var(--rr-hull1); }
+  .rr-harbour .rr-post { fill: var(--rr-hullbase); }
+  .rr-harbour .rr-postrefl { opacity: 0.35; }
+  .rr-harbour .rr-jetty { fill: var(--rr-jetty); }
+  .rr-harbour .rr-plank { fill: var(--rr-jettyedge); opacity: 0.5; }
+  .rr-harbour .rr-jettyedge { fill: var(--rr-jettyedge); }
+  .rr-harbour .rr-moon { fill: #f4efd8; opacity: var(--rr-night); }
+  .rr-harbour .rr-star { fill: #fff; opacity: calc(var(--rr-night) * 0.7); }
+  .rr-harbour .rr-passing { animation: rr-drift 70s linear infinite alternate; }
+  @keyframes rr-drift { from { transform: translateX(-160px); } to { transform: translateX(260px); } }
   .rr-mullions {
     position: absolute; inset: 0;
-    background: repeating-linear-gradient(90deg, var(--rr-frame) 0 7px, transparent 7px 20%);
-    border-bottom: 9px solid var(--rr-frame);
+    background: repeating-linear-gradient(90deg, var(--rr-frame) 0 9px, transparent 9px 20%);
+    border-top: 6px solid var(--rr-frame); border-bottom: 11px solid var(--rr-frame);
+    box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.08);
   }
 
   .rr-desk {
@@ -2226,17 +2258,49 @@
   }
 
   /* ---- archive boxes, trolley ---- */
-  .rr-trolley { position: relative; padding: 0 14px; }
-  .rr-shelf {
-    /* rows 182px (a box plus headroom) + 28px gap; a 12px board sits in
-       the top of each gap */
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-    grid-auto-rows: 182px; gap: 28px 12px; align-items: end; padding: 0 12px;
-    background: repeating-linear-gradient(180deg, transparent 0 182px, #8a949a 182px 191px, #5f696f 191px 194px, transparent 194px 210px);
-    margin-bottom: 4px;
+  .rr-trolley {
+    --rr-steel: #c3cacd; --rr-steel-dark: #7f898e;
+    position: relative; margin: 0 auto; padding: 0 52px 0 14px;
   }
-  .rr-trolley-base { display: flex; justify-content: space-between; padding: 0 30px; height: 24px; }
-  .rr-wheel { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(#777 30%, #222 32%); }
+  .rr-shelves {
+    /* the two uprights, drawn as the shelves' side borders */
+    border-left: 9px solid var(--rr-steel); border-right: 9px solid var(--rr-steel);
+    box-shadow: inset 2px 0 0 var(--rr-steel-dark), inset -2px 0 0 var(--rr-steel-dark);
+    padding-top: 6px; min-height: 120px;
+  }
+  .rr-shelf {
+    display: flex; justify-content: center; align-items: flex-end; gap: 22px 12px;
+    padding: 16px 10px 0;
+    border-bottom: 11px solid var(--rr-steel);
+    box-shadow: 0 3px 0 var(--rr-steel-dark);
+    margin-bottom: 6px;
+  }
+  .rr-shelf .rr-box { flex: 0 1 132px; min-width: 0; }
+  .rr-trolley-handle {
+    /* push bar: out from the right upright and back, with a rubber grip */
+    position: absolute; right: 8px; top: -14px; width: 48px; height: 112px;
+    border: 8px solid var(--rr-steel); border-left: none; border-radius: 0 22px 22px 0;
+    filter: drop-shadow(0 2px 0 var(--rr-steel-dark));
+  }
+  .rr-trolley-handle::after {
+    content: ""; position: absolute; right: -12px; top: 24px; width: 16px; height: 48px;
+    border-radius: 8px; background: #2b2f31; box-shadow: inset 3px 0 0 #4a5054;
+  }
+  .rr-trolley-base {
+    position: relative; display: flex; justify-content: space-between;
+    margin: 0 22px; height: 46px; padding: 0 6px;
+    border-top: 12px solid var(--rr-steel-dark);
+  }
+  .rr-wheel {
+    position: relative; width: 36px; height: 36px; margin-top: 10px; border-radius: 50%;
+    background: radial-gradient(circle, #c9cdd0 0 5px, #6b7377 5px 9px, #2a2d2f 9px 13px, #17191a 13px);
+    box-shadow: 0 3px 4px rgba(0, 0, 0, 0.35);
+  }
+  .rr-wheel::before {
+    /* caster fork up to the frame */
+    content: ""; position: absolute; left: 50%; top: -12px; width: 12px; height: 26px; margin-left: -6px;
+    background: var(--rr-steel); border-radius: 2px; z-index: -1;
+  }
 
   .rr-box {
     position: relative; height: 168px; border: none; padding: 0; cursor: pointer;
@@ -2252,7 +2316,7 @@
   }
   .rr-box:hover, .rr-box:focus-visible { transform: translateY(-8px) rotate(-0.6deg); box-shadow: inset 0 -4px 0 var(--rr-card-dark), 0 16px 20px var(--rr-shadow); }
   .rr-box-label {
-    margin: 12px 10px 0; padding: 6px 7px 7px; background: var(--rr-label); color: var(--rr-ink);
+    margin: 32px 10px 0; padding: 6px 7px 7px; background: var(--rr-label); color: var(--rr-ink);
     width: calc(100% - 20px); display: flex; flex-direction: column; gap: 2px; text-align: left;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2); border-radius: 1px;
   }
@@ -2263,18 +2327,19 @@
   }
   .rr-box-meta { font-size: 11px; color: var(--rr-ink-soft); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .rr-box-hand {
-    position: absolute; bottom: 16px; left: 50%; width: 38px; height: 12px; margin-left: -19px;
+    /* hand-hole near the top, where you'd grab it to pull it off a shelf */
+    position: absolute; top: 11px; left: 50%; width: 38px; height: 12px; margin-left: -19px;
     border-radius: 6px; background: var(--rr-card-dark); box-shadow: inset 0 3px 3px rgba(0, 0, 0, 0.45);
   }
-  .rr-box .rr-scan { right: 8px; bottom: 34px; }
-  .rr-box .rr-tick { left: 8px; bottom: 28px; color: #2a2a2a; }
+  .rr-box .rr-scan { right: 8px; bottom: 10px; }
+  .rr-box .rr-tick { left: 9px; bottom: 6px; color: #2a2a2a; }
   .rr-box.rr-returned { animation: rr-putback 0.6s ease both; outline: 3px solid rgba(255, 255, 255, 0.6); outline-offset: 3px; }
 
   @keyframes rr-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
   @keyframes rr-putback { 0% { transform: translateY(-26px); } 70% { transform: translateY(2px); } 100% { transform: none; } }
 
   .rr-inventory {
-    margin-top: 20px; background: var(--rr-paper); color: var(--rr-ink); border-radius: 3px;
+    margin: 0 0 30px; background: var(--rr-paper); color: var(--rr-ink); border-radius: 3px;
     padding: 10px 14px; box-shadow: 0 6px 12px var(--rr-shadow); font-size: 14px;
   }
   .rr-inventory summary { cursor: pointer; font-family: var(--font-display); font-weight: 600; }
@@ -2500,23 +2565,32 @@
   }
   .rr-open-btn:hover { border-color: var(--accent); }
 
-  @media (max-width: 900px) {
+  /* A narrow room (by its own width, whatever the rail takes): the card
+     and notepad go in a row above the scene, so the trolley and folder
+     get the full desk. */
+  .rr-room { container-type: inline-size; }
+  @container (max-width: 900px) {
     .rr-desk { grid-template-columns: minmax(0, 1fr); padding: 18px 14px 26px; }
-    .rr-props { flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
+    .rr-props { order: -1; flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
     .rr-tent { flex: 0 0 150px; }
     .rr-notepad { flex: 1 1 220px; }
+  }
+  @media (max-width: 900px) {
     .rr-openfolder { grid-template-columns: minmax(0, 1fr); padding: 8px; }
     .rr-leaf-left { border-right: none; border-bottom: 2px solid var(--rr-manila-dark); box-shadow: none; order: 2; animation: none; }
     .rr-pages { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); max-height: 150px; }
-    .rr-window { height: 64px; }
+    .rr-window { height: 96px; }
   }
   @media (max-width: 520px) {
     /* the notepad already shows the full path; the trail stays one line */
     .rr-crumbs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
     .rr-crumb { flex: none; max-width: 180px; }
     .rr-record-link { flex: none; }
-    .rr-shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 6px; }
-    .rr-trolley { padding: 0; }
+    .rr-trolley { padding: 0 38px 0 0; }
+    .rr-trolley-handle { right: 4px; width: 38px; height: 92px; }
+    .rr-box-title { font-size: 12px; }
+    .rr-shelf { padding: 12px 6px 0; gap: 18px 8px; }
+    .rr-trolley-base { margin: 0 10px; }
     .rr-file { padding-right: 60px; }
     .rr-caption-main { font-size: 17px; }
   }
@@ -8309,12 +8383,125 @@
     return s;
   }
 
+  // The view out of the reading-room windows: IISG looks out over the
+  // water at the Cruquiuskade -- brick houses and trees along the far
+  // quay, houseboats moored in front, mooring posts and a floating jetty
+  // close by, a taller block behind. Drawn once from a fixed seed (the
+  // same street every visit); colours come from CSS, so the evening
+  // version (dark mode) lights a share of the windows and lets them
+  // reflect in the water.
+  var rrWindowSvg = null;
+
   function rrWindowEl() {
     var w = el("div", { class: "rr-window", "aria-hidden": "true" });
-    w.innerHTML = '<svg class="rr-skyline" viewBox="0 0 600 40" preserveAspectRatio="none">' +
-      '<path d="M0 40V26h30v-8h22v10h40V14h18v14h36V20h50v-6h14v6h30v8h40V10h24v18h60v-8h28v8h44V18h30v10h40v-6h26v18Z"/></svg>' +
-      '<div class="rr-water"></div><div class="rr-boat"></div><div class="rr-mullions"></div>';
+    if (!rrWindowSvg) rrWindowSvg = rrHarbourSvg();
+    w.innerHTML = rrWindowSvg + '<div class="rr-mullions"></div>';
     return w;
+  }
+
+  function rrHarbourSvg() {
+    var W = 1200, H = 170, QUAY = 100;
+    var seed = 20231;
+    function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+    function r(a, b) { return a + rnd() * (b - a); }
+    function n(v) { return Math.round(v * 10) / 10; }
+    function rect(x, y, w, h, cls, extra) {
+      return '<rect x="' + n(x) + '" y="' + n(y) + '" width="' + n(w) + '" height="' + n(h) + '" class="' + cls + '"' + (extra || "") + '/>';
+    }
+    var out = [];
+    out.push('<defs>' +
+      '<linearGradient id="rr-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--rr-sky-top)"/><stop offset="1" style="stop-color:var(--rr-sky-bottom)"/></linearGradient>' +
+      '<linearGradient id="rr-wat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--rr-water-far)"/><stop offset="1" style="stop-color:var(--rr-water)"/></linearGradient>' +
+      '</defs>');
+    out.push(rect(0, 0, W, QUAY + 2, "", ' fill="url(#rr-sky)"'));
+    out.push('<circle cx="1010" cy="26" r="9" class="rr-moon"/>');
+    for (var st = 0; st < 40; st++) out.push('<circle cx="' + n(r(0, W)) + '" cy="' + n(r(4, 60)) + '" r="' + n(r(0.5, 1.2)) + '" class="rr-star"/>');
+
+    // Far: hazy blocks, and the tall flats (left in the IISG photo).
+    var x = 0;
+    while (x < W) {
+      var fw = r(30, 90), fh = r(14, 34);
+      out.push(rect(x, QUAY - 26 - fh, fw, fh + 30, "rr-far"));
+      x += fw + r(-6, 10);
+    }
+    var lit = [];
+    function tower(tx, tw, th) {
+      out.push(rect(tx, QUAY - th, tw, th, "rr-tower"));
+      for (var ty = QUAY - th + 5; ty < QUAY - 12; ty += 6)
+        for (var tx2 = tx + 3; tx2 < tx + tw - 4; tx2 += 6) {
+          var on = rnd() < 0.35;
+          out.push(rect(tx2, ty, 3, 3, "rr-win" + (on ? " lit" : "")));
+        }
+    }
+    tower(70, 46, 86);
+    tower(860, 34, 70);
+
+    // Mid: the row of canal houses along the far quay.
+    x = -10;
+    while (x < W) {
+      var hw = r(24, 58), hh = r(24, 50), top = QUAY - hh;
+      var tone = "rr-house" + (1 + Math.floor(rnd() * 4));
+      out.push(rect(x, top, hw, hh, tone));
+      if (rnd() < 0.45) {
+        // pitched roof / gable
+        out.push('<path d="M' + n(x - 1) + ' ' + n(top) + 'L' + n(x + hw / 2) + ' ' + n(top - r(8, 14)) + 'L' + n(x + hw + 1) + ' ' + n(top) + 'Z" class="rr-roof"/>');
+      } else {
+        out.push(rect(x - 1, top - 2, hw + 2, 2.5, "rr-roof"));
+      }
+      var litHere = 0;
+      for (var wy = top + 5; wy < QUAY - 8; wy += 9)
+        for (var wx = x + 4; wx < x + hw - 5; wx += 8) {
+          var on2 = rnd() < 0.42;
+          if (on2) litHere++;
+          out.push(rect(wx, wy, 4, 5.5, "rr-win" + (on2 ? " lit" : "")));
+        }
+      if (litHere) lit.push([x + hw / 2, Math.min(3, litHere)]);
+      x += hw + r(0, 2);
+    }
+
+    // Trees along the quay, in front of the houses.
+    for (var t = 0; t < 26; t++) {
+      var cx = r(0, W), cy = QUAY - r(6, 14);
+      out.push('<circle cx="' + n(cx) + '" cy="' + n(cy) + '" r="' + n(r(7, 13)) + '" class="rr-tree"/>');
+      out.push('<circle cx="' + n(cx + r(-8, 8)) + '" cy="' + n(cy + r(-5, 3)) + '" r="' + n(r(5, 9)) + '" class="rr-tree rr-tree2"/>');
+    }
+    out.push(rect(0, QUAY, W, 4, "rr-quay"));
+
+    // Water, ripples and the lights' reflections.
+    out.push(rect(0, QUAY + 4, W, H - QUAY - 4, "", ' fill="url(#rr-wat)"'));
+    for (var rp = 0; rp < 90; rp++) {
+      var ry = r(QUAY + 8, H - 4);
+      out.push(rect(r(0, W), ry, r(12, 60) * (ry - QUAY) / 40, 0.9, "rr-ripple"));
+    }
+    lit.forEach(function (l) {
+      for (var k = 0; k < l[1]; k++) out.push(rect(l[0] + r(-10, 10), QUAY + r(6, 12), r(2, 4), r(14, 30), "rr-refl"));
+    });
+
+    // Houseboats moored along the far quay.
+    x = r(10, 40);
+    while (x < W - 60) {
+      var bw = r(46, 84), by = QUAY + 3;
+      var hull = "rr-hull" + (1 + Math.floor(rnd() * 3));
+      out.push('<path d="M' + n(x) + ' ' + n(by + 4) + 'h' + n(bw) + 'l-4 6h' + n(-bw + 8) + 'Z" class="rr-hullbase"/>');
+      out.push(rect(x + 6, by - 6, bw - 14, 10, hull));
+      out.push(rect(x + 4, by - 8, bw - 10, 2.5, "rr-roof"));
+      for (var bx = x + 10; bx < x + bw - 12; bx += 9) out.push(rect(bx, by - 3, 5, 4, "rr-win" + (rnd() < 0.5 ? " lit" : "")));
+      x += bw + r(14, 90);
+    }
+
+    // Mooring posts in the water and the near floating jetty.
+    [[300, 132], [318, 133], [690, 128], [705, 129], [1080, 136]].forEach(function (pp) {
+      out.push(rect(pp[0], pp[1] - 16, 4, 18, "rr-post"));
+      out.push(rect(pp[0], pp[1] + 2, 4, 6, "rr-post rr-postrefl"));
+    });
+    out.push('<path d="M0 152L470 148L478 160L0 166Z" class="rr-jetty"/>');
+    for (var pl = 0; pl < 470; pl += 14) out.push(rect(pl, 148, 1, 14, "rr-plank"));
+    out.push(rect(0, 160, 480, 3, "rr-jettyedge"));
+
+    // A boat passing by.
+    out.push('<g class="rr-passing"><path d="M520 136h70l-8 8h-56Z" class="rr-hull2"/><rect x="538" y="128" width="26" height="8" class="rr-cabin"/></g>');
+
+    return '<svg class="rr-harbour" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMax slice">' + out.join("") + "</svg>";
   }
 
   // ctx: { root, chain (root-first ancestors), node, here (label of the
@@ -8448,14 +8635,54 @@
     return b;
   }
 
+  // A book trolley: side posts, a push handle, shelves and four casters.
+  // The boxes are spread evenly over as few shelves as fit across (6
+  // boxes three-and-three, not four-and-two), re-spread when the width
+  // changes.
+  var RR_BOX_W = 132, RR_BOX_MIN_W = 104, RR_BOX_GAP = 12;
+
   function rrTrolleyEl(boxes) {
-    // One grid; the shelf boards are drawn under each row in CSS, so
-    // however many boxes fit across, every row stands on one.
     var trolley = el("div", { class: "rr-trolley" });
-    var shelf = el("div", { class: "rr-shelf" });
-    boxes.forEach(function (b) { shelf.appendChild(b); });
-    trolley.appendChild(shelf);
-    trolley.appendChild(el("div", { class: "rr-trolley-base", "aria-hidden": "true" }, [el("span", { class: "rr-wheel" }), el("span", { class: "rr-wheel" })]));
+    trolley.appendChild(el("span", { class: "rr-trolley-handle", "aria-hidden": "true" }));
+    var shelves = el("div", { class: "rr-shelves" });
+    trolley.appendChild(shelves);
+    var base = el("div", { class: "rr-trolley-base", "aria-hidden": "true" });
+    for (var w = 0; w < 4; w++) base.appendChild(el("span", { class: "rr-wheel" }));
+    trolley.appendChild(base);
+
+    var cols = 0;
+    function layout() {
+      // Frame around the boxes: the trolley's padding (handle side
+      // included), the two uprights and the shelves' own padding.
+      var cs = getComputedStyle(trolley);
+      var frame = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + 18 + 20;
+      var room = (trolley.parentNode ? trolley.parentNode.clientWidth : 0) - frame;
+      if (room <= 0) return;
+      var fit = Math.floor((room + RR_BOX_GAP) / (RR_BOX_W + RR_BOX_GAP));
+      // Narrow desks (phones): slimmer boxes, two to a shelf, rather than
+      // a tower of one.
+      if (fit < 2) fit = Math.max(1, Math.floor((room + RR_BOX_GAP) / (RR_BOX_MIN_W + RR_BOX_GAP)));
+      var rows = Math.ceil(boxes.length / fit);
+      var c = Math.ceil(boxes.length / rows);
+      if (c === cols) return;
+      cols = c;
+      // The trolley is as wide as its widest shelf, not the whole desk.
+      trolley.style.maxWidth = (c * (RR_BOX_W + RR_BOX_GAP) - RR_BOX_GAP + frame) + "px";
+      clear(shelves);
+      for (var r = 0; r < rows; r++) {
+        var shelf = el("div", { class: "rr-shelf" });
+        boxes.slice(r * cols, (r + 1) * cols).forEach(function (b) { shelf.appendChild(b); });
+        shelves.appendChild(shelf);
+      }
+    }
+    // Lay out once it's in the page (needs a width), then on resize.
+    requestAnimationFrame(layout);
+    // Watch the desk, not the trolley: the trolley's own width follows
+    // the layout.
+    requestAnimationFrame(function () {
+      if (window.ResizeObserver && trolley.parentNode) new ResizeObserver(layout).observe(trolley.parentNode);
+      else window.addEventListener("resize", layout);
+    });
     return trolley;
   }
 
@@ -8470,13 +8697,14 @@
       b.addEventListener("click", function () { readingNavigate(it.uri); });
       return b;
     });
-    stage.appendChild(rrTrolleyEl(boxes));
+    // The inventory comes first, the way you'd read it before taking a box.
     if (node.abstract) {
       stage.appendChild(el("details", { class: "rr-inventory" }, [
         el("summary", { text: "Read the inventory’s introduction" }),
         el("p", { text: node.abstract })
       ]));
     }
+    stage.appendChild(rrTrolleyEl(boxes));
   }
 
   // ---- Scene: an open box, folders standing in it ----
