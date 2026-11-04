@@ -2284,7 +2284,7 @@
   }
   .rr-box:hover, .rr-box:focus-visible { transform: translateY(-8px) rotate(-0.6deg); box-shadow: inset 0 -4px 0 var(--rr-card-dark), 0 16px 20px var(--rr-shadow); }
   .rr-box-label {
-    margin: 12px 10px 0; padding: 6px 7px 7px; background: var(--rr-label); color: var(--rr-ink);
+    margin: 32px 10px 0; padding: 6px 7px 7px; background: var(--rr-label); color: var(--rr-ink);
     width: calc(100% - 20px); display: flex; flex-direction: column; gap: 2px; text-align: left;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2); border-radius: 1px;
   }
@@ -2295,11 +2295,12 @@
   }
   .rr-box-meta { font-size: 11px; color: var(--rr-ink-soft); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .rr-box-hand {
-    position: absolute; bottom: 16px; left: 50%; width: 38px; height: 12px; margin-left: -19px;
+    /* hand-hole near the top, where you'd grab it to pull it off a shelf */
+    position: absolute; top: 11px; left: 50%; width: 38px; height: 12px; margin-left: -19px;
     border-radius: 6px; background: var(--rr-card-dark); box-shadow: inset 0 3px 3px rgba(0, 0, 0, 0.45);
   }
-  .rr-box .rr-scan { right: 8px; bottom: 34px; }
-  .rr-box .rr-tick { left: 8px; bottom: 28px; color: #2a2a2a; }
+  .rr-box .rr-scan { right: 8px; bottom: 10px; }
+  .rr-box .rr-tick { left: 9px; bottom: 6px; color: #2a2a2a; }
   .rr-box.rr-returned { animation: rr-putback 0.6s ease both; outline: 3px solid rgba(255, 255, 255, 0.6); outline-offset: 3px; }
 
   @keyframes rr-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
