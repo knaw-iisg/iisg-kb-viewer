@@ -10568,17 +10568,19 @@
     function themeNote(ev, n) { return n && ev ? " — picked for “" + ev.name + "”" : ""; }
     var trolleyData = null, shelfData = null;
 
-    function drawTrolley(shuffle) {
+    // surprise: no theme at all -- a random draw from everything
+    // digitized; otherwise the event's theme first, then random filler.
+    function drawTrolley(surprise) {
       var d = trolleyData;
       if (!d || gen !== rrGen) return;
-      // archives the event names outright ("ARCH00405 - digitized") lead
-      // the first draw; then archives on its theme; the rest at random
-      var ranked = rrRankPool(d.themed, function (x) { return x.sc; }, shuffle).slice(0, RR_ON_TROLLEY);
+      // archives the event names outright ("ARCH00405 - digitized") lead;
+      // then archives on its theme; the rest at random
+      var ranked = surprise ? [] : rrRankPool(d.themed, function (x) { return x.sc; }, false).slice(0, RR_ON_TROLLEY);
       var picks = ranked.map(function (x) { return x.r; });
       var pool = d.roots.filter(function (r) { return picks.indexOf(r) === -1; });
       while (picks.length < RR_ON_TROLLEY && pool.length) picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
       clear(trolleySlot);
-      trolleySlot.appendChild(el("h3", { class: "rr-subhead", text: "Waiting on the trolley" + themeNote(d.ev, ranked.length) }));
+      trolleySlot.appendChild(el("h3", { class: "rr-subhead", text: "Waiting on the trolley" + (surprise ? " — a surprise from the whole collection" : themeNote(d.ev, ranked.length)) }));
       var boxes = picks.map(function (r, i) {
         var bx = rrBoxEl({ uri: r.uri, label: r.label, scanned: r.scanned, kids: 1 }, i, { no: rrCallNumber(r.uri), meta: r.dates || "" });
         bx.addEventListener("click", function () { readingNavigate(r.uri); });
@@ -10587,10 +10589,10 @@
       trolleySlot.appendChild(rrTrolleyEl(boxes));
     }
 
-    function drawShelf(shuffle) {
+    function drawShelf(surprise) {
       var d = shelfData;
       if (!d || gen !== rrGen) return Promise.resolve();
-      var items = rrShelfFrom(rrRankPool(d.pool, function (x) { return x.score; }, shuffle));
+      var items = surprise ? [] : rrShelfFrom(rrRankPool(d.pool, function (x) { return x.score; }, false));
       // a short shelf on theme: fill it up with the usual random mix
       var topUp = items.length >= 7 ? Promise.resolve([]) : rrFetchLibraryPicks().catch(function () { return []; });
       return topUp.then(function (rnd) {
@@ -10600,14 +10602,14 @@
         var all = rrShelfFrom(items.concat(rnd.filter(function (x) { return have.indexOf(x.uri) === -1; })));
         clear(libSlot);
         if (!all.length) return;
-        libSlot.appendChild(el("h3", { class: "rr-subhead", text: "Up from the library stacks" + themeNote(d.ev, items.length) }));
+        libSlot.appendChild(el("h3", { class: "rr-subhead", text: "Up from the library stacks" + (surprise ? " — a surprise from the whole library" : themeNote(d.ev, items.length)) }));
         var shelf = el("div", { class: "rr-bookshelf" });
         all.forEach(function (it, i) { shelf.appendChild(rrLibObjEl(it, i)); });
         libSlot.appendChild(shelf);
       });
     }
 
-    surprise.title = "Bring other things on the same theme";
+    surprise.title = "Anything from the whole collection, never mind the theme";
     surprise.addEventListener("click", function () {
       drawShelf(true);
       drawTrolley(true);

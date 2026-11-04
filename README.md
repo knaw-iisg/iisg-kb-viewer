@@ -110,7 +110,8 @@ URL for a differently-hosted store.
   (the most recent one when nothing is scheduled) hangs on the window as a taped-up poster (its
   picture, title and dates; hover to read it, click for the event), and
   the request desk's library shelf and trolley are picked to it --
-  "Surprise me" draws both again from the same theme.
+  "Surprise me" lets go of the theme and fills both at random from the
+  whole collection.
   Events have no subject links, so the theme is the event's own words --
   stems from its title (weighted up) and description, generic ones left
   out -- matched against digitized library titles and archive names;
