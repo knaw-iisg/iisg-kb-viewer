@@ -106,8 +106,8 @@ URL for a differently-hosted store.
   recorder, or a film on a small viewer (`Video` canvases, `<video>`).
   Some catalogue manifests aren't on IISG's IIIF server (seen on
   multi-volume works and periodicals' `Z…` collections); the desk says so.
-  What's on at the institute sets the theme: the event whose start date
-  is closest to today hangs on the window as a taped-up poster (its
+  What's on at the institute sets the theme: the next event to start
+  (the most recent one when nothing is scheduled) hangs on the window as a taped-up poster (its
   picture, title and dates; hover to read it, click for the event), and
   the request desk's library shelf and trolley are picked to it --
   "Surprise me" draws both again from the same theme.
