@@ -2858,7 +2858,7 @@
     background: transparent; border: none; border-bottom: 1.5px solid #8c7a54; outline: none;
   }
   .rr-request input:focus { border-bottom-color: #23406a; }
-  .rr-slips { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; max-height: 360px; overflow-y: auto; }
+  .rr-slips { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; max-height: 480px; overflow-y: auto; }
   .rr-slips:empty { display: none; }
   .rr-slips-note { font-size: 13px; color: var(--rr-ink-soft); }
   .rr-slipbtn {
@@ -2870,6 +2870,20 @@
   .rr-slipbtn-t { font-weight: 600; font-size: 14px; }
   .rr-slipbtn-m { font-size: 12px; color: var(--rr-ink-soft); }
   .rr-slipbtn.has-scans .rr-slipbtn-no::after { content: " ●"; color: var(--rr-scan); }
+  .rr-slips-text { display: flex; flex-direction: column; gap: 6px; }
+  .rr-slips-text:empty { display: none; }
+  .rr-slipcard { display: flex; flex-direction: column; }
+  .rr-slipcard .rr-slipbtn { border-bottom-style: dashed; border-radius: 2px 2px 0 0; }
+  .rr-hitbtn {
+    display: flex; flex-direction: column; gap: 2px; text-align: left; cursor: pointer; font: inherit;
+    background: #fbf7ea; border: 1px solid #e6dcc0; border-top: 0; border-radius: 0 0 2px 2px;
+    padding: 5px 10px 6px 112px; color: var(--rr-ink);
+  }
+  .rr-hitbtn:hover { border-color: #8c7a54; background: #fff; }
+  .rr-hitbtn-where { font-size: 11.5px; font-weight: 600; color: #23406a; overflow-wrap: anywhere; }
+  .rr-snippet { font-size: 12.5px; line-height: 1.4; overflow-wrap: anywhere; }
+  .rr-snippet mark { background: #f3dc7a; color: inherit; padding: 0 1px; border-radius: 2px; }
+  @media (max-width: 560px) { .rr-hitbtn { padding-left: 10px; } }
 
   .rr-open-btn {
     margin: 10px 0 2px; background: var(--accent-soft); color: var(--accent-strong); border: 1px solid var(--line);
@@ -8862,6 +8876,70 @@
     });
   }
 
+  // Words anywhere in the finding aids: folder and file titles, descriptions,
+  // abstracts, biographies. Every word has to occur in the same text. One
+  // row per archive, most matches first, with one matching text to show
+  // (node and text sampled together, so they belong to each other).
+  var RR_TEXT_PROPS = ["https://schema.org/name", "https://schema.org/description", "https://schema.org/abstract",
+    "https://iisg.amsterdam/vocab/biography", "https://iisg.amsterdam/vocab/arrangement"];
+
+  function rrTermWords(term) {
+    return term.toLowerCase().split(/\s+/).filter(function (w) { return w.length >= 2; });
+  }
+
+  function rrSearchFullText(term) {
+    var words = rrTermWords(term);
+    if (!words.length) return Promise.resolve([]);
+    var q = "SELECT ?root (SAMPLE(?rn) AS ?name) (COUNT(DISTINCT ?s) AS ?hits) (SAMPLE(CONCAT(STR(?s), \"\\t\", STR(?o))) AS ?eg) WHERE {\n" +
+      "  GRAPH <https://iisg.amsterdam/graph/findingaid> {\n" +
+      "    ?s " + RR_TEXT_PROPS.map(iriRef).join("|") + " ?o .\n" +
+      words.map(function (w) { return "    FILTER(CONTAINS(LCASE(?o), \"" + escLiteral(w) + "\"))\n"; }).join("") +
+      "    ?s <https://schema.org/isPartOf>* ?root .\n" +
+      "    ?root <https://schema.org/additionalType> <https://www.ica.org/standards/RiC/vocabularies/recordSetTypes#Collection> ;\n" +
+      "          <https://schema.org/name> ?rn .\n" +
+      "  }\n" +
+      "} GROUP BY ?root ORDER BY DESC(?hits) LIMIT 30";
+    return sparql(q).then(function (rows) {
+      var out = rows.map(function (r) {
+        var eg = r.eg.value, tab = eg.indexOf("\t");
+        return { uri: r.root.value, label: tidyTitle(r.name.value), hits: +r.hits.value, hit: eg.slice(0, tab), text: eg.slice(tab + 1) };
+      });
+      // the title of the folder or file the text belongs to, when the text
+      // is its description rather than its title
+      var nodes = out.filter(function (x) { return x.hit !== x.uri; }).map(function (x) { return iriRef(x.hit); });
+      if (!nodes.length) return out;
+      return sparql("SELECT ?s (SAMPLE(?n) AS ?name) (SAMPLE(?id) AS ?no) WHERE {\n" +
+        "  VALUES ?s { " + nodes.join(" ") + " }\n" +
+        "  OPTIONAL { ?s <https://schema.org/name> ?n }\n" +
+        "  OPTIONAL { ?s <https://schema.org/identifier> ?id }\n" +
+        "} GROUP BY ?s").then(function (rows) {
+        var by = {};
+        rows.forEach(function (r) { by[r.s.value] = { name: r.name ? tidyTitle(r.name.value) : null, no: r.no ? r.no.value : null }; });
+        out.forEach(function (x) { var h = by[x.hit]; if (h) { x.hitName = h.name; x.hitNo = h.no; } });
+        return out;
+      }, function () { return out; });
+    });
+  }
+
+  // A stretch of text around the first matching word, the words marked.
+  function rrSnippetEl(text, words) {
+    var lc = text.toLowerCase(), at = -1;
+    words.forEach(function (w) { var i = lc.indexOf(w); if (i !== -1 && (at === -1 || i < at)) at = i; });
+    var from = Math.max(0, at - 70), to = Math.min(text.length, Math.max(at, 0) + 150);
+    // start and end on a word boundary
+    if (from > 0) { var sp = text.indexOf(" ", from); if (sp !== -1 && sp < at) from = sp + 1; }
+    if (to < text.length) { var sp2 = text.lastIndexOf(" ", to); if (sp2 > at) to = sp2; }
+    var part = text.slice(from, to);
+    var re = new RegExp("(" + words.map(function (w) { return w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }).join("|") + ")", "ig");
+    var span = el("span", { class: "rr-snippet" });
+    if (from > 0) span.appendChild(document.createTextNode("…"));
+    part.split(re).forEach(function (bit, i) {
+      span.appendChild(i % 2 ? el("mark", { text: bit }) : document.createTextNode(bit));
+    });
+    if (to < text.length) span.appendChild(document.createTextNode("…"));
+    return span;
+  }
+
   // ---- Navigation ----
 
   var rrLastUri = null;   // where we were, to tell "put back" from "take out"
@@ -10491,8 +10569,8 @@
 
     var form = el("form", { class: "rr-request", role: "search" });
     form.appendChild(el("div", { class: "rr-request-head" }, [el("strong", { text: "Request slip" }), el("span", { text: "No. " + (1000 + Math.floor(Math.random() * 9000)) })]));
-    var label = el("label", { for: "rr-request-input", text: "Archive or library title (or call number)" });
-    var input = el("input", { id: "rr-request-input", type: "text", placeholder: "e.g. Bakunin, Kautsky, ARCH00018, anarchist", autocomplete: "off", spellcheck: "false" });
+    var label = el("label", { for: "rr-request-input", text: "A name, title, word or call number — the finding aids are searched too" });
+    var input = el("input", { id: "rr-request-input", type: "text", placeholder: "e.g. Bakunin, ARCH00018, hongerstaking, railway strike", autocomplete: "off", spellcheck: "false" });
     var submit = el("button", { type: "submit", class: "rr-btn primary", text: "Request" });
     var surprise = el("button", { type: "button", class: "rr-btn", text: "Surprise me" });
     form.appendChild(label);
@@ -10508,6 +10586,7 @@
     stage.appendChild(trolleySlot);
 
     var scannedByRoot = {};
+    var slipAsk = 0;   // the latest request; older answers are dropped
     function slipEl(c) {
       var sc = scannedByRoot[c.uri];
       var b = el("button", { type: "button", class: "rr-slipbtn" }, [
@@ -10526,11 +10605,15 @@
       if (term.length < 2) return;
       clear(results);
       results.appendChild(el("div", { class: "rr-slips-note", text: "The archivist is looking…" }));
-      Promise.all([rrSearchCollections(term), rrSearchLibrary(term).catch(function () { return []; })]).then(function (res) {
-        if (gen !== rrGen) return;
+      var ask = ++slipAsk;
+      // The full text takes a few seconds; the titles come back at once.
+      var textSlot = el("div", { class: "rr-slips-text" }, [el("div", { class: "rr-slips-note", text: "Searching the finding aids for these words as well…" })]);
+      var textP = /^(ARCH|COLL)\s*\d+$/i.test(term) ? Promise.resolve([]) : rrSearchFullText(term);
+      var namesP = Promise.all([rrSearchCollections(term), rrSearchLibrary(term).catch(function () { return []; })]);
+      namesP.then(function (res) {
+        if (gen !== rrGen || ask !== slipAsk) return;
         var found = res[0], books = res[1];
         clear(results);
-        if (!found.length && !books.length) { results.appendChild(el("div", { class: "rr-slips-note", text: "Nothing by that name. Try a person, organisation, title or call number." })); return; }
         if (found.length) {
           results.appendChild(el("div", { class: "rr-slips-group", text: "Archives" }));
           // Scanned ones first: those are the ones you can actually read here.
@@ -10549,8 +10632,48 @@
             results.appendChild(b);
           });
         }
+        results.appendChild(textSlot);
+        return textP.then(function (hits) {
+          if (gen !== rrGen || ask !== slipAsk) return;
+          clear(textSlot);
+          // archives already found by their name are listed above
+          var shown = found.map(function (c) { return c.uri; });
+          hits = hits.filter(function (h) { return shown.indexOf(h.uri) === -1; });
+          if (!hits.length) {
+            if (!found.length && !books.length) textSlot.appendChild(el("div", { class: "rr-slips-note", text: "Nothing found. Try a person, organisation, place, subject or call number." }));
+            return;
+          }
+          textSlot.appendChild(el("div", { class: "rr-slips-group", text: "Mentioned in the finding aids" }));
+          var words = rrTermWords(term);
+          hits.forEach(function (h) {
+            var sc = scannedByRoot[h.uri];
+            var b = el("button", { type: "button", class: "rr-slipbtn" }, [
+              el("span", { class: "rr-slipbtn-no", text: rrCallNumber(h.uri) }),
+              el("span", { class: "rr-slipbtn-t", text: h.label }),
+              el("span", { class: "rr-slipbtn-m", text: [fmtNum(h.hits) + (h.hits === 1 ? " match" : " matches"), sc ? fmtNum(sc) + " scanned" : "not scanned"].join(" · ") })
+            ]);
+            if (sc) b.classList.add("has-scans");
+            b.addEventListener("click", function () { readingNavigate(h.uri); });
+            // straight to the folder or file the words were found in
+            var bare = function (s) { return s.toLowerCase().replace(/[\s.,;:]+$/, ""); };
+            var at = [h.hitNo ? (/^[\d.\s-]+$/.test(h.hitNo) ? "no. " : "") + h.hitNo : null,
+              h.hitName && bare(h.hitName) !== bare(h.text) ? "“" + h.hitName + "”" : null].filter(Boolean).join(" ");
+            var where = h.hit === h.uri ? "In the archive’s description" : (at ? "In " + at : "In the inventory") + " →";
+            var go = el("button", { type: "button", class: "rr-hitbtn", title: "Open where it’s found" }, [
+              el("span", { class: "rr-hitbtn-where", text: where }),
+              rrSnippetEl(h.text, words)
+            ]);
+            go.addEventListener("click", function () { readingNavigate(h.hit); });
+            textSlot.appendChild(el("div", { class: "rr-slipcard" }, [b, go]));
+          });
+          if (hits.length >= 30) textSlot.appendChild(el("div", { class: "rr-slips-note", text: "The 30 archives with the most matches. Add a word to narrow it down." }));
+        }, function () {
+          if (gen !== rrGen || ask !== slipAsk) return;
+          clear(textSlot);
+          if (!found.length && !books.length) textSlot.appendChild(el("div", { class: "rr-slips-note", text: "Nothing by that name, and the full-text search didn’t answer. Try again in a moment." }));
+        });
       }).catch(function () {
-        if (gen !== rrGen) return;
+        if (gen !== rrGen || ask !== slipAsk) return;
         clear(results);
         results.appendChild(el("div", { class: "rr-slips-note", text: "The request desk can’t be reached right now." }));
       });

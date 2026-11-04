@@ -83,7 +83,11 @@ URL for a differently-hosted store.
   `#reading:<uri>`; the dashboard below is "Overview", `#view:home`): a finding
   aid the way you'd consult it at IISG's actual reading room. A request
   slip finds a collection (by name or call number; scanned ones first),
-  or take one of the digitized archives waiting on the trolley. The
+  and a few seconds later also every archive whose finding aid mentions
+  the words -- in folder and file titles, descriptions, abstracts,
+  biographies -- most matches first, each with a snippet that opens the
+  folder it was found in. Or take one of the digitized archives waiting
+  on the trolley. The
   collection arrives as boxes (its series); a box opens onto the folders
   standing in it, sub-series as tied bundles, single letters as loose
   sheets; a folder opens on the desk with an inventory slip on the inside
