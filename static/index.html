@@ -2795,6 +2795,8 @@
   .rr-tt-weight { fill: #8d9397; }
   .rr-tt-tube { stroke: #d9dde0; stroke-width: 4; stroke-linecap: round; }
   .rr-tt-shell { fill: #3a3e41; stroke: #c9cdd0; stroke-width: 1; }
+  /* raised over the record while it's cued: a shadow under the arm */
+  .rr-tt-arm.lifted { filter: drop-shadow(5px 7px 2px rgba(0, 0, 0, 0.5)); }
   .rr-tapebox.is-sleeve { background: #1c1c1c; border-top: none; width: 92px; height: 92px; }
   .rr-tapebox.is-sleeve .rr-tapebox-reel { width: 48px; height: 48px; margin-left: -24px; top: 6px; background: radial-gradient(circle, #9b2f2a 0 9px, #111 9px 23px, transparent 24px); opacity: 1; }
   .rr-tapebox.is-sleeve .rr-tapebox-label { color: #eee; }
@@ -9547,6 +9549,36 @@
       return keys;
     }
 
+    // A recording the catalogue already calls one (a gramophone record, a
+    // cassette, "1 digital audio file"): put the deck on the desk straight
+    // away and fill in its sides when the manifest comes -- IISG's IIIF
+    // server can take seconds to send it.
+    if (/^(record|tape|audio)$/.test(kind)) {
+      var isRec = kind === "record";
+      var viewerUrl = node.manifest && isSafeHref(node.manifest) ? UNIVERSAL_VIEWER + node.manifest : null;
+      var deck = rrRecorderEl(node, [], { viewer: viewerUrl, device: isRec ? "turntable" : "reel" });
+      right.appendChild(deck.el);
+      pagesStrip.remove();
+      folder.classList.add("is-audio");
+      caption.querySelector(".rr-caption-main").textContent = "On your desk: " + (isRec ? "a record" : "a tape") + (node.ident ? ", inv. no. " + node.ident : "") + " — " + node.label;
+      var dsub = caption.querySelector(".rr-caption-sub");
+      if (dsub) dsub.textContent = "Space to play or pause, ← → to wind 10 seconds.";
+      Object.keys(deck.keys).forEach(function (k) { keys[k] = deck.keys[k]; });
+      var dgen = rrGen;
+      rrFetchMedia(node.manifest).then(function (media) {
+        if (dgen !== rrGen) return;
+        deck.setSounds(media.sounds);
+        var open = media.sounds.filter(function (snd) { return !snd.restricted; }).length;
+        if (dsub && media.sounds.length) dsub.textContent = !open ? "Restricted: this recording can only be heard at the IISG."
+          : "Space to play or pause, ← → to wind 10 seconds" + (media.sounds.length > 1 ? "; " + media.sounds.length + " sides, in the " + (isRec ? "sleeves below the turntable." : "tape boxes below the deck.") : ".");
+      }).catch(function (err) {
+        if (dgen !== rrGen) return;
+        deck.fail(err && err.status === 404 ? "This recording isn’t on IISG’s media server (the catalogue links a manifest that can’t be found)."
+          : "IISG’s media server didn’t send the recording just now.");
+      });
+      return keys;
+    }
+
     var sheetWrap = el("div", { class: "rr-sheetstack" });
     var sheet = el("button", { type: "button", class: "rr-sheet rr-page" });
     var img = el("img", { alt: "", draggable: "false" });
@@ -9826,7 +9858,7 @@
   }
 
   function rrTurntableDevice() {
-    var disc, arm, label, angle = 0, rpm = 0;
+    var disc, arm, label, angle = 0, rpm = 0, theta = 116;
     var grooves = "";
     for (var g = 90; g >= 42; g -= 4) grooves += '<circle r="' + g + '" class="rr-tt-groove"/>';
     var strobe = "";
@@ -9867,9 +9899,14 @@
         label = svg.querySelector(".rr-tt-label-text.side");
       },
       setSide: function (i) { label.textContent = String.fromCharCode(65 + i); },
-      draw: function (p, atRest) {
-        var theta = atRest ? 116 : rrArmAngle(94 - p * 54);
+      // atRest: on its rest; lifted: raised over the lead-in groove while
+      // the record is cued; otherwise down in the groove at position p.
+      // The arm eases towards where it should be rather than jumping.
+      draw: function (p, atRest, lifted) {
+        var target = atRest ? 116 : lifted ? rrArmAngle(97) : rrArmAngle(94 - p * 54);
+        theta += (target - theta) * (Math.abs(target - theta) < 0.05 ? 1 : 0.12);
         arm.setAttribute("transform", "rotate(" + theta.toFixed(2) + " 395 40)");
+        arm.classList.toggle("lifted", !!lifted);
       },
       spin: function (dt, p, playing) {
         // spins up and runs down rather than starting and stopping dead
@@ -9914,7 +9951,10 @@
     // The sides, as tape boxes.
     var shelf = el("div", { class: "rr-tapeboxes", role: "list", "aria-label": opts.device === "turntable" ? "Record sides" : "Tape sides" });
     root.appendChild(shelf);
-    var boxes = sounds.map(function (snd, i) {
+    var boxes = [];
+    function buildBoxes() {
+    clear(shelf);
+    boxes = sounds.map(function (snd, i) {
       var b = el("button", { type: "button", class: "rr-tapebox" + (opts.device === "turntable" ? " is-sleeve" : "") + (snd.restricted ? " locked" : ""), role: "listitem" }, [
         el("span", { class: "rr-tapebox-reel", "aria-hidden": "true" }),
         el("span", { class: "rr-tapebox-label" }, [
@@ -9927,7 +9967,9 @@
       shelf.appendChild(b);
       return b;
     });
-    if (sounds.length < 2) shelf.hidden = true;
+    shelf.hidden = sounds.length < 2;
+    }
+    buildBoxes();
 
     var audio = new Audio();
     audio.preload = "metadata";
@@ -9935,6 +9977,17 @@
     audio.crossOrigin = "anonymous";
     var side = -1, actx = null, analyser = null, buf = null;
     var lastT = 0, level = 0, spinBoost = 0;
+    // cue: play was pressed but no sound yet (manifest or audio still
+    // loading) -- the record spins with the arm raised; sounding: sound
+    // is actually coming out, the arm is down.
+    var cue = false, sounding = false;
+
+    function setPlayUI(on) {
+      root.classList.toggle("is-playing", on);
+      kPlay.textContent = on ? "❚❚" : "▶";
+      kPlay.setAttribute("aria-label", on ? "Pause (space)" : "Play (space)");
+      kPlay.title = on ? "Pause (space)" : "Play (space)";
+    }
 
     function dur() { return isFinite(audio.duration) && audio.duration ? audio.duration : (sounds[side] && sounds[side].duration) || 0; }
 
@@ -9947,6 +10000,8 @@
       total.textContent = "/ " + rrClock(snd.duration);
       root.classList.toggle("is-locked", !!snd.restricted);
       if (snd.restricted) {
+        cue = false;
+        setPlayUI(false);
         audio.pause();
         audio.removeAttribute("src");
         clear(notice);
@@ -9966,7 +10021,8 @@
     }
 
     function play() {
-      if (side < 0 || sounds[side].restricted) return;
+      if (side >= 0 && sounds[side].restricted) return;
+      // set up the level meter inside the click, even while still loading
       if (cors && !actx && (window.AudioContext || window.webkitAudioContext)) {
         try {
           actx = new (window.AudioContext || window.webkitAudioContext)();
@@ -9979,10 +10035,16 @@
         } catch (e) { analyser = null; }
       }
       if (actx && actx.state === "suspended") actx.resume();
+      cue = !sounding;
+      setPlayUI(true);
+      if (side < 0) return; // sides not here yet: setSounds starts it
       var p = audio.play();
       if (p && p.catch) p.catch(function () { /* blocked or failed: the error handler says so */ });
     }
-    function toggle() { if (audio.paused) play(); else audio.pause(); }
+    function toggle() {
+      if (cue && !sounding) { cue = false; audio.pause(); setPlayUI(false); return; }
+      if (audio.paused) play(); else audio.pause();
+    }
     function seek(d) {
       if (!dur()) return;
       audio.currentTime = Math.max(0, Math.min(dur() - 0.25, audio.currentTime + d));
@@ -9990,13 +10052,15 @@
     }
 
     kPlay.addEventListener("click", toggle);
-    kStop.addEventListener("click", function () { audio.pause(); if (dur()) audio.currentTime = 0; spinBoost = -1; });
+    kStop.addEventListener("click", function () { cue = false; setPlayUI(false); audio.pause(); if (dur()) audio.currentTime = 0; spinBoost = -1; });
     kBack.addEventListener("click", function () { seek(-10); });
     kFwd.addEventListener("click", function () { seek(10); });
     scrub.addEventListener("input", function () { if (dur()) audio.currentTime = dur() * scrub.value / 1000; });
 
-    audio.addEventListener("play", function () { root.classList.add("is-playing"); kPlay.textContent = "❚❚"; kPlay.setAttribute("aria-label", "Pause (space)"); kPlay.title = "Pause (space)"; });
-    audio.addEventListener("pause", function () { root.classList.remove("is-playing"); kPlay.textContent = "▶"; kPlay.setAttribute("aria-label", "Play (space)"); kPlay.title = "Play (space)"; });
+    audio.addEventListener("play", function () { setPlayUI(true); });
+    audio.addEventListener("playing", function () { sounding = true; cue = false; });
+    audio.addEventListener("waiting", function () { if (!audio.paused) { sounding = false; cue = true; } });
+    audio.addEventListener("pause", function () { sounding = false; cue = false; setPlayUI(false); });
     audio.addEventListener("ended", function () { if (side < sounds.length - 1 && !sounds[side + 1].restricted) load(side + 1, true); });
     audio.addEventListener("error", function () {
       if (!audio.getAttribute("src")) return;
@@ -10009,14 +10073,24 @@
         audio.currentTime = at;
         return;
       }
-      clear(notice);
-      notice.appendChild(el("strong", { text: "This tape won’t play" }));
-      notice.appendChild(el("p", { text: "IISG’s media server didn’t deliver the recording just now." }));
-      notice.hidden = false;
+      fail("IISG’s media server didn’t deliver the recording just now.");
     });
 
+    function fail(msg) {
+      cue = false; sounding = false;
+      setPlayUI(false);
+      clear(notice);
+      notice.appendChild(el("strong", { text: "This " + device.single.toLowerCase() + " won’t play" }));
+      notice.appendChild(el("p", { text: msg }));
+      if (opts.viewer) notice.appendChild(el("a", { href: opts.viewer, target: "_blank", rel: "noopener", text: "Try it in the Universal Viewer ↗" }));
+      notice.hidden = false;
+      [kBack, kPlay, kStop, kFwd, scrub].forEach(function (k) { k.disabled = true; });
+    }
+
     function draw(p) {
-      device.draw(p, audio.paused && !(audio.currentTime > 0));
+      var lifted = cue && !sounding;
+      var down = sounding || (!cue && audio.currentTime > 0);
+      device.draw(p, !down && !lifted, lifted);
       counter.textContent = rrClock(audio.currentTime || 0);
       if (document.activeElement !== scrub) scrub.value = String(Math.round(p * 1000));
     }
@@ -10033,7 +10107,7 @@
       lastT = t;
       var d = dur();
       var p = d ? Math.min(1, (audio.currentTime || 0) / d) : 0;
-      device.spin(dt, p, !audio.paused, spinBoost);
+      device.spin(dt, p, sounding || cue, spinBoost);
       if (spinBoost) { spinBoost *= 0.9; if (Math.abs(spinBoost) < 0.02) spinBoost = 0; }
       draw(p);
 
@@ -10054,12 +10128,27 @@
     }
     requestAnimationFrame(frame);
 
-    var first = 0;
-    while (first < sounds.length - 1 && sounds[first].restricted) first++;
-    load(first, false);
+    // The sides, once the manifest says what they are; until then the
+    // deck stands ready (and spins, arm raised, if play is pressed).
+    function setSounds(list) {
+      sounds = list || [];
+      buildBoxes();
+      if (!sounds.length) { fail("No recording was found for this item."); return; }
+      var first = 0;
+      while (first < sounds.length - 1 && sounds[first].restricted) first++;
+      load(first, cue);
+    }
+    if (sounds.length) setSounds(sounds);
+    else {
+      total.textContent = "/ --:--";
+      [kBack, kFwd, scrub].forEach(function (k) { k.disabled = true; });
+      root.classList.add("is-pending");
+    }
 
     return {
       el: root,
+      setSounds: function (list) { root.classList.remove("is-pending"); [kBack, kFwd, scrub].forEach(function (k) { k.disabled = false; }); setSounds(list); },
+      fail: fail,
       keys: {
         " ": toggle,
         ArrowLeft: function () { seek(-10); },
