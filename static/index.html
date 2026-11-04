@@ -8705,9 +8705,13 @@
           full: v("img") && isLocalUri(v("img")) ? v("img") : null
         };
       }).filter(function (e) { return e.start && e.name; });
-      // the one whose start date is closest to today, past or future
+      // the next one to start (soonest after now); only when nothing is
+      // scheduled, the most recent one
       var t = Date.now();
-      evs.sort(function (a, b) { return Math.abs(new Date(a.start) - t) - Math.abs(new Date(b.start) - t); });
+      var coming = evs.filter(function (e) { return new Date(e.start) >= t; })
+        .sort(function (a, b) { return new Date(a.start) - new Date(b.start); });
+      if (coming.length) return coming[0];
+      evs.sort(function (a, b) { return new Date(b.start) - new Date(a.start); });
       return evs[0] || null;
     }).catch(function () { rrEventPromise = null; return null; });
     return rrEventPromise;
@@ -8719,7 +8723,9 @@
     "these thing those through together towards under until where which while will with within without workshop world years " +
     "amsterdam iisg iish talk talks today dutch annual theme centre center hosts join welcome free entrance registration " +
     "january february march april june july august september october november december " +
-    "monday tuesday wednesday thursday friday saturday sunday").split(" ");
+    "monday tuesday wednesday thursday friday saturday sunday " +
+    "sixteenth seventeenth eighteenth nineteenth twentieth twenty eighty " +
+    "contracting contribution control").split(" ");
 
   function rrThemeStems(ev) {
     var weights = {};
@@ -8727,7 +8733,7 @@
       (text.toLowerCase().match(/[a-zà-ÿ]{5,}/g) || []).forEach(function (word) {
         // fold a causative/negating prefix (enslave, unpaid) onto its root;
         // not re-/de- ("researchers" is not about searching)
-        if (word.length > 8 && /^(en|un)/.test(word)) word = word.slice(2);
+        if (word.length >= 8 && /^(en|un)/.test(word)) word = word.slice(2);
         var stem = word.slice(0, 5);
         if (RR_THEME_STOP.some(function (st) { return stem === st.slice(0, 5); })) return;
         weights[stem] = (weights[stem] || 0) + w;
