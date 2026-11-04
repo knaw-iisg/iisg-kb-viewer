@@ -2307,7 +2307,7 @@
   @keyframes rr-putback { 0% { transform: translateY(-26px); } 70% { transform: translateY(2px); } 100% { transform: none; } }
 
   .rr-inventory {
-    margin-top: 20px; background: var(--rr-paper); color: var(--rr-ink); border-radius: 3px;
+    margin: 0 0 30px; background: var(--rr-paper); color: var(--rr-ink); border-radius: 3px;
     padding: 10px 14px; box-shadow: 0 6px 12px var(--rr-shadow); font-size: 14px;
   }
   .rr-inventory summary { cursor: pointer; font-family: var(--font-display); font-weight: 600; }
@@ -8552,13 +8552,14 @@
       b.addEventListener("click", function () { readingNavigate(it.uri); });
       return b;
     });
-    stage.appendChild(rrTrolleyEl(boxes));
+    // The inventory comes first, the way you'd read it before taking a box.
     if (node.abstract) {
       stage.appendChild(el("details", { class: "rr-inventory" }, [
         el("summary", { text: "Read the inventory’s introduction" }),
         el("p", { text: node.abstract })
       ]));
     }
+    stage.appendChild(rrTrolleyEl(boxes));
   }
 
   // ---- Scene: an open box, folders standing in it ----
