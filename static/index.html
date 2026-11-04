@@ -2172,7 +2172,9 @@
   .rr-harbour .rr-jettyedge { fill: var(--rr-jettyedge); }
   .rr-harbour .rr-moon { fill: #f4efd8; opacity: var(--rr-night); }
   .rr-harbour .rr-star { fill: #fff; opacity: calc(var(--rr-night) * 0.7); }
-  .rr-harbour .rr-passing { animation: rr-drift 70s linear infinite alternate; }
+  /* Out to the right and back again, turning round at the far end so the
+     green (starboard) light always leads at the bow. */
+  .rr-harbour .rr-passing { animation: rr-drift 140s linear infinite; transform-box: fill-box; transform-origin: center; }
   .rr-harbour .rr-mast { stroke: var(--rr-hullbase); stroke-width: 1; }
   .rr-harbour .rr-navlight, .rr-harbour .rr-halo, .rr-harbour .rr-navrefl { opacity: var(--rr-night); }
   .rr-harbour .rr-navlight.white { fill: #fffbe8; }
@@ -2183,7 +2185,12 @@
   .rr-harbour .rr-halo.red { fill: #ff5a4a; }
   .rr-harbour .rr-halo.green { fill: #4dff9a; }
   .rr-harbour .rr-navrefl { opacity: calc(var(--rr-night) * 0.45); }
-  @keyframes rr-drift { from { transform: translateX(-160px); } to { transform: translateX(260px); } }
+  @keyframes rr-drift {
+    0% { transform: translateX(-160px) scaleX(1); }
+    50% { transform: translateX(260px) scaleX(1); }
+    50.01% { transform: translateX(260px) scaleX(-1); }
+    100% { transform: translateX(-160px) scaleX(-1); }
+  }
   .rr-mullions {
     position: absolute; inset: 0; z-index: 2;
     background: repeating-linear-gradient(90deg, var(--rr-frame) 0 9px, transparent 9px 20%);
