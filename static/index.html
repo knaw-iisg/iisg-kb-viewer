@@ -2699,6 +2699,122 @@
     .rr-vu { justify-self: end; }
   }
 
+  /* ---- the library (rrLibraryScene) ---- */
+  .rr-slip-line { font-family: var(--font-mono); font-size: 12px; color: var(--rr-ink-soft); margin-top: 4px; overflow-wrap: anywhere; }
+  .rr-slips-group { font-family: var(--font-display); font-weight: 600; font-size: 13px; color: var(--rr-ink-soft); margin: 6px 0 0; }
+  .rr-slipbtn.is-library .rr-slipbtn-no { display: inline-flex; align-items: flex-start; gap: 4px; }
+  .rr-slipbtn.is-library .rr-slipbtn-no::after { content: none; }
+
+  /* a book opened on the desk: cloth covers instead of a manila folder */
+  .rr-openfolder.kind-book, .rr-openfolder.kind-periodical {
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.18), transparent 6%, transparent 94%, rgba(0, 0, 0, 0.18)), #6b2f2a;
+    box-shadow: inset 0 0 0 3px #5a2621, 0 16px 26px var(--rr-shadow);
+  }
+  .rr-openfolder.kind-periodical { background-color: #2c4560; box-shadow: inset 0 0 0 3px #223852, 0 16px 26px var(--rr-shadow); }
+  .rr-openfolder.kind-book .rr-leaf-left, .rr-openfolder.kind-periodical .rr-leaf-left { border-right-color: rgba(0, 0, 0, 0.35); }
+  .rr-openfolder.kind-book .rr-slip-links a, .rr-openfolder.kind-periodical .rr-slip-links a { color: #f1dfb8; }
+  .rr-openfolder.kind-photo { background: #2b2b2b; }
+  .rr-openfolder.kind-photo .rr-slip-links a { color: #cfd8de; }
+
+  /* volumes of a work, as spines along the desk */
+  .rr-volumes { display: flex; gap: 4px; align-items: flex-end; margin: 0 0 14px; overflow-x: auto; overflow-y: hidden; padding: 18px 4px 4px; scrollbar-width: thin; }
+  .rr-volume {
+    position: relative; flex: none; width: 30px; height: 92px; border: none; cursor: pointer; border-radius: 2px 2px 1px 1px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 30%, rgba(0, 0, 0, 0.25)), #6b2f2a;
+    box-shadow: 0 4px 6px var(--rr-shadow); transition: transform 0.15s;
+    animation: rr-rise 0.35s ease both; animation-delay: calc(var(--i) * 30ms);
+  }
+  .rr-volumes.kind-periodical .rr-volume { background-color: #2c4560; height: 104px; width: 34px; }
+  .rr-volume-band { position: absolute; left: 0; right: 0; top: 14px; height: 10px; border-top: 2px solid #c9a24a; border-bottom: 2px solid #c9a24a; }
+  .rr-volume-no { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; font-family: var(--font-display); font-size: 13px; color: #e9d08f; }
+  .rr-volume:hover:not(.current) { transform: translateY(-6px); }
+  .rr-volume.current { transform: translateY(-12px); outline: 2px solid #f4f7f6; outline-offset: 2px; }
+
+  /* the library shelf on the request desk */
+  .rr-bookshelf {
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px; padding: 14px 16px 0;
+    background: linear-gradient(transparent calc(100% - 12px), #8a6440 calc(100% - 12px)), linear-gradient(#5b4230, #4a3626);
+    border-radius: 4px; box-shadow: inset 0 8px 14px rgba(0, 0, 0, 0.35), 0 6px 12px var(--rr-shadow);
+    min-height: 180px; padding-bottom: 12px;
+  }
+  .rr-libobj {
+    position: relative; border: none; cursor: pointer; padding: 0; margin-bottom: 0; flex: none;
+    transition: transform 0.15s; animation: rr-rise 0.4s ease both; animation-delay: calc(var(--i) * 50ms);
+    color: #f1e6c8 !important; overflow: hidden;
+  }
+  .rr-libobj:hover, .rr-libobj:focus-visible { transform: translateY(-8px); }
+  .rr-libobj-title, .rr-libobj-date { display: block; font-family: var(--font-display); }
+  .rr-libobj.kind-book, .rr-libobj.kind-periodical {
+    width: 44px; height: 150px; border-radius: 3px 3px 1px 1px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.14), transparent 25%, rgba(0, 0, 0, 0.3)), hsl(var(--hue), 38%, 30%);
+    box-shadow: inset 0 10px 0 -6px rgba(201, 162, 74, 0.8), inset 0 -14px 0 -10px rgba(201, 162, 74, 0.8);
+    writing-mode: vertical-rl; text-orientation: mixed; padding: 16px 0;
+  }
+  .rr-libobj.kind-periodical { width: 58px; height: 160px; background-color: hsl(var(--hue), 30%, 26%); }
+  .rr-libobj.kind-book .rr-libobj-title, .rr-libobj.kind-periodical .rr-libobj-title {
+    font-size: 11.5px; line-height: 1.15; max-height: 118px; overflow: hidden; margin: 0 auto;
+  }
+  .rr-libobj.kind-book .rr-libobj-date, .rr-libobj.kind-periodical .rr-libobj-date { display: none; }
+  .rr-libobj.kind-record, .rr-libobj.kind-tape, .rr-libobj.kind-photo, .rr-libobj.kind-film {
+    width: 132px; height: 132px; display: flex; flex-direction: column; justify-content: flex-end; text-align: left;
+    padding: 8px; border-radius: 2px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  }
+  .rr-libobj.kind-record {
+    background: radial-gradient(circle at 70% 30%, hsl(var(--hue), 60%, 45%) 0 13px, #111 13px 15px, #1b1b1b 15px 46px, transparent 47px), hsl(var(--hue), 25%, 75%);
+    color: #222 !important;
+  }
+  .rr-libobj.kind-tape { width: 118px; height: 76px; background: linear-gradient(135deg, #e9eef2, #c9d3db); border-top: 6px solid #2f5c8a; color: #23313d !important; }
+  .rr-libobj.kind-film { border-radius: 50%; background: radial-gradient(circle, #ddd 0 10px, #777 10px 12px, #b9bdc0 12px 60px, #8a8f93 60px); color: #222 !important; justify-content: center; text-align: center; padding: 26px; }
+  .rr-libobj.kind-photo { width: 150px; height: 112px; background: #2b2b2b; border-left: 10px solid #1d1d1d; }
+  .rr-libobj.kind-record .rr-libobj-title, .rr-libobj.kind-tape .rr-libobj-title, .rr-libobj.kind-photo .rr-libobj-title, .rr-libobj.kind-film .rr-libobj-title {
+    font-size: 11px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .rr-libobj-date { font-size: 10px; opacity: 0.8; }
+  .rr-libobj .rr-tick { right: 4px; top: 2px; color: #f4f7f6; writing-mode: horizontal-tb; }
+
+  /* turntable */
+  .rr-tt-plinth { fill: #6d4529; stroke: #4a2e1b; stroke-width: 1.5; }
+  .rr-tt-top { fill: #2a2a2b; }
+  .rr-tt-platter { fill: #b9bec2; stroke: #808589; stroke-width: 2; }
+  .rr-tt-strobe { fill: #4b5054; }
+  .rr-tt-vinyl { fill: #121212; }
+  .rr-tt-groove { fill: none; stroke: #2a2a2a; stroke-width: 0.7; }
+  .rr-tt-label { fill: #9b2f2a; }
+  .rr-tt-label-ring { fill: none; stroke: #e6c77a; stroke-width: 1.2; }
+  .rr-tt-label-text { fill: #f4e6c4; font-family: var(--font-display); font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .rr-tt-label-line { fill: #e6c77a; }
+  .rr-tt-spindle { fill: #d9dde0; }
+  .rr-tt-rest { fill: #555b60; }
+  .rr-tt-base { fill: #4a4f53; stroke: #2a2d30; stroke-width: 2; }
+  .rr-tt-hub { fill: #c9cdd0; }
+  .rr-tt-weight { fill: #8d9397; }
+  .rr-tt-tube { stroke: #d9dde0; stroke-width: 4; stroke-linecap: round; }
+  .rr-tt-shell { fill: #3a3e41; stroke: #c9cdd0; stroke-width: 1; }
+  .rr-tapebox.is-sleeve { background: #1c1c1c; border-top: none; width: 92px; height: 92px; }
+  .rr-tapebox.is-sleeve .rr-tapebox-reel { width: 48px; height: 48px; margin-left: -24px; top: 6px; background: radial-gradient(circle, #9b2f2a 0 9px, #111 9px 23px, transparent 24px); opacity: 1; }
+  .rr-tapebox.is-sleeve .rr-tapebox-label { color: #eee; }
+
+  /* film viewer */
+  .rr-screen { position: relative; width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 12px; }
+  .rr-screen-housing {
+    position: relative; padding: 46px 18px 18px; border-radius: 12px;
+    background: linear-gradient(#5b6166, #3c4145); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 12px 18px var(--rr-shadow);
+  }
+  .rr-screen-reel {
+    position: absolute; top: -26px; width: 64px; height: 64px; border-radius: 50%;
+    background: radial-gradient(circle, #ddd 0 6px, #555 6px 8px, transparent 8px), conic-gradient(#9aa0a4 0 50deg, #2a2a2a 50deg 70deg, #9aa0a4 70deg 170deg, #2a2a2a 170deg 190deg, #9aa0a4 190deg 290deg, #2a2a2a 290deg 310deg, #9aa0a4 310deg);
+    border: 3px solid #6b7175;
+  }
+  .rr-screen-reel.left { left: 30px; }
+  .rr-screen-reel.right { right: 30px; }
+  .rr-screen.is-playing .rr-screen-reel { animation: rr-reel-turn 1.6s linear infinite; }
+  @keyframes rr-reel-turn { to { transform: rotate(360deg); } }
+  .rr-screen-glass { background: #000; border-radius: 6px; overflow: hidden; box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.9); }
+  .rr-screen-glass video { display: block; width: 100%; height: auto; }
+  .rr-tapebox.is-can { border-radius: 50%; width: 86px; height: 86px; border-top: none; background: radial-gradient(circle, #ddd 0 8px, #8a8f93 8px 10px, #b9bdc0 10px 40px, #8a8f93 40px); }
+  .rr-tapebox.is-can .rr-tapebox-reel { display: none; }
+  .rr-tapebox.is-can .rr-tapebox-label { justify-content: center; height: 100%; padding: 0; }
+
   /* ---- request desk ---- */
   .rr-request {
     max-width: 640px; background: #fff8e2; color: var(--rr-ink); padding: 16px 18px 18px; border-radius: 2px;
@@ -7612,7 +7728,8 @@
 
     // Archive components: the same place in the finding aid, as boxes and
     // folders on a reading-room desk (renderReading).
-    if (view && HIERARCHICAL_TYPES[view.type] && /\/id\/collection\//.test(uri)) {
+    if ((view && HIERARCHICAL_TYPES[view.type] && /\/id\/collection\//.test(uri)) ||
+        (rrIsLibraryUri(uri) && (outByPred["iisgv:iiifManifest"] || []).length)) {
       var rrBtn = el("button", { type: "button", class: "rr-open-btn", text: "Open in the reading room" });
       rrBtn.addEventListener("click", function () { readingNavigate(uri); });
       header.appendChild(rrBtn);
@@ -8300,7 +8417,8 @@
 
   var RR_KIND_NAMES = {
     box: "box", bundle: "bundle", folder: "folder", letter: "letter",
-    photo: "photo", volume: "volume", audio: "recording", collection: "archive"
+    photo: "photo", volume: "volume", audio: "recording", collection: "archive",
+    book: "book", periodical: "periodical", record: "record", tape: "tape", film: "film", library: "library"
   };
 
   function rrPhysKind(phys) {
@@ -8346,6 +8464,10 @@
       var all = Object.keys(rrHandled);
       localStorage.setItem(RR_HANDLED_KEY, JSON.stringify(all.slice(-3000)));
     } catch (e) { /* ignore */ }
+  }
+
+  function rrHandledLibrary() {
+    return Object.keys(rrHandled).filter(rrIsLibraryUri).length;
   }
 
   function rrHandledIn(rootUri) {
@@ -8461,18 +8583,28 @@
   // and its sound recordings (one Sound canvas per tape side), for the
   // tape recorder (rrRecorderEl).
   function rrFetchMedia(manifestUrl) {
-    if (!manifestUrl || !isSafeHref(manifestUrl) || !isLocalUri(manifestUrl)) return Promise.resolve({ pages: [], sounds: [] });
+    if (!manifestUrl || !isSafeHref(manifestUrl) || !isLocalUri(manifestUrl)) return Promise.resolve({ pages: [], sounds: [], videos: [] });
     return rrCached(rrManifestCache, manifestUrl, function () {
       return fetch(manifestUrl).then(function (r) {
-        if (!r.ok) throw new Error("manifest " + r.status);
+        if (!r.ok) { var err = new Error("manifest " + r.status); err.status = r.status; throw err; }
         return r.json();
       }).then(function (m) {
-        var pages = [], sounds = [];
+        var pages = [], sounds = [], videos = [];
         function svcId(s) { s = Array.isArray(s) ? s[0] : s; return s ? (s["@id"] || s.id) : null; }
         if (Array.isArray(m.items)) {
           m.items.forEach(function (canvas, i) {
             var body = null;
             try { body = canvas.items[0].items[0].body; } catch (e) { body = null; }
+            if (body && (body.type === "Video" || /^video\//.test(body.format || ""))) {
+              if (body.id && isSafeHref(body.id) && isLocalUri(body.id)) videos.push({
+                url: body.id, duration: body.duration || canvas.duration || null,
+                width: body.width || canvas.width || null, height: body.height || canvas.height || null,
+                restricted: (Array.isArray(body.service) ? body.service : []).some(function (sv) {
+                  return /auth/i.test((sv["@type"] || sv.type || "") + " " + (sv.profile || ""));
+                })
+              });
+              return;
+            }
             if (body && (body.type === "Sound" || /^audio\//.test(body.format || ""))) {
               // IIIF Auth on the file: listening needs a login at IISG.
               var auth = (Array.isArray(body.service) ? body.service : []).filter(function (sv) {
@@ -8506,7 +8638,7 @@
           };
         });
         // A sound canvas's thumbnail is only a stand-in picture, not a page.
-        return { pages: sounds.length ? [] : pages, sounds: sounds };
+        return { pages: sounds.length || videos.length ? [] : pages, sounds: sounds, videos: videos };
       });
     });
   }
@@ -8515,7 +8647,7 @@
   // trolley on the request desk and "Surprise me" draw from these.
   function rrFetchDigitizedRoots() {
     if (rrDigitizedRoots) return rrDigitizedRoots;
-    var q = "SELECT ?root (COUNT(?d) AS ?n) (SAMPLE(?nm) AS ?name) (SAMPLE(?dt) AS ?dates) WHERE {\n" +
+    var q = "SELECT ?root (COUNT(DISTINCT ?d) AS ?n) (SAMPLE(?nm) AS ?name) (SAMPLE(?dt) AS ?dates) WHERE {\n" +
       "  ?d <https://iisg.amsterdam/vocab/iiifManifest> ?m ; " + RR_PART + " ?x .\n" +
       "  BIND(IRI(STRBEFORE(STR(?d), \"#\")) AS ?root)\n" +
       "  ?root (<http://schema.org/name>|<https://schema.org/name>) ?nm .\n" +
@@ -8587,6 +8719,12 @@
     photo: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/><path d="M4 16l5-5 4 4 2-2 5 5"/></svg>',
     volume: '<svg viewBox="0 0 24 24"><path d="M6 3h12v18H6Z"/><path d="M9 3v18"/></svg>',
     audio: '<svg viewBox="0 0 24 24"><circle cx="7" cy="11" r="4"/><circle cx="17" cy="11" r="4"/><path d="M3 19h18M7 15l2 4M17 15l-2 4"/></svg>',
+    tape: '<svg viewBox="0 0 24 24"><circle cx="7" cy="11" r="4"/><circle cx="17" cy="11" r="4"/><path d="M3 19h18M7 15l2 4M17 15l-2 4"/></svg>',
+    book: '<svg viewBox="0 0 24 24"><path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v14c-3-1-6-1-8 1-2-2-5-2-8-1Z"/><path d="M12 6v14"/></svg>',
+    periodical: '<svg viewBox="0 0 24 24"><path d="M5 4h10v16H5Z"/><path d="M9 4v16"/><path d="M17 6h2v14h-8"/></svg>',
+    record: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 6a6 6 0 0 1 6 6"/></svg>',
+    film: '<svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="4"/><circle cx="17" cy="9" r="3"/><path d="M3 15h18v5H3Z"/></svg>',
+    library: '<svg viewBox="0 0 24 24"><path d="M4 20V5h3v15M8 20V7h3v13M13 20l3-14 3 .7-3 13.3"/><path d="M3 20h18"/></svg>',
     collection: '<svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M5 20V8h4v12M10 20V5h4v15M15 20v-9h4v9"/></svg>'
   };
 
@@ -8794,14 +8932,33 @@
     var deskBtn = el("button", { type: "button", class: "rr-crumb", text: "Reading room" });
     deskBtn.addEventListener("click", function () { navigateToView("readingroom"); });
     crumbs.appendChild(deskBtn);
-    var path = ctx.node ? ctx.chain.concat([{ uri: ctx.node.uri, label: ctx.node.label }]) : [];
+    // The path, for the trail and the notepad: archive > box > ... >
+    // here, or for a library item simply Library > the item.
+    var path = [];
+    if (ctx.node && ctx.library) {
+      path = [
+        { label: "Library", short: "Library", crumb: "Library", kind: "library", desk: true },
+        { uri: ctx.node.uri, label: ctx.node.label, short: ctx.node.label, crumb: ctx.node.label, kind: ctx.kind }
+      ];
+    } else if (ctx.node) {
+      var full = ctx.chain.concat([{ uri: ctx.node.uri, label: ctx.node.label }]);
+      path = full.map(function (p, i) {
+        var last = i === full.length - 1;
+        return {
+          uri: p.uri, label: p.label,
+          short: i === 0 ? rrCallNumber(p.uri) : p.label,
+          crumb: i === 0 ? rrCallNumber(p.uri) + " · " + p.label : p.label,
+          kind: i === 0 ? "collection" : last ? ctx.kind : i === 1 ? "box" : "bundle"
+        };
+      });
+    }
+    function go(p) { if (p.desk) navigateToView("readingroom"); else readingNavigate(p.uri); }
     path.forEach(function (p, i) {
       crumbs.appendChild(el("span", { class: "rr-crumb-sep", "aria-hidden": "true", text: "›" }));
       var last = i === path.length - 1;
-      var b = el("button", { type: "button", class: "rr-crumb" + (last ? " current" : ""), title: p.label,
-        text: i === 0 ? rrCallNumber(p.uri) + " · " + p.label : p.label });
+      var b = el("button", { type: "button", class: "rr-crumb" + (last ? " current" : ""), title: p.label, text: p.crumb });
       if (last) b.setAttribute("aria-current", "location");
-      else b.addEventListener("click", function () { readingNavigate(p.uri); });
+      else b.addEventListener("click", function () { go(p); });
       crumbs.appendChild(b);
     });
     if (ctx.node) {
@@ -8825,7 +8982,7 @@
     // Reservation card on its stand: which archive is on this desk.
     var tent = el("div", { class: "rr-tent" });
     if (ctx.root) {
-      tent.appendChild(el("span", { class: "rr-tent-desk", text: "Desk " + rrDeskNo(ctx.root.uri) }));
+      tent.appendChild(el("span", { class: "rr-tent-desk", text: "Desk " + rrDeskNo(ctx.root.uri) + (ctx.library ? " · Library" : "") }));
       tent.appendChild(el("strong", { text: rrCallNumber(ctx.root.uri) }));
       tent.appendChild(el("span", { class: "rr-tent-name", text: ctx.root.label }));
     } else {
@@ -8842,17 +8999,16 @@
       var list = el("ol", { class: "rr-pad-path" });
       path.forEach(function (p, i) {
         var last = i === path.length - 1;
-        var kind = i === 0 ? "collection" : (last ? ctx.kind : (i === 1 ? "box" : "bundle"));
         var li = el("li", { style: "--d:" + Math.min(i, 6) });
-        var b = el("button", { type: "button", class: last ? "current" : "" }, [rrIcon(kind), el("span", { text: i === 0 ? rrCallNumber(p.uri) : p.label })]);
+        var b = el("button", { type: "button", class: last ? "current" : "" }, [rrIcon(p.kind), el("span", { text: p.short })]);
         b.title = p.label;
-        if (!last) b.addEventListener("click", function () { readingNavigate(p.uri); });
+        if (!last) b.addEventListener("click", function () { go(p); });
         li.appendChild(b);
         list.appendChild(li);
       });
       pad.appendChild(list);
-      var handled = rrHandledIn(ctx.root.uri);
-      pad.appendChild(el("div", { class: "rr-pad-tally", text: handled ? "✓ " + handled + " handled in this archive" : "Nothing handled yet" }));
+      var handled = ctx.library ? rrHandledLibrary() : rrHandledIn(ctx.root.uri);
+      pad.appendChild(el("div", { class: "rr-pad-tally", text: handled ? "✓ " + handled + " handled in this " + (ctx.library ? "library" : "archive") : "Nothing handled yet" }));
       pad.appendChild(el("div", { class: "rr-pad-keys", text: ctx.keysHint || "Esc  put back" }));
     } else {
       pad.appendChild(el("div", { class: "rr-pad-head", text: "House rules" }));
@@ -9134,7 +9290,11 @@
 
   // ---- Scene: a folder open on the desk ----
 
-  function rrDeskScene(stage, node, kind, siblings, chain) {
+  // opts (library items): library, volumes (several manifests, e.g. a
+  // ten-volume work or a periodical's bound years), volume (the one open),
+  // onVolume(i).
+  function rrDeskScene(stage, node, kind, siblings, chain, opts) {
+    opts = opts || {};
     var folder = el("div", { class: "rr-openfolder kind-" + kind });
     var left = el("div", { class: "rr-leaf rr-leaf-left" });
     var right = el("div", { class: "rr-leaf rr-leaf-right" });
@@ -9144,10 +9304,11 @@
     // Inside cover: the archivist's slip.
     var slip = el("div", { class: "rr-slip" });
     slip.appendChild(el("div", { class: "rr-slip-head" }, [
-      el("span", { text: rrCallNumber(node.uri) }),
-      el("span", { text: node.ident ? "inv. no. " + node.ident : RR_KIND_NAMES[kind] })
+      el("span", { text: opts.library ? "IISG Library" : rrCallNumber(node.uri) }),
+      el("span", { text: node.ident ? "inv. no. " + node.ident : opts.library ? "item " + rrCallNumber(node.uri) : RR_KIND_NAMES[kind] })
     ]));
     slip.appendChild(el("div", { class: "rr-slip-title", text: node.label }));
+    (node.extra || []).forEach(function (line) { slip.appendChild(el("div", { class: "rr-slip-line", text: line })); });
     var facts = [node.dates, node.phys].filter(Boolean);
     if (facts.length) slip.appendChild(el("div", { class: "rr-slip-meta", text: facts.join(" · ") }));
     left.appendChild(slip);
@@ -9166,6 +9327,7 @@
       node.manifest ? (kind === "audio" ? "Threading the tape…" : "Turn the pages with ← →, click a page to look closer.") : null
     );
     stage.appendChild(caption);
+    if (opts.volumes && opts.volumes.length > 1) stage.appendChild(rrVolumeShelfEl(opts.volumes, opts.volume || 0, kind, opts.onVolume));
     stage.appendChild(folder);
 
     // Desk controls: previous / put back / next, through the box's order.
@@ -9179,11 +9341,12 @@
       else b.disabled = true;
       return b;
     }
-    bar.appendChild(navBtn("‹ Previous " + RR_KIND_NAMES[prev ? prev.kind : kind], prev, ""));
-    var putBack = el("button", { type: "button", class: "rr-btn primary", text: "Put back" });
+    // A library item has no box to page through: just hand it back.
+    if (!opts.library) bar.appendChild(navBtn("‹ Previous " + RR_KIND_NAMES[prev ? prev.kind : kind], prev, ""));
+    var putBack = el("button", { type: "button", class: "rr-btn primary", text: opts.library ? "Return it to the desk" : "Put back" });
     putBack.addEventListener("click", function () { rrUp(node.uri, chain); });
     bar.appendChild(putBack);
-    bar.appendChild(navBtn(next ? "Next " + RR_KIND_NAMES[next.kind] + " ›" : "End of the box", next, ""));
+    if (!opts.library) bar.appendChild(navBtn(next ? "Next " + RR_KIND_NAMES[next.kind] + " ›" : "End of the box", next, ""));
     if (idx >= 0 && siblings.length > 1) bar.appendChild(el("span", { class: "rr-deskbar-pos", text: fmtNum(idx + 1) + " of " + fmtNum(siblings.length) + " in this " + (chain.length > 1 ? "box" : "archive") }));
     stage.appendChild(bar);
 
@@ -9218,7 +9381,8 @@
 
     var pages = [], page = 0, thumbs = [];
     // While the manifest loads (or if it can't), the first-page thumbnail.
-    if (node.thumb) { img.src = node.thumb; sheet.classList.add("loading"); }
+    // (not for recordings and films: their "thumbnail" isn't a page)
+    if (node.thumb && !/^(record|tape|film|audio)$/.test(kind)) { img.src = node.thumb; sheet.classList.add("loading"); }
 
     function show(i, dir) {
       if (!pages.length) return;
@@ -9282,18 +9446,34 @@
     var gen = rrGen;
     rrFetchMedia(node.manifest).then(function (media) {
       if (gen !== rrGen) return;
+      var viewer = node.manifest && isSafeHref(node.manifest) ? UNIVERSAL_VIEWER + node.manifest : null;
+      if (media.videos.length) {
+        // A film: a viewing screen takes the place of the pages.
+        var scr = rrScreenEl(node, media.videos, { viewer: viewer });
+        clear(right);
+        right.appendChild(scr.el);
+        pagesStrip.remove();
+        folder.classList.add("is-audio");
+        caption.querySelector(".rr-caption-main").textContent = "On your desk: a film — " + node.label;
+        var vsub = caption.querySelector(".rr-caption-sub");
+        if (vsub) vsub.textContent = "Space to play or pause, ← → to skip 10 seconds.";
+        Object.keys(scr.keys).forEach(function (k) { keys[k] = scr.keys[k]; });
+        return;
+      }
       if (media.sounds.length) {
-        // A recording: the tape recorder takes the place of the pages.
-        var rec = rrRecorderEl(node, media.sounds, { viewer: node.manifest && isSafeHref(node.manifest) ? UNIVERSAL_VIEWER + node.manifest : null });
+        // A recording: the tape recorder, or for a gramophone record the
+        // record player, takes the place of the pages.
+        var isRecord = kind === "record";
+        var rec = rrRecorderEl(node, media.sounds, { viewer: viewer, device: isRecord ? "turntable" : "reel" });
         clear(right);
         right.appendChild(rec.el);
         pagesStrip.remove();
         folder.classList.add("is-audio");
-        caption.querySelector(".rr-caption-main").textContent = "On your desk: a tape" + (node.ident ? ", inv. no. " + node.ident : "") + " — " + node.label;
+        caption.querySelector(".rr-caption-main").textContent = "On your desk: " + (isRecord ? "a record" : "a tape") + (node.ident ? ", inv. no. " + node.ident : "") + " — " + node.label;
         var sub = caption.querySelector(".rr-caption-sub");
         var open = media.sounds.filter(function (snd) { return !snd.restricted; }).length;
         if (sub) sub.textContent = !open ? "Restricted: this recording can only be heard at the IISG."
-          : "Space to play or pause, ← → to wind 10 seconds" + (media.sounds.length > 1 ? "; " + media.sounds.length + " sides, in the tape boxes below the deck." : ".");
+          : "Space to play or pause, ← → to wind 10 seconds" + (media.sounds.length > 1 ? "; " + media.sounds.length + " sides, in the " + (isRecord ? "sleeves below the turntable." : "tape boxes below the deck.") : ".");
         Object.keys(rec.keys).forEach(function (k) { keys[k] = rec.keys[k]; });
         return;
       }
@@ -9311,10 +9491,15 @@
         pagesStrip.appendChild(t);
       });
       show(0);
-    }).catch(function () {
+    }).catch(function (err) {
       if (gen !== rrGen) return;
       sheet.classList.remove("loading");
-      pageNo.textContent = node.thumb ? "first page only — the full scan is in the Universal Viewer" : "The scans couldn’t be loaded right now.";
+      // 404: the catalogue lists a manifest the IIIF server doesn't have
+      // (seen on some multi-volume works and periodicals) -- say so,
+      // rather than suggest the scan is somewhere else.
+      pageNo.textContent = err && err.status === 404
+        ? "This scan isn’t on IISG’s image server (the catalogue links a manifest that can’t be found)."
+        : node.thumb ? "first page only — the full scan is in the Universal Viewer" : "The scans couldn’t be loaded right now.";
       prevPage.disabled = nextPage.disabled = true;
     });
 
@@ -9396,27 +9581,131 @@
       '<circle r="15" class="rr-reel-hub"/><path d="M0 -6L5 3H-5Z" class="rr-reel-key"/></g></g>';
   }
 
+  // What the sound comes off: a reel-to-reel deck (tapes, cassettes,
+  // archive recordings) or a turntable (gramophone records). Each draws
+  // itself from the position on the side (p, 0-1) and turns while playing;
+  // the controls, counter and VU meter around it are shared.
+  function rrReelDevice() {
+    var spinL, spinR, woundL, woundR, tapePath, angleL = 0, angleR = 0;
+    function radii(p) {
+      var a = RR_REEL_MIN * RR_REEL_MIN, b = RR_REEL_MAX * RR_REEL_MAX;
+      return [Math.sqrt(a + (1 - p) * (b - a)), Math.sqrt(a + p * (b - a))];
+    }
+    return {
+      label: "Tape recorder", side: function (i) { return "Side " + (i + 1); }, single: "Tape",
+      svg: '<svg viewBox="0 0 460 250" role="img" aria-label="Tape recorder">' +
+        '<rect x="4" y="4" width="452" height="242" rx="14" class="rr-deck-plate"/>' +
+        '<rect x="14" y="14" width="432" height="222" rx="9" class="rr-deck-inset"/>' +
+        '<g transform="translate(118 96)">' + rrReelSvg("rr-reel-l") + '</g>' +
+        '<g transform="translate(342 96)">' + rrReelSvg("rr-reel-r") + '</g>' +
+        '<path class="rr-tape-path" d=""/>' +
+        '<circle cx="168" cy="200" r="7" class="rr-roller"/><circle cx="292" cy="200" r="7" class="rr-roller"/>' +
+        '<rect x="200" y="196" width="60" height="26" rx="4" class="rr-head"/>' +
+        '<rect x="226" y="196" width="8" height="8" class="rr-head-gap"/>' +
+        '<text x="230" y="236" class="rr-deck-brand">IISG · 19 cm/s</text>' +
+        '</svg>',
+      bind: function (svg) {
+        var reelL = svg.querySelector("#rr-reel-l"), reelR = svg.querySelector("#rr-reel-r");
+        spinL = reelL.querySelector(".rr-reel-spin"); spinR = reelR.querySelector(".rr-reel-spin");
+        woundL = reelL.querySelector(".rr-tape-wound"); woundR = reelR.querySelector(".rr-tape-wound");
+        tapePath = svg.querySelector(".rr-tape-path");
+      },
+      draw: function (p) {
+        // What's on each reel follows the position, by area; the tape runs
+        // from the left reel's underside past the head to the right reel.
+        var r = radii(p);
+        woundL.setAttribute("r", r[0].toFixed(1));
+        woundR.setAttribute("r", r[1].toFixed(1));
+        tapePath.setAttribute("d", "M" + (118 - r[0] * 0.5).toFixed(1) + " " + (96 + r[0] * 0.87).toFixed(1) +
+          " L161 205 L200 209 L260 209 L299 205 L" + (342 + r[1] * 0.5).toFixed(1) + " " + (96 + r[1] * 0.87).toFixed(1));
+      },
+      spin: function (dt, p, playing, boost) {
+        // constant tape speed: the emptier reel turns faster
+        var r = radii(p);
+        var speed = (playing ? 900 : 0) + boost * 9000;
+        angleL += dt * speed / r[0] * 57.3 * 0.2;
+        angleR += dt * speed / r[1] * 57.3 * 0.2;
+        spinL.setAttribute("transform", "rotate(" + angleL.toFixed(1) + ")");
+        spinR.setAttribute("transform", "rotate(" + angleR.toFixed(1) + ")");
+      }
+    };
+  }
+
+  // Turntable: the record turns at 78 rpm (these are shellac 78s) once up
+  // to speed; the tonearm tracks inward from the outer groove to the run-
+  // out as the side plays, and rests off the record when stopped at the
+  // start. Geometry: arm pivot (395, 40), arm 210 long, record at (170, 125).
+  var RR_TT_PIVOT = [395, 40], RR_TT_ARM = 210, RR_TT_CENTER = [170, 125];
+
+  function rrArmAngle(radius) {
+    var dx = RR_TT_CENTER[0] - RR_TT_PIVOT[0], dy = RR_TT_CENTER[1] - RR_TT_PIVOT[1];
+    var d = Math.sqrt(dx * dx + dy * dy);
+    var c = (RR_TT_ARM * RR_TT_ARM + d * d - radius * radius) / (2 * RR_TT_ARM * d);
+    return (Math.atan2(dy, dx) - Math.acos(Math.max(-1, Math.min(1, c)))) * 180 / Math.PI;
+  }
+
+  function rrTurntableDevice() {
+    var disc, arm, label, angle = 0, rpm = 0;
+    var grooves = "";
+    for (var g = 90; g >= 42; g -= 4) grooves += '<circle r="' + g + '" class="rr-tt-groove"/>';
+    var strobe = "";
+    for (var k = 0; k < 72; k++) {
+      var a = k * 5 * Math.PI / 180;
+      strobe += '<rect x="' + (170 + 104 * Math.cos(a) - 1).toFixed(1) + '" y="' + (125 + 104 * Math.sin(a) - 1).toFixed(1) + '" width="2" height="2" class="rr-tt-strobe"/>';
+    }
+    return {
+      label: "Record player", side: function (i) { return "Side " + String.fromCharCode(65 + i); }, single: "Record",
+      svg: '<svg viewBox="0 0 460 250" role="img" aria-label="Record player">' +
+        '<defs><linearGradient id="rr-tt-shine" x1="0" y1="0" x2="1" y2="1">' +
+        '<stop offset="0.25" stop-color="#fff" stop-opacity="0"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.13"/>' +
+        '<stop offset="0.55" stop-color="#fff" stop-opacity="0"/><stop offset="0.75" stop-color="#fff" stop-opacity="0.08"/>' +
+        '<stop offset="0.85" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>' +
+        '<rect x="4" y="4" width="452" height="242" rx="10" class="rr-tt-plinth"/>' +
+        '<rect x="14" y="14" width="432" height="222" rx="6" class="rr-tt-top"/>' +
+        '<circle cx="170" cy="125" r="108" class="rr-tt-platter"/>' + strobe +
+        '<g class="rr-tt-disc" transform="translate(170 125)">' +
+        '<circle r="99" class="rr-tt-vinyl"/>' + grooves +
+        '<circle r="31" class="rr-tt-label"/><circle r="31" class="rr-tt-label-ring"/>' +
+        '<text y="-12" class="rr-tt-label-text side">A</text><rect x="-16" y="4" width="32" height="2" class="rr-tt-label-line"/>' +
+        '<rect x="-12" y="10" width="24" height="2" class="rr-tt-label-line"/>' +
+        '<circle r="3" class="rr-tt-spindle"/></g>' +
+        '<circle cx="170" cy="125" r="99" fill="url(#rr-tt-shine)"/>' +
+        '<rect x="292" y="214" width="16" height="10" rx="2" class="rr-tt-rest"/>' +
+        '<circle cx="395" cy="40" r="20" class="rr-tt-base"/>' +
+        '<g class="rr-tt-arm">' +
+        '<rect x="351" y="34" width="28" height="12" rx="3" class="rr-tt-weight"/>' +
+        '<line x1="378" y1="40" x2="585" y2="40" class="rr-tt-tube"/>' +
+        '<path d="M583 33h18l4 7l-4 7h-18Z" class="rr-tt-shell"/>' +
+        '</g>' +
+        '<circle cx="395" cy="40" r="7" class="rr-tt-hub"/>' +
+        '<text x="420" y="230" class="rr-deck-brand">78 rpm</text>' +
+        '</svg>',
+      bind: function (svg) {
+        disc = svg.querySelector(".rr-tt-disc");
+        arm = svg.querySelector(".rr-tt-arm");
+        label = svg.querySelector(".rr-tt-label-text.side");
+      },
+      setSide: function (i) { label.textContent = String.fromCharCode(65 + i); },
+      draw: function (p, atRest) {
+        var theta = atRest ? 116 : rrArmAngle(94 - p * 54);
+        arm.setAttribute("transform", "rotate(" + theta.toFixed(2) + " 395 40)");
+      },
+      spin: function (dt, p, playing) {
+        // spins up and runs down rather than starting and stopping dead
+        rpm += ((playing ? 78 : 0) - rpm) * Math.min(1, dt * (playing ? 3 : 1.2));
+        angle = (angle + dt * rpm * 6) % 360;
+        disc.setAttribute("transform", "translate(170 125) rotate(" + angle.toFixed(1) + ")");
+      }
+    };
+  }
+
   function rrRecorderEl(node, sounds, opts) {
-    var root = el("div", { class: "rr-recorder" });
+    var device = opts.device === "turntable" ? rrTurntableDevice() : rrReelDevice();
+    var root = el("div", { class: "rr-recorder" + (opts.device === "turntable" ? " is-turntable" : "") });
     var deckWrap = el("div", { class: "rr-deck" });
-    deckWrap.innerHTML =
-      '<svg viewBox="0 0 460 250" role="img" aria-label="Tape recorder">' +
-      '<rect x="4" y="4" width="452" height="242" rx="14" class="rr-deck-plate"/>' +
-      '<rect x="14" y="14" width="432" height="222" rx="9" class="rr-deck-inset"/>' +
-      '<g transform="translate(118 96)">' + rrReelSvg("rr-reel-l") + '</g>' +
-      '<g transform="translate(342 96)">' + rrReelSvg("rr-reel-r") + '</g>' +
-      '<path class="rr-tape-path" d=""/>' +
-      '<circle cx="168" cy="200" r="7" class="rr-roller"/><circle cx="292" cy="200" r="7" class="rr-roller"/>' +
-      '<rect x="200" y="196" width="60" height="26" rx="4" class="rr-head"/>' +
-      '<rect x="226" y="196" width="8" height="8" class="rr-head-gap"/>' +
-      '<text x="230" y="236" class="rr-deck-brand">IISG · 19 cm/s</text>' +
-      '</svg>';
+    deckWrap.innerHTML = device.svg;
     root.appendChild(deckWrap);
-    var svg = deckWrap.firstChild;
-    var reelL = svg.querySelector("#rr-reel-l"), reelR = svg.querySelector("#rr-reel-r");
-    var spinL = reelL.querySelector(".rr-reel-spin"), spinR = reelR.querySelector(".rr-reel-spin");
-    var woundL = reelL.querySelector(".rr-tape-wound"), woundR = reelR.querySelector(".rr-tape-wound");
-    var tapePath = svg.querySelector(".rr-tape-path");
+    device.bind(deckWrap.firstChild);
 
     // Control panel: counter, VU meter, piano keys, position.
     var panel = el("div", { class: "rr-deck-panel" });
@@ -9442,13 +9731,13 @@
     root.appendChild(notice);
 
     // The sides, as tape boxes.
-    var shelf = el("div", { class: "rr-tapeboxes", role: "list", "aria-label": "Tape sides" });
+    var shelf = el("div", { class: "rr-tapeboxes", role: "list", "aria-label": opts.device === "turntable" ? "Record sides" : "Tape sides" });
     root.appendChild(shelf);
     var boxes = sounds.map(function (snd, i) {
-      var b = el("button", { type: "button", class: "rr-tapebox" + (snd.restricted ? " locked" : ""), role: "listitem" }, [
+      var b = el("button", { type: "button", class: "rr-tapebox" + (opts.device === "turntable" ? " is-sleeve" : "") + (snd.restricted ? " locked" : ""), role: "listitem" }, [
         el("span", { class: "rr-tapebox-reel", "aria-hidden": "true" }),
         el("span", { class: "rr-tapebox-label" }, [
-          el("strong", { text: sounds.length > 1 ? "Side " + (i + 1) : "Tape" }),
+          el("strong", { text: sounds.length > 1 ? device.side(i) : device.single }),
           el("span", { text: snd.duration ? rrClock(snd.duration) : "" }),
           snd.restricted ? el("em", { text: "restricted" }) : null
         ])
@@ -9464,7 +9753,7 @@
     var cors = true;
     audio.crossOrigin = "anonymous";
     var side = -1, actx = null, analyser = null, buf = null;
-    var angleL = 0, angleR = 0, lastT = 0, level = 0, spinBoost = 0;
+    var lastT = 0, level = 0, spinBoost = 0;
 
     function dur() { return isFinite(audio.duration) && audio.duration ? audio.duration : (sounds[side] && sounds[side].duration) || 0; }
 
@@ -9472,6 +9761,7 @@
       if (i < 0 || i >= sounds.length) return;
       var snd = sounds[i];
       side = i;
+      if (device.setSide) device.setSide(i);
       boxes.forEach(function (b, j) { b.setAttribute("aria-current", j === i ? "true" : "false"); });
       total.textContent = "/ " + rrClock(snd.duration);
       root.classList.toggle("is-locked", !!snd.restricted);
@@ -9544,18 +9834,8 @@
       notice.hidden = false;
     });
 
-    // Tape geometry: what's on each reel follows the position, by area.
-    function radii(p) {
-      var a = RR_REEL_MIN * RR_REEL_MIN, b = RR_REEL_MAX * RR_REEL_MAX;
-      return [Math.sqrt(a + (1 - p) * (b - a)), Math.sqrt(a + p * (b - a))];
-    }
     function draw(p) {
-      var r = radii(p);
-      woundL.setAttribute("r", r[0].toFixed(1));
-      woundR.setAttribute("r", r[1].toFixed(1));
-      // left reel's underside -> roller -> past the head -> roller -> right reel
-      tapePath.setAttribute("d", "M" + (118 - r[0] * 0.5).toFixed(1) + " " + (96 + r[0] * 0.87).toFixed(1) +
-        " L161 205 L200 209 L260 209 L299 205 L" + (342 + r[1] * 0.5).toFixed(1) + " " + (96 + r[1] * 0.87).toFixed(1));
+      device.draw(p, audio.paused && !(audio.currentTime > 0));
       counter.textContent = rrClock(audio.currentTime || 0);
       if (document.activeElement !== scrub) scrub.value = String(Math.round(p * 1000));
     }
@@ -9572,13 +9852,8 @@
       lastT = t;
       var d = dur();
       var p = d ? Math.min(1, (audio.currentTime || 0) / d) : 0;
-      var r = radii(p);
-      var speed = audio.paused ? 0 : 900;               // tape speed, in SVG units/s
-      if (spinBoost) { speed += spinBoost * 9000; spinBoost *= 0.9; if (Math.abs(spinBoost) < 0.02) spinBoost = 0; }
-      angleL += dt * speed / r[0] * 57.3 * 0.2;
-      angleR += dt * speed / r[1] * 57.3 * 0.2;
-      spinL.setAttribute("transform", "rotate(" + angleL.toFixed(1) + ")");
-      spinR.setAttribute("transform", "rotate(" + angleR.toFixed(1) + ")");
+      device.spin(dt, p, !audio.paused, spinBoost);
+      if (spinBoost) { spinBoost *= 0.9; if (Math.abs(spinBoost) < 0.02) spinBoost = 0; }
       draw(p);
 
       var target = 0;
@@ -9613,6 +9888,234 @@
     };
   }
 
+  // ---- A film on the desk: a small viewing screen ----
+  // For Video canvases (the library's handful of digitized films): the
+  // reels are drawn on a viewer's housing around a plain <video> with its
+  // own controls; it stops when the scene leaves the page.
+  function rrScreenEl(node, videos, opts) {
+    var root = el("div", { class: "rr-screen" });
+    var housing = el("div", { class: "rr-screen-housing" });
+    housing.appendChild(el("span", { class: "rr-screen-reel left", "aria-hidden": "true" }));
+    housing.appendChild(el("span", { class: "rr-screen-reel right", "aria-hidden": "true" }));
+    var glass = el("div", { class: "rr-screen-glass" });
+    housing.appendChild(glass);
+    root.appendChild(housing);
+    var notice = el("div", { class: "rr-restricted", hidden: "" });
+    root.appendChild(notice);
+    var video = el("video", { controls: "", preload: "metadata", playsinline: "" });
+    glass.appendChild(video);
+    var shelf = el("div", { class: "rr-tapeboxes", role: "list", "aria-label": "Film reels" });
+    if (videos.length > 1) root.appendChild(shelf);
+
+    function load(i) {
+      var v = videos[i];
+      Array.prototype.forEach.call(shelf.children, function (b, j) { b.setAttribute("aria-current", j === i ? "true" : "false"); });
+      if (v.restricted) {
+        video.removeAttribute("src");
+        clear(notice);
+        notice.appendChild(el("strong", { text: "Access restricted" }));
+        notice.appendChild(el("p", { text: "This film can only be viewed at the IISG." }));
+        if (opts.viewer) notice.appendChild(el("a", { href: opts.viewer, target: "_blank", rel: "noopener", text: "Try it in the Universal Viewer ↗" }));
+        notice.hidden = false;
+        return;
+      }
+      notice.hidden = true;
+      video.src = v.url;
+    }
+    videos.forEach(function (v, i) {
+      var b = el("button", { type: "button", class: "rr-tapebox is-can", role: "listitem" }, [
+        el("span", { class: "rr-tapebox-reel", "aria-hidden": "true" }),
+        el("span", { class: "rr-tapebox-label" }, [el("strong", { text: "Reel " + (i + 1) }), el("span", { text: v.duration ? rrClock(v.duration) : "" })])
+      ]);
+      b.addEventListener("click", function () { load(i); video.play(); });
+      shelf.appendChild(b);
+    });
+    video.addEventListener("play", function () { root.classList.add("is-playing"); });
+    video.addEventListener("pause", function () { root.classList.remove("is-playing"); });
+    // Scene left: stop the film.
+    var watch = setInterval(function () {
+      if (!root.isConnected) { video.pause(); video.removeAttribute("src"); clearInterval(watch); }
+    }, 500);
+    load(0);
+    return {
+      el: root,
+      keys: {
+        " ": function () { if (video.paused) video.play(); else video.pause(); },
+        ArrowLeft: function () { video.currentTime = Math.max(0, video.currentTime - 10); },
+        ArrowRight: function () { video.currentTime = Math.min(video.duration || 0, video.currentTime + 10); }
+      }
+    };
+  }
+
+  // ---- The library: books, periodicals, records, films ----
+  // biblio-etl's catalogue records come up from the library stacks one at
+  // a time -- no boxes or folders, so a record is a visit of its own: it
+  // arrives on the desk as what it is (a book, a run of bound volumes, a
+  // record in its sleeve, a film) and opens with the same viewers.
+  // Several manifests on one record are its volumes, in catalogue order.
+  var rrLibCache = {};
+
+  function rrIsLibraryUri(uri) { return /^https:\/\/iisg\.amsterdam\/id\/item\//.test(uri); }
+
+  function rrLibKind(types, forms) {
+    var f = forms.join("|").toLowerCase();
+    var has = function (t) { return types.indexOf("https://schema.org/" + t) !== -1 || types.indexOf("http://schema.org/" + t) !== -1; };
+    if (/gramophone|\brecord\b|78 rpm|vinyl|\blp\b/.test(f)) return "record";
+    if (has("VideoObject") || /\bfilm\b|video|dvd/.test(f)) return "film";
+    if (has("AudioObject") || /cassette|tape|\bcd\b|sound/.test(f)) return "tape";
+    if (has("ImageObject") || /photo|postcard|album|poster|print|drawing/.test(f)) return "photo";
+    if (has("CreativeWorkSeries") || has("Periodical")) return "periodical";
+    return "book";
+  }
+
+  function rrFetchLibItem(uri) {
+    return rrCached(rrLibCache, uri, function () {
+      var NAME = "(<http://schema.org/name>|<https://schema.org/name>)";
+      var q = "SELECT (SAMPLE(?n0) AS ?name) (SAMPLE(?d0) AS ?date) (SAMPLE(?pd0) AS ?phys) (SAMPLE(?pl0) AS ?place)\n" +
+        "       (SAMPLE(?pb0) AS ?publisher) (SAMPLE(?nv0) AS ?native) (SAMPLE(?th0) AS ?thumb) (SAMPLE(?m0) AS ?manifest)\n" +
+        "       (GROUP_CONCAT(DISTINCT STR(?t); separator=\"|\") AS ?types) (GROUP_CONCAT(DISTINCT ?fn; separator=\"|\") AS ?forms)\n" +
+        "       (GROUP_CONCAT(DISTINCT ?cn; separator=\"|\") AS ?creators) WHERE {\n" +
+        "  VALUES ?s { " + iriRef(uri) + " }\n" +
+        "  OPTIONAL { ?s " + NAME + " ?n0 }\n" +
+        "  OPTIONAL { ?s (<http://schema.org/datePublished>|<https://schema.org/datePublished>) ?d0 }\n" +
+        "  OPTIONAL { ?s <https://iisg.amsterdam/vocab/physicalDescription> ?pd0 }\n" +
+        "  OPTIONAL { ?s <https://iisg.amsterdam/vocab/placeOfPublication> ?pl0 }\n" +
+        "  OPTIONAL { ?s <https://iisg.amsterdam/vocab/publisher> ?pb0 }\n" +
+        "  OPTIONAL { ?s <https://iisg.amsterdam/vocab/nativeViewer> ?nv0 }\n" +
+        "  OPTIONAL { ?s <https://schema.org/thumbnailUrl> ?th0 }\n" +
+        "  OPTIONAL { ?s <https://iisg.amsterdam/vocab/iiifManifest> ?m0 }\n" +
+        "  OPTIONAL { ?s a ?t }\n" +
+        "  OPTIONAL { ?s <https://iisg.amsterdam/vocab/form>/" + NAME + " ?fn }\n" +
+        "  OPTIONAL { ?s (<http://schema.org/creator>|<https://schema.org/creator>|<http://id.loc.gov/vocabulary/relators/cre>|<http://id.loc.gov/vocabulary/relators/aut>)/" + NAME + " ?cn }\n" +
+        "} GROUP BY ?s";
+      return Promise.all([sparql(q), fetchRecordPreviews(uri).catch(function () { return []; })]).then(function (res) {
+        var r = res[0][0] || {};
+        var v = function (k) { return r[k] && r[k].value ? r[k].value : null; };
+        var split = function (k) { return v(k) ? v(k).split("|").filter(Boolean) : []; };
+        var types = split("types"), forms = split("forms");
+        var creators = split("creators").map(personDisplayName).filter(function (c, i, a) { return a.indexOf(c) === i; });
+        var vols = res[1].slice().sort(function (a, b) { return a.pos - b.pos; });
+        var imprint = [v("place"), v("publisher")].filter(Boolean).join(" : ");
+        return {
+          uri: uri, label: v("name") ? tidyTitle(v("name")) : shortLabel(uri),
+          kind: rrLibKind(types, forms), forms: forms,
+          dates: v("date"), phys: v("phys"), native: v("native"),
+          thumb: v("thumb") && isLocalUri(v("thumb")) ? v("thumb") : null,
+          manifest: v("manifest"), volumes: vols,
+          extra: [creators.slice(0, 3).join("; "), imprint].filter(Boolean)
+        };
+      });
+    });
+  }
+
+  // The volumes of a multi-volume work or a periodical's bound years, as
+  // spines on the desk; the open one stands out.
+  function rrVolumeShelfEl(volumes, current, kind, onPick) {
+    var row = el("div", { class: "rr-volumes kind-" + kind, role: "tablist", "aria-label": "Volumes" });
+    volumes.forEach(function (vol, i) {
+      var b = el("button", { type: "button", role: "tab", class: "rr-volume" + (i === current ? " current" : ""),
+        "aria-selected": i === current ? "true" : "false", style: "--i:" + i, title: "Volume " + (vol.pos || i + 1) }, [
+        el("span", { class: "rr-volume-band", "aria-hidden": "true" }),
+        el("span", { class: "rr-volume-no", text: String(vol.pos || i + 1) })
+      ]);
+      if (i !== current) b.addEventListener("click", function () { onPick(i); });
+      row.appendChild(b);
+    });
+    return row;
+  }
+
+  var rrVolumeOf = {};
+
+  // Digitized library records: by title for the request slip, and a
+  // random handful for the library shelf on the request desk.
+  var RR_LIB_ROW = "  ?s <https://iisg.amsterdam/vocab/iiifManifest> ?m .\n" +
+    "  FILTER(STRSTARTS(STR(?s), \"https://iisg.amsterdam/id/item/\"))\n" +
+    "  ?s (<http://schema.org/name>|<https://schema.org/name>) ?n .\n";
+  var RR_LIB_EXTRA = "  OPTIONAL { ?s (<http://schema.org/datePublished>|<https://schema.org/datePublished>) ?d }\n" +
+    "  OPTIONAL { ?s a ?t }\n" +
+    "  OPTIONAL { ?s <https://iisg.amsterdam/vocab/form>/(<http://schema.org/name>|<https://schema.org/name>) ?fn }\n";
+  var RR_LIB_SELECT = "SELECT ?s (SAMPLE(?n) AS ?name) (SAMPLE(?d) AS ?date) (GROUP_CONCAT(DISTINCT STR(?t); separator=\"|\") AS ?types)" +
+    " (GROUP_CONCAT(DISTINCT ?fn; separator=\"|\") AS ?forms) WHERE {\n";
+
+  function rrLibRows(rows) {
+    return rows.map(function (r) {
+      var split = function (k) { return r[k] && r[k].value ? r[k].value.split("|").filter(Boolean) : []; };
+      return { uri: r.s.value, label: tidyTitle(r.name.value), dates: r.date ? r.date.value : null, kind: rrLibKind(split("types"), split("forms")) };
+    });
+  }
+
+  function rrSearchLibrary(term) {
+    var q = RR_LIB_SELECT + RR_LIB_ROW +
+      "  FILTER(CONTAINS(LCASE(?n), \"" + escLiteral(term.trim().toLowerCase()) + "\"))\n" + RR_LIB_EXTRA +
+      "} GROUP BY ?s LIMIT 40";
+    return sparql(q).then(rrLibRows);
+  }
+
+  function rrFetchLibraryPicks() {
+    var others = RR_LIB_SELECT + RR_LIB_ROW + "  ?s a ?t0 . FILTER(?t0 != <https://schema.org/Book>)\n" + RR_LIB_EXTRA + "} GROUP BY ?s";
+    var books = RR_LIB_SELECT + RR_LIB_ROW + "  ?s a <https://schema.org/Book> .\n" + RR_LIB_EXTRA +
+      "} GROUP BY ?s LIMIT 4 OFFSET " + Math.floor(Math.random() * 4800);
+    return Promise.all([sparql(others).then(rrLibRows), sparql(books).then(rrLibRows)]).then(function (res) {
+      function pick(list, test) {
+        var c = list.filter(test);
+        return c.length ? c[Math.floor(Math.random() * c.length)] : null;
+      }
+      return res[1].slice(0, 3).concat([
+        pick(res[0], function (x) { return x.kind === "periodical"; }),
+        pick(res[0], function (x) { return x.kind === "record"; }),
+        pick(res[0], function (x) { return x.kind === "film" || x.kind === "photo"; }),
+        pick(res[0], function (x) { return x.kind === "tape"; })
+      ]).filter(Boolean);
+    });
+  }
+
+  // A library record on the shelf: a book's spine, a periodical's bound
+  // volume, a record in its sleeve, a film can, a photo album.
+  function rrLibObjEl(it, i) {
+    var hue = 0;
+    for (var k = 0; k < it.uri.length; k++) hue = (hue * 31 + it.uri.charCodeAt(k)) % 360;
+    var b = el("button", { type: "button", class: "rr-libobj kind-" + it.kind, style: "--i:" + i + ";--hue:" + hue,
+      title: RR_KIND_NAMES[it.kind] + ": " + it.label + (it.dates ? " (" + it.dates + ")" : "") }, [
+      el("span", { class: "rr-libobj-title", text: it.label }),
+      it.dates ? el("span", { class: "rr-libobj-date", text: it.dates }) : null
+    ]);
+    var tick = rrTick(it.uri);
+    if (tick) b.appendChild(tick);
+    b.addEventListener("click", function () { readingNavigate(it.uri); });
+    return b;
+  }
+
+  function rrLibraryScene(uri, gen) {
+    return rrFetchLibItem(uri).then(function (item) {
+      if (gen !== rrGen || location.hash.indexOf("#reading:") !== 0) return;
+      var vi = Math.min(rrVolumeOf[uri] || 0, Math.max(0, item.volumes.length - 1));
+      var vol = item.volumes[vi];
+      var node = {
+        uri: uri, label: item.label, phys: item.phys, dates: item.dates, ident: null, native: item.native,
+        manifest: vol ? vol.manifest : item.manifest, thumb: vol ? vol.thumb : item.thumb,
+        extra: item.extra.concat(item.volumes.length > 1 ? ["Volume " + (vol.pos || vi + 1) + " of " + item.volumes.length] : [])
+      };
+      rrMarkHandled(uri);
+      clear(mainEl);
+      var hint = item.kind === "record" || item.kind === "tape" || item.kind === "film"
+        ? "space  play / pause\n← →  10 seconds\nEsc  return it" : "← →  turn pages\nEsc  return it";
+      var shell = rrShell({ library: true, root: { uri: uri, label: item.label }, chain: [], node: node, kind: item.kind, keysHint: hint });
+      shell.stage.classList.add("scene-desk");
+      mainEl.appendChild(shell.section);
+      var keys = rrDeskScene(shell.stage, node, item.kind, [], [], {
+        library: true, volumes: item.volumes, volume: vi,
+        onVolume: function (i) { rrVolumeOf[uri] = i; rrLastUri = uri; renderReading(uri); }
+      }) || {};
+      keys.Escape = function () { navigateToView("readingroom"); };
+      if (item.volumes.length > 1) {
+        keys.PageUp = function () { if (vi > 0) { rrVolumeOf[uri] = vi - 1; renderReading(uri); } };
+        keys.PageDown = function () { if (vi < item.volumes.length - 1) { rrVolumeOf[uri] = vi + 1; renderReading(uri); } };
+      }
+      rrKeys = keys;
+      if (window.scrollY > mainEl.offsetTop) window.scrollTo(0, 0);
+    });
+  }
+
   // ---- Putting a scene together ----
 
   function renderReading(uri) {
@@ -9626,6 +10129,15 @@
       clear(mainEl);
       mainEl.appendChild(el("div", { class: "results-heading", text: "Fetching it from the stacks…" }));
     }, 500);
+
+    if (rrIsLibraryUri(uri)) {
+      rrLibraryScene(uri, gen).then(function () { clearTimeout(loadingTimer); }).catch(function () {
+        if (gen !== rrGen || location.hash.indexOf("#reading:") !== 0) return;
+        clearTimeout(loadingTimer);
+        renderError("Couldn’t fetch this from the library stacks.", function () { renderReading(uri); });
+      });
+      return;
+    }
 
     Promise.all([rrFetchNode(uri), rrFetchChain(uri), rrFetchKids(uri)]).then(function (res) {
       var node = res[0], chain = res[1], kids = res[2];
@@ -9705,12 +10217,12 @@
     var stage = shell.stage;
     rrKeys = {};
 
-    stage.appendChild(rrCaption("Welcome to the reading room.", "Fill in a request slip for an archive, or take one of the boxes already waiting on the trolley."));
+    stage.appendChild(rrCaption("Welcome to the reading room.", "Fill in a request slip for an archive or a library item, or take something already waiting on the trolley or the library shelf."));
 
     var form = el("form", { class: "rr-request", role: "search" });
     form.appendChild(el("div", { class: "rr-request-head" }, [el("strong", { text: "Request slip" }), el("span", { text: "No. " + (1000 + Math.floor(Math.random() * 9000)) })]));
-    var label = el("label", { for: "rr-request-input", text: "Archive (name or call number)" });
-    var input = el("input", { id: "rr-request-input", type: "text", placeholder: "e.g. Bakunin, Kautsky, ARCH00018", autocomplete: "off", spellcheck: "false" });
+    var label = el("label", { for: "rr-request-input", text: "Archive or library title (or call number)" });
+    var input = el("input", { id: "rr-request-input", type: "text", placeholder: "e.g. Bakunin, Kautsky, ARCH00018, anarchist", autocomplete: "off", spellcheck: "false" });
     var submit = el("button", { type: "submit", class: "rr-btn primary", text: "Request" });
     var surprise = el("button", { type: "button", class: "rr-btn", text: "Surprise me" });
     form.appendChild(label);
@@ -9741,13 +10253,29 @@
       if (term.length < 2) return;
       clear(results);
       results.appendChild(el("div", { class: "rr-slips-note", text: "The archivist is looking…" }));
-      rrSearchCollections(term).then(function (found) {
+      Promise.all([rrSearchCollections(term), rrSearchLibrary(term).catch(function () { return []; })]).then(function (res) {
         if (gen !== rrGen) return;
+        var found = res[0], books = res[1];
         clear(results);
-        if (!found.length) { results.appendChild(el("div", { class: "rr-slips-note", text: "No archive by that name. Try a person, organisation or call number." })); return; }
-        // Scanned ones first: those are the ones you can actually read here.
-        found.sort(function (a, b) { return (scannedByRoot[b.uri] || 0) - (scannedByRoot[a.uri] || 0); });
-        found.forEach(function (c) { results.appendChild(slipEl(c)); });
+        if (!found.length && !books.length) { results.appendChild(el("div", { class: "rr-slips-note", text: "Nothing by that name. Try a person, organisation, title or call number." })); return; }
+        if (found.length) {
+          results.appendChild(el("div", { class: "rr-slips-group", text: "Archives" }));
+          // Scanned ones first: those are the ones you can actually read here.
+          found.sort(function (a, b) { return (scannedByRoot[b.uri] || 0) - (scannedByRoot[a.uri] || 0); });
+          found.forEach(function (c) { results.appendChild(slipEl(c)); });
+        }
+        if (books.length) {
+          results.appendChild(el("div", { class: "rr-slips-group", text: "Library (digitized)" }));
+          books.forEach(function (c) {
+            var b = el("button", { type: "button", class: "rr-slipbtn has-scans is-library" }, [
+              el("span", { class: "rr-slipbtn-no" }, [rrIcon(c.kind), document.createTextNode(" " + RR_KIND_NAMES[c.kind])]),
+              el("span", { class: "rr-slipbtn-t", text: c.label }),
+              el("span", { class: "rr-slipbtn-m", text: [c.dates, "item " + rrCallNumber(c.uri)].filter(Boolean).join(" · ") })
+            ]);
+            b.addEventListener("click", function () { readingNavigate(c.uri); });
+            results.appendChild(b);
+          });
+        }
       }).catch(function () {
         if (gen !== rrGen) return;
         clear(results);
@@ -9772,6 +10300,16 @@
       });
       trolleySlot.appendChild(rrTrolleyEl(boxes));
     }).catch(function () { surprise.disabled = true; });
+
+    var libSlot = el("div", { class: "rr-waiting" });
+    stage.appendChild(libSlot);
+    rrFetchLibraryPicks().then(function (items) {
+      if (gen !== rrGen || !items.length) return;
+      libSlot.appendChild(el("h3", { class: "rr-subhead", text: "Up from the library stacks" }));
+      var shelf = el("div", { class: "rr-bookshelf" });
+      items.forEach(function (it, i) { shelf.appendChild(rrLibObjEl(it, i)); });
+      libSlot.appendChild(shelf);
+    }).catch(function () { /* the archives still work without it */ });
 
     input.focus({ preventScroll: true });
   }

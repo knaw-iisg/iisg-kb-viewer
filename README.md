@@ -95,6 +95,16 @@ URL for a differently-hosted store.
   numbers in the data: what is drawn as a box, bundle, folder, letter or
   volume comes from the node's place in the tree and its
   `iisgv:physicalDescription` ("1 map", "3 Briefe", "1 doos", ...).
+  The library comes up too: the request slip searches digitized
+  catalogue records as well as archives, and a library shelf on the
+  request desk holds a random mix. A library record has no boxes or
+  folders -- it arrives on the desk as what it is: a cloth-bound book
+  (several manifests are its volumes, as spines to pick from), a
+  periodical, a gramophone record on a **record player** (78 rpm, the
+  tonearm tracking inward as the side plays), a cassette on the tape
+  recorder, or a film on a small viewer (`Video` canvases, `<video>`).
+  Some catalogue manifests aren't on IISG's IIIF server (seen on
+  multi-volume works and periodicals' `Z…` collections); the desk says so.
   Every archive record page links into it. Boxes and bundles carry
   stickers for what's digitized inside -- "12 scans", "2 audio", "1 video"
   -- split by each item's `physicalDescription` (or its folder's, when it
