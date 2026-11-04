@@ -99,7 +99,7 @@ URL for a differently-hosted store.
   stickers for what's digitized inside -- "12 scans", "2 audio", "1 video"
   -- split by each item's `physicalDescription` (or its folder's, when it
   has none), since the graph doesn't record a manifest's media type. A
-  green reading lamp on the desk switches the room between day and
+  green reading lamp in front of the window switches the room between day and
   evening (lit windows, a glowing VU meter); it follows dark mode until
   clicked, then remembers the reader's choice.
   Recordings (oral-history interviews, recorded meetings: IIIF manifests

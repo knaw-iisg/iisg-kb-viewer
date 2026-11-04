@@ -2115,7 +2115,7 @@
 
   /* the room */
   .rr-room {
-    border-radius: 14px; overflow: hidden; box-shadow: var(--shadow);
+    position: relative; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow);
     background: var(--rr-desk);
   }
   .rr-window { position: relative; height: 150px; overflow: hidden; background: var(--rr-sky-bottom); }
@@ -2171,14 +2171,18 @@
 
   /* green-shaded reading lamp: click to switch day/evening */
   .rr-lamp {
-    position: relative; align-self: center; width: 150px; padding: 0; border: none; background: none; cursor: pointer;
+    /* on the back edge of the desk, in front of the window: its base
+       just below the sill (150px window), above the props column */
+    position: absolute; z-index: 3; right: 41px; top: 45px; width: 180px;
+    padding: 0; border: none; background: none; cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.35));
   }
   .rr-lamp svg { display: block; width: 100%; height: auto; overflow: visible; }
   .rr-lamp:focus-visible { outline: 2px solid #f4f7f6; outline-offset: 4px; border-radius: 6px; }
   .rr-lamp .brass { fill: #b8913f; }
   .rr-lamp .brass-dark { fill: #8a6a2a; }
-  .rr-lamp .shade { fill: #1f5a3c; }
+  .rr-lamp .shade { fill: #1f5a3c; stroke: #0c2618; stroke-width: 1.6; }
   .rr-lamp .shade-hi { fill: #3f8a5f; opacity: 0.55; }
   .rr-lamp .bulb-glow { fill: #ffe2a3; opacity: 0; transition: opacity 0.25s; }
   .rr-lamp .chain { stroke: #b8913f; stroke-width: 1.2; }
@@ -2190,7 +2194,7 @@
   /* the pool of lamplight on the desk */
   .rr-desk::after {
     content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.4s;
-    background: radial-gradient(ellipse 360px 300px at calc(100% - 131px) 92px, rgba(255, 214, 140, 0.32), rgba(255, 200, 120, 0.12) 55%, transparent 75%);
+    background: radial-gradient(ellipse 380px 300px at calc(100% - 131px) 0px, rgba(255, 214, 140, 0.34), rgba(255, 200, 120, 0.12) 55%, transparent 75%);
     mix-blend-mode: screen;
   }
   .rr.is-night .rr-desk::after { opacity: 1; }
@@ -2703,8 +2707,10 @@
   @container (max-width: 900px) {
     .rr-desk { grid-template-columns: minmax(0, 1fr); padding: 18px 14px 26px; }
     .rr-props { order: -1; flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
-    .rr-lamp { width: 110px; align-self: flex-start; }
-    .rr-desk::after { background: radial-gradient(ellipse 260px 200px at 70px 60px, rgba(255, 214, 140, 0.32), transparent 75%); }
+    .rr-window { height: 96px; }
+    /* narrow: on the window sill (96px window), at the right */
+    .rr-lamp { width: 120px; right: 16px; top: 21px; }
+    .rr-desk::after { background: radial-gradient(ellipse 280px 200px at calc(100% - 71px) 0px, rgba(255, 214, 140, 0.32), transparent 75%); }
     .rr-tent { flex: 0 0 150px; }
     .rr-notepad { flex: 1 1 220px; }
   }
@@ -2712,7 +2718,6 @@
     .rr-openfolder { grid-template-columns: minmax(0, 1fr); padding: 8px; }
     .rr-leaf-left { border-right: none; border-bottom: 2px solid var(--rr-manila-dark); box-shadow: none; order: 2; animation: none; }
     .rr-pages { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); max-height: 150px; }
-    .rr-window { height: 96px; }
   }
   @media (max-width: 520px) {
     /* the notepad already shows the full path; the trail stays one line */
@@ -8752,13 +8757,14 @@
 
     var room = el("div", { class: "rr-room" });
     room.appendChild(rrWindowEl());
+    // The reading lamp stands at the back of the desk, against the window.
+    var lamp = rrLampEl();
+    rrLampState(lamp, rrIsNight());
+    room.appendChild(lamp);
     var desk = el("div", { class: "rr-desk" });
     var stage = el("div", { class: "rr-stage" });
     var props = el("div", { class: "rr-props" });
 
-    var lamp = rrLampEl();
-    rrLampState(lamp, rrIsNight());
-    props.appendChild(lamp);
 
     // Reservation card on its stand: which archive is on this desk.
     var tent = el("div", { class: "rr-tent" });
