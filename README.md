@@ -95,7 +95,13 @@ URL for a differently-hosted store.
   numbers in the data: what is drawn as a box, bundle, folder, letter or
   volume comes from the node's place in the tree and its
   `iisgv:physicalDescription` ("1 map", "3 Briefe", "1 doos", ...).
-  Every archive record page links into it.
+  Every archive record page links into it. Boxes and bundles carry
+  stickers for what's digitized inside -- "12 scans", "2 audio", "1 video"
+  -- split by each item's `physicalDescription` (or its folder's, when it
+  has none), since the graph doesn't record a manifest's media type. A
+  green reading lamp in front of the window switches the room between day and
+  evening (lit windows, a glowing VU meter); it follows dark mode until
+  clicked, then remembers the reader's choice.
   Recordings (oral-history interviews, recorded meetings: IIIF manifests
   whose canvases are `Sound`, one per tape side) go on a reel-to-reel
   tape recorder instead: the sides as tape boxes, playing straight from

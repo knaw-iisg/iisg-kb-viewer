@@ -2071,25 +2071,9 @@
     --font-hand: "Caveat", "Segoe Print", "Bradley Hand", cursive;
     color: var(--rr-ink);
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .rr {
-      --rr-sky-top: #0b1426; --rr-sky-bottom: #26344f;
-      --rr-far: #1a2334; --rr-tower: #222c3b;
-      --rr-house1: #3a2724; --rr-house2: #43302a; --rr-house3: #31221e; --rr-house4: #4a463f;
-      --rr-roof: #15120f; --rr-win: #1b2127; --rr-win-lit: #ffcf73;
-      --rr-tree: #15211a; --rr-tree2: #1b2a20; --rr-quay: #1f1d1a;
-      --rr-water-far: #1a2c3a; --rr-ripple: #2e4a5c; --rr-refl: 0.55;
-      --rr-hull1: #7d8186; --rr-hull2: #2b3d4d; --rr-hull3: #233a2c; --rr-hullbase: #0d0f11;
-      --rr-jetty: #3a3026; --rr-jettyedge: #221b14; --rr-night: 1;
-      --rr-water: #0f1d27; --rr-frame: #090c0e;
-      --rr-desk: #33494d; --rr-desk-hi: #3c5559; --rr-desk-lip: #7a5a38; --rr-desk-lip-dark: #5c4329;
-      --rr-card: #8a6744; --rr-card-dark: #6f5236; --rr-card-light: #a07b55;
-      --rr-label: #e8e2d2; --rr-manila: #c9b07a; --rr-manila-dark: #a89060;
-      --rr-bundle: #6d7a85; --rr-bundle-dark: #57636d;
-      --rr-paper: #ece6d6; --rr-paper-edge: #c9c0ab; --rr-shadow: rgba(0, 0, 0, 0.55);
-    }
-  }
-  :root[data-theme="dark"] .rr {
+  /* Evening: by default when the app is in dark mode, or whenever the
+     reader switches the desk lamp on (rrIsNight). */
+  .rr.is-night {
     --rr-sky-top: #0b1426; --rr-sky-bottom: #26344f;
     --rr-far: #1a2334; --rr-tower: #222c3b;
     --rr-house1: #3a2724; --rr-house2: #43302a; --rr-house3: #31221e; --rr-house4: #4a463f;
@@ -2131,11 +2115,25 @@
 
   /* the room */
   .rr-room {
-    border-radius: 14px; overflow: hidden; box-shadow: var(--shadow);
+    position: relative; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow);
     background: var(--rr-desk);
   }
   .rr-window { position: relative; height: 150px; overflow: hidden; background: var(--rr-sky-bottom); }
-  .rr-harbour { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .rr-harbour { position: absolute; inset: 0; width: 100%; height: 100%; display: block; transition: filter 0.6s; }
+  /* With the lamp on in the dark, the glass mirrors the room and the
+     harbour fades behind it: dimmer, flatter, a little soft; a mirrored
+     glow of the lamp, the desk's own reflection along the bottom and a
+     couple of glare streaks on top. */
+  .rr-window::after {
+    content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity 0.6s;
+    background:
+      radial-gradient(ellipse 90px 60px at calc(100% - 158px) 46%, rgba(255, 228, 165, 0.5), rgba(255, 205, 125, 0.16) 60%, transparent),
+      linear-gradient(112deg, transparent 22%, rgba(255, 255, 255, 0.07) 27%, transparent 33%, transparent 61%, rgba(255, 255, 255, 0.05) 65%, transparent 70%),
+      linear-gradient(to top, rgba(95, 125, 130, 0.5), rgba(95, 125, 130, 0.12) 38%, transparent 60%),
+      rgba(70, 72, 66, 0.16);
+  }
+  .rr.is-night .rr-window::after { opacity: 1; }
+  .rr.is-night .rr-harbour { filter: brightness(0.72) contrast(0.62) saturate(0.7) blur(0.7px); }
   .rr-harbour .rr-far { fill: var(--rr-far); }
   .rr-harbour .rr-tower { fill: var(--rr-tower); }
   .rr-harbour .rr-house1 { fill: var(--rr-house1); }
@@ -2165,7 +2163,7 @@
   .rr-harbour .rr-passing { animation: rr-drift 70s linear infinite alternate; }
   @keyframes rr-drift { from { transform: translateX(-160px); } to { transform: translateX(260px); } }
   .rr-mullions {
-    position: absolute; inset: 0;
+    position: absolute; inset: 0; z-index: 2;
     background: repeating-linear-gradient(90deg, var(--rr-frame) 0 9px, transparent 9px 20%);
     border-top: 6px solid var(--rr-frame); border-bottom: 11px solid var(--rr-frame);
     box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.08);
@@ -2184,6 +2182,36 @@
   .rr-stage { min-width: 0; }
 
   .rr-props { display: flex; flex-direction: column; gap: 20px; align-items: stretch; }
+
+  /* green-shaded reading lamp: click to switch day/evening */
+  .rr-lamp {
+    /* on the back edge of the desk, in front of the window: its base
+       just below the sill (150px window), above the props column */
+    position: absolute; z-index: 3; right: 41px; top: 45px; width: 180px;
+    padding: 0; border: none; background: none; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.35));
+  }
+  .rr-lamp svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .rr-lamp:focus-visible { outline: 2px solid #f4f7f6; outline-offset: 4px; border-radius: 6px; }
+  .rr-lamp .brass { fill: #b8913f; }
+  .rr-lamp .brass-dark { fill: #8a6a2a; }
+  .rr-lamp .shade { fill: #1f5a3c; stroke: #0c2618; stroke-width: 1.6; }
+  .rr-lamp .shade-hi { fill: #3f8a5f; opacity: 0.55; }
+  .rr-lamp .bulb-glow { fill: #ffe2a3; opacity: 0; transition: opacity 0.25s; }
+  .rr-lamp .chain { stroke: #b8913f; stroke-width: 1.2; }
+  .rr-lamp .bead { fill: #d8b55a; transition: transform 0.15s; }
+  .rr-lamp:active .bead, .rr-lamp:active .chain { transform: translateY(4px); }
+  .rr.is-night .rr-lamp .shade { fill: #2c7a52; }
+  .rr.is-night .rr-lamp .shade-hi { fill: #9fe0b5; opacity: 0.45; }
+  .rr.is-night .rr-lamp .bulb-glow { opacity: 1; }
+  /* the pool of lamplight on the desk */
+  .rr-desk::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.4s;
+    background: radial-gradient(ellipse 380px 300px at calc(100% - 131px) 0px, rgba(255, 214, 140, 0.34), rgba(255, 200, 120, 0.12) 55%, transparent 75%);
+    mix-blend-mode: screen;
+  }
+  .rr.is-night .rr-desk::after { opacity: 1; }
 
   /* reservation card on a stand */
   .rr-tent {
@@ -2247,11 +2275,15 @@
   .rr-btn:disabled { opacity: 0.45; cursor: default; }
   .rr-btn.primary { background: #2f4a50; color: #f4f7f6 !important; border-color: #22383d; }
 
+  .rr-media { position: absolute; display: flex; gap: 3px; pointer-events: none; }
   .rr-scan {
-    position: absolute; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.02em;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.02em; white-space: nowrap;
     background: var(--rr-scan); color: #fff; border-radius: 9px; padding: 1px 6px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); pointer-events: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
+  .rr-scan.is-audio { background: #2f5c8a; }
+  .rr-scan.is-video { background: #6b3f8f; }
+  .rr-scan.is-any { background: #4d5a3a; }
   .rr-tick {
     position: absolute; font-family: var(--font-hand); font-size: 26px; line-height: 1; color: var(--rr-pencil);
     transform: rotate(-8deg); pointer-events: none;
@@ -2333,7 +2365,7 @@
     position: absolute; top: 11px; left: 50%; width: 38px; height: 12px; margin-left: -19px;
     border-radius: 6px; background: var(--rr-card-dark); box-shadow: inset 0 3px 3px rgba(0, 0, 0, 0.45);
   }
-  .rr-box .rr-scan { right: 8px; bottom: 10px; }
+  .rr-box .rr-media { right: 8px; left: 30px; bottom: 9px; flex-direction: column; align-items: flex-end; }
   .rr-box .rr-tick { left: 9px; bottom: 6px; color: #2a2a2a; }
   .rr-box.rr-returned { animation: rr-putback 0.6s ease both; outline: 3px solid rgba(255, 255, 255, 0.6); outline-offset: 3px; }
 
@@ -2430,7 +2462,7 @@
   .rr-file-title { font-size: 14px; line-height: 1.3; color: var(--rr-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .rr-file:hover .rr-file-title, .rr-file:focus-visible .rr-file-title { white-space: normal; }
   .rr-file-meta { font-size: 11.5px; color: var(--rr-ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .rr-file .rr-scan { right: 10px; top: 10px; }
+  .rr-file .rr-media { right: 10px; top: 10px; }
   .rr-file .rr-tick { right: 52px; top: 4px; }
   .rr-file.kind-letter, .rr-file.kind-photo {
     background: var(--rr-paper); width: 96%; margin-left: 1.5%; border-radius: 0;
@@ -2541,13 +2573,7 @@
     --rr-vu-glow: transparent; --rr-vu-glow-size: 0px;
     position: relative; width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 12px;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .rr-recorder {
-      --rr-vu-face: radial-gradient(ellipse at 50% 85%, #ffd27a, #f0a640 55%, #b8661c);
-      --rr-vu-inner: rgba(90, 40, 0, 0.6); --rr-vu-glow: rgba(255, 166, 60, 0.55); --rr-vu-glow-size: 16px;
-    }
-  }
-  :root[data-theme="dark"] .rr-recorder {
+  .rr.is-night .rr-recorder {
     --rr-vu-face: radial-gradient(ellipse at 50% 85%, #ffd27a, #f0a640 55%, #b8661c);
     --rr-vu-inner: rgba(90, 40, 0, 0.6); --rr-vu-glow: rgba(255, 166, 60, 0.55); --rr-vu-glow-size: 16px;
   }
@@ -2695,6 +2721,17 @@
   @container (max-width: 900px) {
     .rr-desk { grid-template-columns: minmax(0, 1fr); padding: 18px 14px 26px; }
     .rr-props { order: -1; flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
+    .rr-window { height: 96px; }
+    .rr-window::after {
+      background:
+        radial-gradient(ellipse 60px 40px at calc(100% - 92px) 40%, rgba(255, 228, 165, 0.5), rgba(255, 205, 125, 0.16) 60%, transparent),
+        linear-gradient(112deg, transparent 22%, rgba(255, 255, 255, 0.07) 27%, transparent 33%),
+        linear-gradient(to top, rgba(95, 125, 130, 0.5), transparent 60%),
+        rgba(70, 72, 66, 0.16);
+    }
+    /* narrow: on the window sill (96px window), at the right */
+    .rr-lamp { width: 120px; right: 16px; top: 21px; }
+    .rr-desk::after { background: radial-gradient(ellipse 280px 200px at calc(100% - 71px) 0px, rgba(255, 214, 140, 0.32), transparent 75%); }
     .rr-tent { flex: 0 0 150px; }
     .rr-notepad { flex: 1 1 220px; }
   }
@@ -2702,7 +2739,6 @@
     .rr-openfolder { grid-template-columns: minmax(0, 1fr); padding: 8px; }
     .rr-leaf-left { border-right: none; border-bottom: 2px solid var(--rr-manila-dark); box-shadow: none; order: 2; animation: none; }
     .rr-pages { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); max-height: 150px; }
-    .rr-window { height: 96px; }
   }
   @media (max-width: 520px) {
     /* the notepad already shows the full path; the trail stays one line */
@@ -8234,6 +8270,7 @@
   // Earliest match wins, so "1 omslag met 3 brieven" is a folder.
   var RR_PHYS_KINDS = [
     ["audio", /\b(audio|sound|geluid\w*|tonband\w*|cassettes?|audiotapes?|\d+\s*min|minuten)\b/i],
+    ["video", /\b(video\w*|vhs|dvd|u-matic|betamax|film(?!strip))\b/i],
     ["box", /\b(doos|dozen|box(es)?|pak(ken)?|kartons?|bo[iî]tes?|cajas?|schachteln?)\b/i],
     ["volume", /\b(deel|delen|vols?|volumes?|b[äa]nde?|registers?|cahiers?|notebooks?|tomes?|schriften?)\b/i],
     ["photo", /\b(foto'?s?|photos?|photographs?|fotografi\w*|negatie\w*|dia'?s)\b/i],
@@ -8351,14 +8388,27 @@
         "  OPTIONAL { ?c <https://iisg.amsterdam/vocab/iiifManifest> ?m0 }\n" +
         "  OPTIONAL { ?g " + RR_PART + " ?c }\n" +
         "} GROUP BY ?c LIMIT 5000";
-      var dq = "SELECT ?c (COUNT(DISTINCT ?d) AS ?n) WHERE {\n" +
-        "  { SELECT ?d WHERE { ?d " + RR_PART + "+ " + iriRef(uri) + " . ?d <https://iisg.amsterdam/vocab/iiifManifest> ?m } }\n" +
+      // Split by physical description, since the graph only says that an
+      // item has a manifest, not what's on it: "1 digital audio file" or
+      // "75 min" is a recording, "VHS" a video, anything else a scan. An
+      // item without one goes by its folder's ("9 banden, 1 cassette;
+      // 14 digital audio files").
+      var dq = "SELECT ?c ?pd (COUNT(DISTINCT ?d) AS ?n) WHERE {\n" +
+        "  { SELECT ?d (SAMPLE(?pd2) AS ?pd) WHERE { ?d " + RR_PART + "+ " + iriRef(uri) + " . ?d <https://iisg.amsterdam/vocab/iiifManifest> ?m .\n" +
+        "      OPTIONAL { ?d <https://iisg.amsterdam/vocab/physicalDescription> ?pd0 }\n" +
+        "      OPTIONAL { ?d " + RR_PART + " ?dp . ?dp <https://iisg.amsterdam/vocab/physicalDescription> ?pd1 }\n" +
+        "      BIND(COALESCE(?pd0, ?pd1) AS ?pd2) } GROUP BY ?d }\n" +
         "  ?c " + RR_PART + " " + iriRef(uri) + " .\n" +
         "  ?d " + RR_PART + "* ?c .\n" +
-        "} GROUP BY ?c";
+        "} GROUP BY ?c ?pd";
       return Promise.all([sparql(q), sparql(dq).catch(function () { return []; })]).then(function (res) {
-        var scanned = {};
-        res[1].forEach(function (r) { scanned[r.c.value] = parseInt(r.n.value, 10); });
+        var scanned = {}, media = {};
+        res[1].forEach(function (r) {
+          var c = r.c.value, n = parseInt(r.n.value, 10), k = rrPhysKind(r.pd ? r.pd.value : null);
+          var m = media[c] || (media[c] = { scan: 0, audio: 0, video: 0 });
+          m[k === "audio" || k === "video" ? k : "scan"] += n;
+          scanned[c] = (scanned[c] || 0) + n;
+        });
         var items = res[0].map(function (r) {
           var v = function (k) { return r[k] ? r[k].value : null; };
           var pos = v("pos") !== null ? parseFloat(v("pos")) : NaN;
@@ -8367,7 +8417,8 @@
             pos: isNaN(pos) ? Infinity : pos, phys: v("phys"), dates: v("dates"), ident: v("ident"),
             thumb: v("thumb") && isLocalUri(v("thumb")) ? v("thumb") : null,
             manifest: v("manifest"), kids: parseInt(v("kids") || "0", 10),
-            scanned: scanned[r.c.value] || 0
+            scanned: scanned[r.c.value] || 0,
+            media: media[r.c.value] || null
           };
           it.kind = rrItemKind(it);
           return it;
@@ -8648,8 +8699,59 @@
 
   // ctx: { root, chain (root-first ancestors), node, here (label of the
   // current scene's object kind) }
+  // Day or evening in the reading room. Follows the app's own theme
+  // (dark mode = evening) until the reader switches the desk lamp, which
+  // is then remembered in this browser.
+  var RR_TIME_KEY = "rr-time";
+  var rrDarkQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+  function rrIsNight() {
+    try {
+      var v = localStorage.getItem(RR_TIME_KEY);
+      if (v === "night" || v === "day") return v === "night";
+    } catch (e) { /* storage blocked: follow the theme */ }
+    var theme = document.documentElement.getAttribute("data-theme");
+    if (theme) return theme === "dark";
+    return !!(rrDarkQuery && rrDarkQuery.matches);
+  }
+
+  function rrApplyTime() {
+    var night = rrIsNight();
+    Array.prototype.forEach.call(document.querySelectorAll(".rr"), function (r) { r.classList.toggle("is-night", night); });
+    Array.prototype.forEach.call(document.querySelectorAll(".rr-lamp"), function (l) { rrLampState(l, night); });
+  }
+  if (rrDarkQuery && rrDarkQuery.addEventListener) rrDarkQuery.addEventListener("change", rrApplyTime);
+
+  function rrLampEl() {
+    var b = el("button", { type: "button", class: "rr-lamp", "aria-label": "Reading lamp" });
+    b.innerHTML = '<svg viewBox="0 0 160 112" aria-hidden="true">' +
+      '<ellipse cx="80" cy="66" rx="50" ry="10" class="bulb-glow"/>' +
+      '<rect x="77" y="58" width="6" height="40" class="brass"/>' +
+      '<path d="M50 104 Q80 94 110 104 L114 108 Q80 100 46 108Z" class="brass-dark"/>' +
+      '<ellipse cx="80" cy="104" rx="34" ry="5" class="brass"/>' +
+      '<line x1="104" y1="60" x2="104" y2="82" class="chain"/><circle cx="104" cy="84" r="2.6" class="bead"/>' +
+      '<path d="M16 60 C22 30 138 30 144 60 Z" class="shade"/>' +
+      '<path d="M30 52 C40 36 120 36 130 52 C112 44 48 44 30 52Z" class="shade-hi"/>' +
+      '<rect x="14" y="58" width="132" height="5" rx="2" class="brass"/>' +
+      '<circle cx="80" cy="30" r="4" class="brass"/>' +
+      '</svg>';
+    b.addEventListener("click", function () {
+      var room = b.closest(".rr");
+      var night = !(room && room.classList.contains("is-night"));
+      try { localStorage.setItem(RR_TIME_KEY, night ? "night" : "day"); } catch (e) { /* this page only, then */ }
+      if (room) room.classList.toggle("is-night", night);
+      rrLampState(b, night);
+    });
+    return b;
+  }
+
+  function rrLampState(lamp, night) {
+    lamp.setAttribute("aria-pressed", night ? "true" : "false");
+    lamp.title = night ? "Switch the lamp off (daytime)" : "Switch the lamp on (evening)";
+  }
+
   function rrShell(ctx) {
-    var section = el("section", { class: "rr", "aria-label": "Reading room" });
+    var section = el("section", { class: "rr" + (rrIsNight() ? " is-night" : ""), "aria-label": "Reading room" });
 
     // Plain trail above the scene: the same path as the notepad, for
     // quick jumps and screen readers.
@@ -8676,9 +8778,14 @@
 
     var room = el("div", { class: "rr-room" });
     room.appendChild(rrWindowEl());
+    // The reading lamp stands at the back of the desk, against the window.
+    var lamp = rrLampEl();
+    rrLampState(lamp, rrIsNight());
+    room.appendChild(lamp);
     var desk = el("div", { class: "rr-desk" });
     var stage = el("div", { class: "rr-stage" });
     var props = el("div", { class: "rr-props" });
+
 
     // Reservation card on its stand: which archive is on this desk.
     var tent = el("div", { class: "rr-tent" });
@@ -8748,10 +8855,43 @@
     return bits.join(" · ");
   }
 
+  // What's digitized in or under an item, as stickers: "12 scans",
+  // "2 audio", "1 video". Without a split (the request desk's trolley
+  // only knows totals), "21 digitized".
+  var RR_MEDIA_WORDS = { scan: ["scan", "scans"], audio: ["audio", "audio"], video: ["video", "video"] };
+
+  function rrMediaParts(it) {
+    if (!it.scanned) return [];
+    var m = it.media;
+    if (!m) return [["any", it.scanned]];
+    return ["scan", "audio", "video"].filter(function (k) { return m[k]; }).map(function (k) { return [k, m[k]]; });
+  }
+
+  function rrMediaText(it) {
+    return rrMediaParts(it).map(function (p) {
+      return fmtNum(p[1]) + " " + (p[0] === "any" ? "digitized" : RR_MEDIA_WORDS[p[0]][p[1] === 1 ? 0 : 1]);
+    }).join(" · ");
+  }
+
   function rrScanBadge(it) {
-    if (!it.scanned) return null;
-    return el("span", { class: "rr-scan", title: it.manifest ? "Scanned" : fmtNum(it.scanned) + " scanned inside",
-      text: it.manifest && it.kids === 0 ? "scan" : fmtNum(it.scanned) + " scan" + (it.scanned === 1 ? "" : "s") });
+    var parts = rrMediaParts(it);
+    if (!parts.length) return null;
+    var leaf = it.manifest && it.kids === 0;
+    return el("span", { class: "rr-media", title: leaf ? "Digitized" : rrMediaText(it) + " inside" }, parts.map(function (p) {
+      var word = p[0] === "any" ? "digitized" : RR_MEDIA_WORDS[p[0]][p[1] === 1 ? 0 : 1];
+      return el("span", { class: "rr-scan is-" + p[0], text: leaf ? word : fmtNum(p[1]) + " " + word });
+    }));
+  }
+
+  // Totals over a list of items, for captions and box ends.
+  function rrMediaSum(items) {
+    var sum = { scanned: 0, media: { scan: 0, audio: 0, video: 0 } };
+    items.forEach(function (k) {
+      sum.scanned += k.scanned;
+      if (k.media) ["scan", "audio", "video"].forEach(function (x) { sum.media[x] += k.media[x]; });
+      else sum.media.scan += k.scanned;
+    });
+    return sum;
   }
 
   function rrTick(uri) {
@@ -8829,10 +8969,10 @@
   }
 
   function rrTrolleyScene(stage, node, kids, cameFrom) {
-    var scanned = kids.reduce(function (s, k) { return s + k.scanned; }, 0);
+    var sum = rrMediaSum(kids);
     stage.appendChild(rrCaption(
       "Your archive has arrived: " + rrCount(kids.length, "box", "boxes") + " on the trolley.",
-      [node.dates, node.phys, scanned ? fmtNum(scanned) + " items scanned" : "nothing scanned yet"].filter(Boolean).join(" · ") + ". Take a box to your desk."
+      [node.dates, node.phys, sum.scanned ? rrMediaText(sum) : "nothing digitized yet"].filter(Boolean).join(" · ") + ". Take a box to your desk."
     ));
     var boxes = kids.map(function (it, i) {
       var b = rrBoxEl(it, i, { cls: it.uri === cameFrom ? "rr-returned" : "" });
@@ -8888,11 +9028,11 @@
     var tapes = kids.filter(function (k) { return k.kind === "audio"; }).length;
     var noun = tapes * 2 > kids.length ? ["recording", "recordings"]
       : sheets * 2 > kids.length ? ["letter or sheet", "letters and sheets"] : ["folder", "folders"];
-    var scanned = kids.reduce(function (s, k) { return s + k.scanned; }, 0);
+    var sum = rrMediaSum(kids);
     stage.appendChild(rrCaption(
       (isBundle ? "You untie the bundle: " : "You lift the lid: ") + rrCount(kids.length, noun[0], noun[1]) +
         (chunks > 1 ? ", packed in " + chunks + " boxes" : "") + ".",
-      [node.dates, scanned ? fmtNum(scanned) + " scanned" : "none of it scanned yet"].filter(Boolean).join(" · ") + ". Pull one out to read it."
+      [node.dates, sum.scanned ? rrMediaText(sum) : "none of it digitized yet"].filter(Boolean).join(" · ") + ". Pull one out to read it."
     ));
 
     var area = el("div", { class: "rr-boxarea" });
@@ -8915,11 +9055,11 @@
           var first = part[0], last = part[part.length - 1];
           // Positions, not inventory numbers: those can run to "D_I_A_1_276".
           var range = isFinite(first.pos) && isFinite(last.pos) ? first.pos + "–" + last.pos : (k * RR_PER_BOX + 1) + "–" + (k * RR_PER_BOX + part.length);
-          var sc = part.reduce(function (s, x) { return s + x.scanned; }, 0);
+          var sc = rrMediaText(rrMediaSum(part));
           var end = el("button", { type: "button", role: "tab", class: "rr-boxend" + (k === c ? " current" : ""),
             "aria-selected": k === c ? "true" : "false", title: first.label + " … " + last.label }, [
             el("strong", { text: String(k + 1) }), el("span", { text: range }),
-            sc ? el("i", { text: sc + " scans" }) : null
+            sc ? el("i", { text: sc }) : null
           ]);
           end.addEventListener("click", function () { draw(k, true); });
           shelf.appendChild(end);
@@ -9464,6 +9604,13 @@
         clearTimeout(loadingTimer);
         clear(mainEl);
         chain = chain.map(function (c) { return { uri: c.uri, label: tidyTitle(c.label) }; });
+
+        // Leaves with no description of their own take the box's: a folder
+        // of "14 digital audio files" holds recordings, not folders.
+        var boxKind = rrPhysKind(node.phys);
+        if (boxKind === "audio" || boxKind === "video") kids.forEach(function (k) {
+          if (!k.phys && !k.kids) k.kind = boxKind;
+        });
 
         var scene, kind;
         if (!kids.length) {
