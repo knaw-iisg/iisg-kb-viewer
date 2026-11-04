@@ -2119,13 +2119,24 @@
     background: var(--rr-desk);
   }
   .rr-window { position: relative; height: 150px; overflow: hidden; background: var(--rr-sky-bottom); }
-  .rr-harbour { position: absolute; inset: 0; width: 100%; height: 100%; display: block; transition: filter 0.6s; }
+  .rr-harbour { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  /* the reflection is strongest by the lamp (right) and gone on the left:
+     the dimmed copy of the view and the glass's reflections share one
+     mask, so the far end of the window stays perfectly see-through */
+  .rr-window { --rr-glass-mask: linear-gradient(to left, #000 0, #000 14%, rgba(0, 0, 0, 0.55) 42%, transparent 78%); }
+  .rr-harbour.is-dim {
+    filter: brightness(0.66) contrast(0.58) saturate(0.65) blur(0.8px);
+    -webkit-mask-image: var(--rr-glass-mask); mask-image: var(--rr-glass-mask);
+    opacity: 0; transition: opacity 0.6s;
+  }
+  .rr.is-night .rr-harbour.is-dim { opacity: 1; }
   /* With the lamp on in the dark, the glass mirrors the room and the
      harbour fades behind it: dimmer, flatter, a little soft; a mirrored
      glow of the lamp, the desk's own reflection along the bottom and a
      couple of glare streaks on top. */
   .rr-window::after {
     content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity 0.6s;
+    -webkit-mask-image: var(--rr-glass-mask); mask-image: var(--rr-glass-mask);
     background:
       radial-gradient(ellipse 90px 60px at calc(100% - 158px) 46%, rgba(255, 228, 165, 0.5), rgba(255, 205, 125, 0.16) 60%, transparent),
       linear-gradient(112deg, transparent 22%, rgba(255, 255, 255, 0.07) 27%, transparent 33%, transparent 61%, rgba(255, 255, 255, 0.05) 65%, transparent 70%),
@@ -2133,7 +2144,6 @@
       rgba(70, 72, 66, 0.16);
   }
   .rr.is-night .rr-window::after { opacity: 1; }
-  .rr.is-night .rr-harbour { filter: brightness(0.72) contrast(0.62) saturate(0.7) blur(0.7px); }
   .rr-harbour .rr-far { fill: var(--rr-far); }
   .rr-harbour .rr-tower { fill: var(--rr-tower); }
   .rr-harbour .rr-house1 { fill: var(--rr-house1); }
@@ -2161,6 +2171,16 @@
   .rr-harbour .rr-moon { fill: #f4efd8; opacity: var(--rr-night); }
   .rr-harbour .rr-star { fill: #fff; opacity: calc(var(--rr-night) * 0.7); }
   .rr-harbour .rr-passing { animation: rr-drift 70s linear infinite alternate; }
+  .rr-harbour .rr-mast { stroke: var(--rr-hullbase); stroke-width: 1; }
+  .rr-harbour .rr-navlight, .rr-harbour .rr-halo, .rr-harbour .rr-navrefl { opacity: var(--rr-night); }
+  .rr-harbour .rr-navlight.white { fill: #fffbe8; }
+  .rr-harbour .rr-navlight.red, .rr-harbour .rr-navrefl.red { fill: #ff5a4a; }
+  .rr-harbour .rr-navlight.green, .rr-harbour .rr-navrefl.green { fill: #4dff9a; }
+  .rr-harbour .rr-halo { opacity: calc(var(--rr-night) * 0.35); }
+  .rr-harbour .rr-halo.white { fill: #fff2c0; }
+  .rr-harbour .rr-halo.red { fill: #ff5a4a; }
+  .rr-harbour .rr-halo.green { fill: #4dff9a; }
+  .rr-harbour .rr-navrefl { opacity: calc(var(--rr-night) * 0.45); }
   @keyframes rr-drift { from { transform: translateX(-160px); } to { transform: translateX(260px); } }
   .rr-mullions {
     position: absolute; inset: 0; z-index: 2;
@@ -8588,7 +8608,10 @@
   function rrWindowEl() {
     var w = el("div", { class: "rr-window", "aria-hidden": "true" });
     if (!rrWindowSvg) rrWindowSvg = rrHarbourSvg();
-    w.innerHTML = rrWindowSvg + '<div class="rr-mullions"></div>';
+    // The view twice: clear, and dimmed behind the glass's reflection of
+    // the lit room -- the dimmed one masked so it's strongest by the lamp
+    // and gone on the left (see .rr-harbour.is-dim).
+    w.innerHTML = rrWindowSvg + rrWindowSvg.replace('class="rr-harbour"', 'class="rr-harbour is-dim"') + '<div class="rr-mullions"></div>';
     return w;
   }
 
@@ -8692,7 +8715,19 @@
     out.push(rect(0, 160, 480, 3, "rr-jettyedge"));
 
     // A boat passing by.
-    out.push('<g class="rr-passing"><path d="M520 136h70l-8 8h-56Z" class="rr-hull2"/><rect x="538" y="128" width="26" height="8" class="rr-cabin"/></g>');
+    // ... with its lights for the evening: cabin windows, a white masthead
+    // light, red (port) and green (starboard) side lights, all mirrored in
+    // the water below.
+    out.push('<g class="rr-passing">' +
+      '<rect x="541" y="146" width="3" height="16" class="rr-refl"/><rect x="551" y="146" width="3" height="12" class="rr-refl"/><rect x="558" y="146" width="2" height="14" class="rr-refl"/>' +
+      '<rect x="521" y="146" width="2" height="12" class="rr-navrefl red"/><rect x="587" y="146" width="2" height="12" class="rr-navrefl green"/>' +
+      '<path d="M520 136h70l-8 8h-56Z" class="rr-hull2"/><rect x="538" y="128" width="26" height="8" class="rr-cabin"/>' +
+      '<rect x="541" y="130" width="5" height="3.5" class="rr-win lit"/><rect x="549" y="130" width="5" height="3.5" class="rr-win lit"/><rect x="557" y="130" width="5" height="3.5" class="rr-win lit"/>' +
+      '<line x1="560" y1="128" x2="560" y2="117" class="rr-mast"/>' +
+      '<circle cx="560" cy="116" r="4" class="rr-halo white"/><circle cx="560" cy="116" r="1.4" class="rr-navlight white"/>' +
+      '<circle cx="522" cy="137" r="4" class="rr-halo red"/><circle cx="522" cy="137" r="1.4" class="rr-navlight red"/>' +
+      '<circle cx="588" cy="137" r="4" class="rr-halo green"/><circle cx="588" cy="137" r="1.4" class="rr-navlight green"/>' +
+      '</g>');
 
     return '<svg class="rr-harbour" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMax slice">' + out.join("") + "</svg>";
   }
