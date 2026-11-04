@@ -48,7 +48,7 @@ URL for a differently-hosted store.
 
 ## Features
 
-- **Home dashboard**: live per-graph and per-kind-of-item counts, fetched
+- **Overview dashboard** (`#view:home`): live per-graph and per-kind-of-item counts, fetched
   from the store on load, clickable to browse.
 - **Search**: matches `schema:name`/`rdfs:label`. Mixed-type result sets
   show as compact count-and-icon tiles (like the home dashboard) rather than
@@ -79,7 +79,8 @@ URL for a differently-hosted store.
   Dataverse subject, place and licence, a text filter, sorting and a
   random pick. A dataset's own page groups its facts the same way:
   Mandatory (missing ones shown dashed), Recommended, Other.
-- **Reading room** (sidebar "Reading room", `#reading:<uri>`): a finding
+- **Reading room** (the landing page, sidebar "Reading room",
+  `#reading:<uri>`; the dashboard below is "Overview", `#view:home`): a finding
   aid the way you'd consult it at IISG's actual reading room. A request
   slip finds a collection (by name or call number; scanned ones first),
   or take one of the digitized archives waiting on the trolley. The
@@ -105,10 +106,11 @@ URL for a differently-hosted store.
   recorder, or a film on a small viewer (`Video` canvases, `<video>`).
   Some catalogue manifests aren't on IISG's IIIF server (seen on
   multi-volume works and periodicals' `Z…` collections); the desk says so.
-  What's on at the institute sets the theme: the next (or running)
-  event from events-etl hangs on the window as a taped-up poster (its
-  picture, title and dates; hover to look closer, click for the event),
-  and the request desk's library shelf and trolley are picked to it.
+  What's on at the institute sets the theme: the event whose start date
+  is closest to today hangs on the window as a taped-up poster (its
+  picture, title and dates; hover to read it, click for the event), and
+  the request desk's library shelf and trolley are picked to it --
+  "Surprise me" draws both again from the same theme.
   Events have no subject links, so the theme is the event's own words --
   stems from its title (weighted up) and description, generic ones left
   out -- matched against digitized library titles and archive names;

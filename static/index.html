@@ -2825,9 +2825,10 @@
     position: absolute; z-index: 3; left: calc(20% + 22px); top: 10px; width: 92px; padding: 5px 5px 6px;
     border: none; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 3px;
     background: #f7f3ea; color: #1f1c18 !important; transform: rotate(-2deg); transform-origin: 50% 0;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35); transition: transform 0.2s;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35); transition: transform 0.25s;
   }
-  .rr-poster:hover, .rr-poster:focus-visible { transform: rotate(0deg) scale(2.1); z-index: 6; }
+  /* close enough to read the poster's own lettering */
+  .rr-poster:hover, .rr-poster:focus-visible { transform: rotate(0deg) scale(4.6); transform-origin: 18% 0; z-index: 6; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); }
   .rr-poster img { display: block; width: 100%; aspect-ratio: 12 / 7; object-fit: cover; background: #ccc; }
   .rr-poster-noimg { display: block; width: 100%; aspect-ratio: 12 / 7; background: linear-gradient(135deg, #b5452f, #2f5c8a); }
   .rr-poster-title { font-family: var(--font-display); font-weight: 600; font-size: 7.5px !important; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
@@ -2925,15 +2926,15 @@
 <div class="app">
   <aside class="rail">
     <div class="brand">
-      <span class="brand-mark" id="brand-home" title="Home">IISG Knowledge Base Explorer</span>
+      <span class="brand-mark" id="brand-home" title="Reading room">IISG Knowledge Base Explorer</span>
     </div>
     <div class="brand-sub">IISH knowledge graph</div>
 
     <div class="rail-section" id="rail-views">
       <div class="rail-heading"><span>Views</span></div>
       <ul class="rail-graphs">
-        <li><button class="rail-graph-btn" data-view="home"><span>Home</span></button></li>
         <li><button class="rail-graph-btn" data-view="readingroom"><span>Reading room</span></button></li>
+        <li><button class="rail-graph-btn" data-view="home"><span>Overview</span></button></li>
         <li><button class="rail-graph-btn" data-view="archive"><span>Archive</span></button></li>
         <li><button class="rail-graph-btn" data-view="books"><span>Books</span></button></li>
         <li><button class="rail-graph-btn" data-view="datasets"><span>Datasets</span></button></li>
@@ -4881,8 +4882,9 @@
   }
 
   // Brand/logo click -- back to the landing page, same as the bare site
-  // with no hash.
-  function navigateHome() { navigateToView("home"); }
+  // with no hash: the reading room's request desk. The former home page
+  // is the "Overview" view (#view:home).
+  function navigateHome() { navigateToView("readingroom"); }
 
   function syncFromHash() {
     var raw = decodeURIComponent(location.hash.replace(/^#/, ""));
@@ -4891,7 +4893,7 @@
     if (raw.indexOf("search:") === 0) { searchInput.value = raw.slice(7); runSearch(raw.slice(7), { fromHash: true }); return; }
     if (raw.indexOf("reading:") === 0) { currentUri = null; renderTrail(); renderReading(raw.slice(8)); return; }
     if (raw && /^https?:\/\//i.test(raw)) { currentUri = raw; loadEntity(raw); }
-    else { currentUri = null; renderTrail(); renderView("home"); }
+    else { currentUri = null; renderTrail(); renderView("readingroom"); }
   }
 
   window.addEventListener("popstate", syncFromHash);
@@ -8692,19 +8694,18 @@
       "      OPTIONAL { ?i <https://schema.org/thumbnail>/<https://schema.org/contentUrl> ?th0 } } }\n" +
       "} GROUP BY ?e";
     rrEventPromise = sparql(q).then(function (rows) {
-      var now = new Date().toISOString().slice(0, 16);
       var evs = rows.map(function (r) {
         var v = function (k) { return r[k] ? r[k].value : null; };
         return {
           uri: r.e.value, name: tidyTitle(v("name") || ""), start: v("start"), end: v("end") || v("start"),
           desc: v("desc") || "",
-          img: [v("thumb"), v("img")].filter(function (u) { return u && isLocalUri(u); })[0] || null
+          img: [v("thumb"), v("img")].filter(function (u) { return u && isLocalUri(u); })[0] || null,
+          full: v("img") && isLocalUri(v("img")) ? v("img") : null
         };
       }).filter(function (e) { return e.start && e.name; });
-      // the next one still to come (or running now); else the latest past
-      var coming = evs.filter(function (e) { return e.end >= now; }).sort(function (a, b) { return a.start < b.start ? -1 : 1; });
-      if (coming.length) return coming[0];
-      evs.sort(function (a, b) { return a.start < b.start ? 1 : -1; });
+      // the one whose start date is closest to today, past or future
+      var t = Date.now();
+      evs.sort(function (a, b) { return Math.abs(new Date(a.start) - t) - Math.abs(new Date(b.start) - t); });
       return evs[0] || null;
     }).catch(function () { rrEventPromise = null; return null; });
     return rrEventPromise;
@@ -8712,16 +8713,19 @@
 
   var RR_THEME_STOP = ("about after against again also among archiv around before being between book books bring century centur conference " +
     "discuss during early edited event events every exhibition first focus from history histor institut interna international into issues lecture " +
-    "modern netherland other over paper part presen presentation programme project research seminar social society speaker their there " +
+    "modern netherland other over paper part presen presentation programme project public published research seminar social society speaker their there " +
     "these thing those through together towards under until where which while will with within without workshop world years " +
-    "amsterdam iisg iish talk talks today dutch").split(" ");
+    "amsterdam iisg iish talk talks today dutch annual theme centre center hosts join welcome free entrance registration " +
+    "january february march april june july august september october november december " +
+    "monday tuesday wednesday thursday friday saturday sunday").split(" ");
 
   function rrThemeStems(ev) {
     var weights = {};
     function add(text, w) {
       (text.toLowerCase().match(/[a-zà-ÿ]{5,}/g) || []).forEach(function (word) {
-        // fold a negating/causative prefix (enslave, unpaid, ...) onto its root
-        if (word.length > 8 && /^(en|un|re|de)/.test(word)) word = word.slice(2);
+        // fold a causative/negating prefix (enslave, unpaid) onto its root;
+        // not re-/de- ("researchers" is not about searching)
+        if (word.length > 8 && /^(en|un)/.test(word)) word = word.slice(2);
         var stem = word.slice(0, 5);
         if (RR_THEME_STOP.some(function (st) { return stem === st.slice(0, 5); })) return;
         weights[stem] = (weights[stem] || 0) + w;
@@ -8729,8 +8733,12 @@
     }
     add(ev.name, 3);
     add(ev.desc, 1);
-    return Object.keys(weights).map(function (k) { return { stem: k, w: weights[k] }; })
-      .sort(function (a, b) { return b.w - a.w; }).slice(0, 6);
+    var stems = Object.keys(weights).map(function (k) { return { stem: k, w: weights[k] }; })
+      .sort(function (a, b) { return b.w - a.w; });
+    // a word the description mentions just once is noise next to the
+    // title's own words -- keep it only if there's little else to go on
+    var strong = stems.filter(function (st) { return st.w >= 2; });
+    return (strong.length >= 2 ? strong : stems).slice(0, 6);
   }
 
   function rrThemeScore(label, stems) {
@@ -8751,17 +8759,35 @@
       return items;
     }).then(function (items) {
       items.forEach(function (it) { it.score = rrThemeScore(it.label, stems); });
-      items.sort(function (a, b) { return b.score - a.score || (Math.random() - 0.5); });
-      // a shelf, not a list: no more than four books, then whatever else matched
-      var books = 0, out = [];
-      items.forEach(function (it) {
-        if (out.length >= 7) return;
-        if (it.kind === "book" && books >= 4) return;
-        if (it.kind === "book") books++;
-        out.push(it);
-      });
-      return out;
+      return items;
     });
+  }
+
+  // Best matches first -- or, to be surprised, a fresh draw from the
+  // whole pool, still weighted towards the better matches (each item's
+  // key random^(1/score), highest keys win).
+  function rrRankPool(pool, scoreOf, shuffle) {
+    // a redraw stays on theme: strong matches (a third of the best score
+    // or more) are drawn from first, weak ones only after them
+    var best = pool.reduce(function (m, x) { return Math.max(m, Math.min(20, scoreOf(x))); }, 0);
+    var keyed = pool.map(function (x) {
+      var sc = Math.max(1, Math.min(20, scoreOf(x)));
+      return { x: x, strong: sc >= best / 3, k: shuffle ? Math.pow(Math.random(), 1 / sc) : scoreOf(x) + Math.random() * 0.5 };
+    });
+    keyed.sort(function (a, b) { return (b.strong - a.strong) || (b.k - a.k); });
+    return keyed.map(function (o) { return o.x; });
+  }
+
+  // a shelf, not a list: no more than four books, then whatever else
+  function rrShelfFrom(ranked) {
+    var books = 0, out = [];
+    ranked.forEach(function (it) {
+      if (out.length >= 7) return;
+      if (it.kind === "book" && books >= 4) return;
+      if (it.kind === "book") books++;
+      out.push(it);
+    });
+    return out;
   }
 
   // A printed poster, taped inside the glass: the event's picture, title
@@ -8782,6 +8808,18 @@
     ]);
     var im = b.querySelector("img");
     if (im) im.onerror = function () { im.remove(); };
+    // the full-size picture, fetched the first time someone looks closer
+    if (im && ev.full && ev.full !== ev.img) {
+      var sharpen = function () {
+        var big = new Image();
+        big.onload = function () { im.src = ev.full; };
+        big.src = ev.full;
+        b.removeEventListener("mouseenter", sharpen);
+        b.removeEventListener("focus", sharpen);
+      };
+      b.addEventListener("mouseenter", sharpen);
+      b.addEventListener("focus", sharpen);
+    }
     b.addEventListener("click", function () { navigate(ev.uri); });
     return b;
   }
@@ -10429,56 +10467,77 @@
       });
     });
 
-    // Both the shelf and the trolley follow the event on the window.
+    // Both the shelf and the trolley follow the event on the window;
+    // "Surprise me" draws them again from the same theme.
     var themeP = rrFetchFeaturedEvent().then(function (ev) { return { ev: ev, stems: ev ? rrThemeStems(ev) : [] }; });
     function themeNote(ev, n) { return n && ev ? " — picked for “" + ev.name + "”" : ""; }
+    var trolleyData = null, shelfData = null;
+
+    function drawTrolley(shuffle) {
+      var d = trolleyData;
+      if (!d || gen !== rrGen) return;
+      // archives the event names outright ("ARCH00405 - digitized") lead
+      // the first draw; then archives on its theme; the rest at random
+      var ranked = rrRankPool(d.themed, function (x) { return x.sc; }, shuffle).slice(0, RR_ON_TROLLEY);
+      var picks = ranked.map(function (x) { return x.r; });
+      var pool = d.roots.filter(function (r) { return picks.indexOf(r) === -1; });
+      while (picks.length < RR_ON_TROLLEY && pool.length) picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+      clear(trolleySlot);
+      trolleySlot.appendChild(el("h3", { class: "rr-subhead", text: "Waiting on the trolley" + themeNote(d.ev, ranked.length) }));
+      var boxes = picks.map(function (r, i) {
+        var bx = rrBoxEl({ uri: r.uri, label: r.label, scanned: r.scanned, kids: 1 }, i, { no: rrCallNumber(r.uri), meta: r.dates || "" });
+        bx.addEventListener("click", function () { readingNavigate(r.uri); });
+        return bx;
+      });
+      trolleySlot.appendChild(rrTrolleyEl(boxes));
+    }
+
+    function drawShelf(shuffle) {
+      var d = shelfData;
+      if (!d || gen !== rrGen) return Promise.resolve();
+      var items = rrShelfFrom(rrRankPool(d.pool, function (x) { return x.score; }, shuffle));
+      // a short shelf on theme: fill it up with the usual random mix
+      var topUp = items.length >= 7 ? Promise.resolve([]) : rrFetchLibraryPicks().catch(function () { return []; });
+      return topUp.then(function (rnd) {
+        if (gen !== rrGen) return;
+        var have = items.map(function (x) { return x.uri; });
+        // themed first; the top-up kept to the same "at most four books" mix
+        var all = rrShelfFrom(items.concat(rnd.filter(function (x) { return have.indexOf(x.uri) === -1; })));
+        clear(libSlot);
+        if (!all.length) return;
+        libSlot.appendChild(el("h3", { class: "rr-subhead", text: "Up from the library stacks" + themeNote(d.ev, items.length) }));
+        var shelf = el("div", { class: "rr-bookshelf" });
+        all.forEach(function (it, i) { shelf.appendChild(rrLibObjEl(it, i)); });
+        libSlot.appendChild(shelf);
+      });
+    }
+
+    surprise.title = "Bring other things on the same theme";
+    surprise.addEventListener("click", function () {
+      drawShelf(true);
+      drawTrolley(true);
+      libSlot.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
 
     Promise.all([rrFetchDigitizedRoots(), themeP]).then(function (res) {
       var roots = res[0], theme = res[1];
       if (gen !== rrGen || !roots.length) return;
       roots.forEach(function (r) { scannedByRoot[r.uri] = r.scanned; });
-      surprise.addEventListener("click", function () {
-        readingNavigate(roots[Math.floor(Math.random() * roots.length)].uri);
-      });
-      // archives the event names outright ("ARCH00405 - digitized") first,
-      // then those on its theme (best match first), the rest at random
       var named = ((theme.ev && theme.ev.desc) || "").match(/\b(ARCH|COLL)\d{5}\b/g) || [];
       var themed = roots.map(function (r) {
         var sc = rrThemeScore(r.label, theme.stems);
         if (named.indexOf(rrCallNumber(r.uri)) !== -1) sc += 1000;
         return { r: r, sc: sc };
-      })
-        .filter(function (x) { return x.sc > 0; })
-        .sort(function (a, b) { return b.sc - a.sc || b.r.scanned - a.r.scanned; })
-        .slice(0, RR_ON_TROLLEY).map(function (x) { return x.r; });
-      var pool = roots.filter(function (r) { return themed.indexOf(r) === -1; });
-      var picks = themed.slice();
-      while (picks.length < RR_ON_TROLLEY && pool.length) picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-      trolleySlot.appendChild(el("h3", { class: "rr-subhead", text: "Waiting on the trolley" + themeNote(theme.ev, themed.length) }));
-      var boxes = picks.map(function (r, i) {
-        var b = rrBoxEl({ uri: r.uri, label: r.label, scanned: r.scanned, kids: 1 }, i, { no: rrCallNumber(r.uri), meta: r.dates || "" });
-        b.addEventListener("click", function () { readingNavigate(r.uri); });
-        return b;
-      });
-      trolleySlot.appendChild(rrTrolleyEl(boxes));
+      }).filter(function (x) { return x.sc > 0; });
+      trolleyData = { roots: roots, themed: themed, ev: theme.ev };
+      drawTrolley(false);
     }).catch(function () { surprise.disabled = true; });
 
     themeP.then(function (theme) {
-      return rrThemedLibrary(theme.stems).catch(function () { return []; }).then(function (themed) {
-        if (themed.length >= 4) return { items: themed, ev: theme.ev, themed: true };
-        // too little on theme: top up with the usual random mix
-        return rrFetchLibraryPicks().then(function (rnd) {
-          var have = themed.map(function (x) { return x.uri; });
-          return { items: themed.concat(rnd.filter(function (x) { return have.indexOf(x.uri) === -1; })).slice(0, 7), ev: theme.ev, themed: themed.length > 0 };
-        });
+      return rrThemedLibrary(theme.stems).catch(function () { return []; }).then(function (pool) {
+        shelfData = { pool: pool, ev: theme.ev };
+        return drawShelf(false);
       });
-    }).then(function (res) {
-      var items = res.items;
-      if (gen !== rrGen || !items.length) return;
-      libSlot.appendChild(el("h3", { class: "rr-subhead", text: "Up from the library stacks" + themeNote(res.ev, res.themed) }));
-      var shelf = el("div", { class: "rr-bookshelf" });
-      items.forEach(function (it, i) { shelf.appendChild(rrLibObjEl(it, i)); });
-      libSlot.appendChild(shelf);
     }).catch(function () { /* the archives still work without it */ });
 
     input.focus({ preventScroll: true });
@@ -10501,14 +10560,14 @@
     history.replaceState({ view: initialHash.slice(5) }, "", "#" + initialHash);
     renderView(initialHash.slice(5));
   } else {
-    // Default landing, no hash at all: the landing page -- see
-    // renderLanding().
-    renderView("home");
+    // Default landing, no hash at all: the reading room (renderReadingDesk).
+    // The overview dashboard is #view:home.
+    renderView("readingroom");
   }
   // Not in the reading room: there the keys turn pages and put things
   // back (and the request desk focuses its own slip), while Esc in the
   // search box would leave for the home page.
-  if (!/^(reading:|view:readingroom$)/.test(initialHash)) searchInput.focus({ preventScroll: true });
+  if (initialHash && !/^(reading:|view:readingroom$)/.test(initialHash)) searchInput.focus({ preventScroll: true });
 })();
 </script>
 </body>
