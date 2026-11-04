@@ -96,6 +96,13 @@ URL for a differently-hosted store.
   volume comes from the node's place in the tree and its
   `iisgv:physicalDescription` ("1 map", "3 Briefe", "1 doos", ...).
   Every archive record page links into it.
+  Recordings (oral-history interviews, recorded meetings: IIIF manifests
+  whose canvases are `Sound`, one per tape side) go on a reel-to-reel
+  tape recorder instead: the sides as tape boxes, playing straight from
+  access.iisg.amsterdam through a plain `<audio>` element, while the reels
+  turn and wind over, the counter runs and a VU needle follows the signal
+  (Web Audio; the files are served with open CORS). Sides behind IIIF
+  Auth show the manifest's own "Access restricted" notice instead.
 - **Hierarchy breadcrumbs**: findingaid-etl's nested archive components
   (collection > series > ... > file, up to 12 levels via `sdo:isPartOf`) get
   a clickable trail on the record page and a read-only path on matching
