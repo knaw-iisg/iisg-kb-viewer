@@ -2119,7 +2119,21 @@
     background: var(--rr-desk);
   }
   .rr-window { position: relative; height: 150px; overflow: hidden; background: var(--rr-sky-bottom); }
-  .rr-harbour { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .rr-harbour { position: absolute; inset: 0; width: 100%; height: 100%; display: block; transition: filter 0.6s; }
+  /* With the lamp on in the dark, the glass mirrors the room and the
+     harbour fades behind it: dimmer, flatter, a little soft; a mirrored
+     glow of the lamp, the desk's own reflection along the bottom and a
+     couple of glare streaks on top. */
+  .rr-window::after {
+    content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity 0.6s;
+    background:
+      radial-gradient(ellipse 90px 60px at calc(100% - 158px) 46%, rgba(255, 228, 165, 0.5), rgba(255, 205, 125, 0.16) 60%, transparent),
+      linear-gradient(112deg, transparent 22%, rgba(255, 255, 255, 0.07) 27%, transparent 33%, transparent 61%, rgba(255, 255, 255, 0.05) 65%, transparent 70%),
+      linear-gradient(to top, rgba(95, 125, 130, 0.5), rgba(95, 125, 130, 0.12) 38%, transparent 60%),
+      rgba(70, 72, 66, 0.16);
+  }
+  .rr.is-night .rr-window::after { opacity: 1; }
+  .rr.is-night .rr-harbour { filter: brightness(0.72) contrast(0.62) saturate(0.7) blur(0.7px); }
   .rr-harbour .rr-far { fill: var(--rr-far); }
   .rr-harbour .rr-tower { fill: var(--rr-tower); }
   .rr-harbour .rr-house1 { fill: var(--rr-house1); }
@@ -2149,7 +2163,7 @@
   .rr-harbour .rr-passing { animation: rr-drift 70s linear infinite alternate; }
   @keyframes rr-drift { from { transform: translateX(-160px); } to { transform: translateX(260px); } }
   .rr-mullions {
-    position: absolute; inset: 0;
+    position: absolute; inset: 0; z-index: 2;
     background: repeating-linear-gradient(90deg, var(--rr-frame) 0 9px, transparent 9px 20%);
     border-top: 6px solid var(--rr-frame); border-bottom: 11px solid var(--rr-frame);
     box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.08);
@@ -2708,6 +2722,13 @@
     .rr-desk { grid-template-columns: minmax(0, 1fr); padding: 18px 14px 26px; }
     .rr-props { order: -1; flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
     .rr-window { height: 96px; }
+    .rr-window::after {
+      background:
+        radial-gradient(ellipse 60px 40px at calc(100% - 92px) 40%, rgba(255, 228, 165, 0.5), rgba(255, 205, 125, 0.16) 60%, transparent),
+        linear-gradient(112deg, transparent 22%, rgba(255, 255, 255, 0.07) 27%, transparent 33%),
+        linear-gradient(to top, rgba(95, 125, 130, 0.5), transparent 60%),
+        rgba(70, 72, 66, 0.16);
+    }
     /* narrow: on the window sill (96px window), at the right */
     .rr-lamp { width: 120px; right: 16px; top: 21px; }
     .rr-desk::after { background: radial-gradient(ellipse 280px 200px at calc(100% - 71px) 0px, rgba(255, 214, 140, 0.32), transparent 75%); }
