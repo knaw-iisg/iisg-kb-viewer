@@ -2278,7 +2278,9 @@
   .rr-shelf .rr-box { flex: 0 1 132px; min-width: 0; }
   .rr-trolley-handle {
     /* push bar: out from the right upright and back, with a rubber grip */
-    position: absolute; right: 8px; top: -14px; width: 48px; height: 112px;
+    /* both ends of the bar sit on the right upright (52-61px in from the
+       trolley's right edge), starting at its top */
+    position: absolute; right: 4px; top: 4px; width: 55px; height: 108px;
     border: 8px solid var(--rr-steel); border-left: none; border-radius: 0 22px 22px 0;
     filter: drop-shadow(0 2px 0 var(--rr-steel-dark));
   }
@@ -2530,6 +2532,100 @@
   .rr-deskbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin-top: 20px; }
   .rr-deskbar-pos { flex-basis: 100%; text-align: center; color: #eef3f2; font-size: 12.5px; }
 
+  /* ---- a recording: reel-to-reel tape recorder (rrRecorderEl) ---- */
+  .rr-openfolder.is-audio { background: #2e383d; }
+  .rr-openfolder.is-audio .rr-leaf-left { border-right-color: #1f272b; }
+  .rr-openfolder.is-audio .rr-slip-links a { color: #bcd6ea; }
+  .rr-recorder { position: relative; width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 12px; }
+  .rr-deck svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 10px 14px var(--rr-shadow)); }
+  .rr-deck-plate { fill: #c9cdd0; stroke: #8e9498; stroke-width: 1.5; }
+  .rr-deck-inset { fill: #24282b; }
+  .rr-tape-wound { fill: #4b3024; stroke: #2a1a12; stroke-width: 1; }
+  .rr-reel-flange { fill: #d5dade; fill-opacity: 0.22; stroke: #e6e9eb; stroke-width: 2.5; }
+  .rr-reel-cut { fill: #0c0e10; fill-opacity: 0.35; stroke: #e6e9eb; stroke-opacity: 0.6; stroke-width: 1; }
+  .rr-reel-hub { fill: #dfe3e5; stroke: #80878c; stroke-width: 2; }
+  .rr-reel-key { fill: #80878c; }
+  .rr-tape-path { fill: none; stroke: #4b3024; stroke-width: 2.4; }
+  .rr-roller { fill: #c3c8cb; stroke: #6c7378; stroke-width: 2; }
+  .rr-head { fill: #a9afb3; stroke: #5f666b; stroke-width: 1.5; }
+  .rr-head-gap { fill: #2a2d30; }
+  .rr-deck-brand { fill: #8d9397; font-family: var(--font-mono); font-size: 10px; text-anchor: middle; letter-spacing: 0.1em; }
+
+  .rr-deck-panel {
+    display: grid; grid-template-columns: auto auto 1fr; grid-template-areas: "counter vu keys" "scrub scrub scrub";
+    align-items: center; gap: 10px 14px;
+    background: linear-gradient(#d4d8db, #b4b9bd); border-radius: 10px; padding: 12px 14px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 6px 12px var(--rr-shadow);
+  }
+  .rr-counter-wrap { grid-area: counter; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .rr-counter {
+    font-family: var(--font-mono); font-size: 20px; letter-spacing: 0.08em; color: #f2f2f2;
+    background: #1d2023; padding: 2px 8px; border-radius: 3px; box-shadow: inset 0 2px 3px #000;
+    min-width: 92px; text-align: center;
+  }
+  .rr-counter-total { font-family: var(--font-mono); font-size: 11px; color: #3b4246; padding-left: 2px; }
+  .rr-vu { grid-area: vu; width: 88px; background: #f1e6c4; border: 2px solid #6e757a; border-radius: 4px; box-shadow: inset 0 0 8px rgba(120, 90, 20, 0.35); }
+  .rr-vu svg { display: block; width: 100%; height: auto; }
+  .rr-vu-scale { fill: none; stroke: #2b2b2b; stroke-width: 1.5; }
+  .rr-vu-red { fill: none; stroke: #c0392b; stroke-width: 3; }
+  .rr-vu-label { font-family: var(--font-mono); font-size: 10px; text-anchor: middle; fill: #2b2b2b; }
+  .rr-vu-needle { stroke: #1a1a1a; stroke-width: 1.6; stroke-linecap: round; }
+  .rr-keys { grid-area: keys; display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+  .rr-key {
+    min-width: 46px; height: 38px; border: 1px solid #6e757a; border-radius: 4px 4px 6px 6px; cursor: pointer;
+    background: linear-gradient(#f4f5f6, #d2d6d9); color: #2b3034 !important; font-size: 13px !important;
+    box-shadow: 0 4px 0 #81888d, 0 5px 6px rgba(0, 0, 0, 0.3); transition: transform 0.06s, box-shadow 0.06s;
+  }
+  .rr-key:active:not(:disabled), .rr-recorder.is-playing .rr-key.play {
+    transform: translateY(3px); box-shadow: 0 1px 0 #81888d, 0 2px 3px rgba(0, 0, 0, 0.3);
+  }
+  .rr-recorder.is-playing .rr-key.play { background: linear-gradient(#e2f0e2, #b9d6ba); }
+  .rr-key:disabled { opacity: 0.45; cursor: default; }
+  .rr-scrub { grid-area: scrub; width: 100%; accent-color: #4b3024; }
+
+  .rr-restricted {
+    position: absolute; left: 50%; top: 18%; transform: translateX(-50%) rotate(-2deg); width: min(80%, 340px);
+    background: var(--rr-paper); color: var(--rr-ink); padding: 12px 16px; border: 2px solid var(--rr-scan);
+    box-shadow: 0 8px 16px var(--rr-shadow); text-align: center;
+  }
+  .rr-restricted strong { font-family: var(--font-display); color: var(--rr-scan); font-size: 16px; letter-spacing: 0.02em; }
+  .rr-restricted p { margin: 6px 0 8px; font-size: 13.5px; }
+  .rr-restricted a { color: #2d4f7c; font-size: 13px; }
+  .rr-recorder.is-locked .rr-deck { filter: grayscale(0.6) brightness(0.85); }
+
+  .rr-tapeboxes { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  .rr-tapebox {
+    position: relative; width: 92px; height: 86px; border: none; cursor: pointer; padding: 0;
+    background: linear-gradient(135deg, #e9eef2, #c9d3db); border-radius: 2px;
+    border-top: 6px solid #2f5c8a; box-shadow: 0 4px 8px var(--rr-shadow);
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px;
+    transition: transform 0.15s;
+  }
+  .rr-tapebox:hover { transform: translateY(-4px) rotate(-1deg); }
+  .rr-tapebox[aria-current="true"] { outline: 3px solid #f4f7f6; outline-offset: 2px; transform: translateY(-4px); }
+  .rr-tapebox-reel {
+    position: absolute; top: 8px; left: 50%; width: 34px; height: 34px; margin-left: -17px; border-radius: 50%;
+    background: radial-gradient(circle, #fff 0 4px, #8a929a 4px 6px, transparent 6px), radial-gradient(circle, #4b3024 0 15px, #2a1a12 15px 17px, transparent 17px);
+    opacity: 0.85;
+  }
+  .rr-tapebox-label { display: flex; flex-direction: column; align-items: center; padding: 0 4px 6px; font-size: 11px !important; color: #23313d; line-height: 1.25; }
+  .rr-tapebox-label strong { font-family: var(--font-mono); font-size: 12px; }
+  .rr-tapebox-label em { font-style: normal; color: #fff; background: var(--rr-scan); border-radius: 6px; padding: 0 5px; font-size: 9.5px; }
+  .rr-tapebox.locked { opacity: 0.8; }
+
+  /* recordings in a box: a tape in its box, standing on edge */
+  .rr-file.kind-audio { background: #dfe6ec; border-top: 4px solid #2f5c8a; margin-top: 10px; }
+  .rr-file.kind-audio .rr-tab { display: none; }
+  .rr-file.kind-audio::after {
+    content: ""; position: absolute; right: 44px; top: 50%; width: 20px; height: 20px; margin-top: -10px; border-radius: 50%;
+    background: radial-gradient(circle, #fff 0 2px, #4b3024 2px 8px, #2a1a12 8px 9px, transparent 9px);
+  }
+  @media (max-width: 520px) {
+    .rr-deck-panel { grid-template-columns: auto 1fr; grid-template-areas: "counter vu" "keys keys" "scrub scrub"; }
+    .rr-keys { justify-content: center; }
+    .rr-vu { justify-self: end; }
+  }
+
   /* ---- request desk ---- */
   .rr-request {
     max-width: 640px; background: #fff8e2; color: var(--rr-ink); padding: 16px 18px 18px; border-radius: 2px;
@@ -2587,7 +2683,7 @@
     .rr-crumb { flex: none; max-width: 180px; }
     .rr-record-link { flex: none; }
     .rr-trolley { padding: 0 38px 0 0; }
-    .rr-trolley-handle { right: 4px; width: 38px; height: 92px; }
+    .rr-trolley-handle { right: 0; width: 44px; height: 92px; }
     .rr-box-title { font-size: 12px; }
     .rr-shelf { padding: 12px 6px 0; gap: 18px 8px; }
     .rr-trolley-base { margin: 0 10px; }
@@ -2611,11 +2707,11 @@
       <div class="rail-heading"><span>Views</span></div>
       <ul class="rail-graphs">
         <li><button class="rail-graph-btn" data-view="home"><span>Home</span></button></li>
-        <li><button class="rail-graph-btn" data-view="archive"><span>Archive</span></button></li>
         <li><button class="rail-graph-btn" data-view="readingroom"><span>Reading room</span></button></li>
+        <li><button class="rail-graph-btn" data-view="archive"><span>Archive</span></button></li>
         <li><button class="rail-graph-btn" data-view="books"><span>Books</span></button></li>
         <li><button class="rail-graph-btn" data-view="datasets"><span>Datasets</span></button></li>
-        <li><button class="rail-graph-btn" data-view="person"><span>Person</span></button></li>
+        <li><button class="rail-graph-btn" data-view="person"><span>Persons</span></button></li>
         <li><button class="rail-graph-btn" data-view="events"><span>Events@IISG</span></button></li>
       </ul>
 
@@ -8110,6 +8206,7 @@
 
   // Earliest match wins, so "1 omslag met 3 brieven" is a folder.
   var RR_PHYS_KINDS = [
+    ["audio", /\b(audio|sound|geluid\w*|tonband\w*|cassettes?|audiotapes?|\d+\s*min|minuten)\b/i],
     ["box", /\b(doos|dozen|box(es)?|pak(ken)?|kartons?|bo[iî]tes?|cajas?|schachteln?)\b/i],
     ["volume", /\b(deel|delen|vols?|volumes?|b[äa]nde?|registers?|cahiers?|notebooks?|tomes?|schriften?)\b/i],
     ["photo", /\b(foto'?s?|photos?|photographs?|fotografi\w*|negatie\w*|dia'?s)\b/i],
@@ -8119,7 +8216,7 @@
 
   var RR_KIND_NAMES = {
     box: "box", bundle: "bundle", folder: "folder", letter: "letter",
-    photo: "photo", volume: "volume", collection: "archive"
+    photo: "photo", volume: "volume", audio: "recording", collection: "archive"
   };
 
   function rrPhysKind(phys) {
@@ -8260,22 +8357,37 @@
     });
   }
 
-  // Every page of an item, from its IIIF manifest (Presentation 3, with a
-  // fallback for 2). Shaped like fetchRecordImages' output, so the shared
-  // lightbox (openImageLightbox) can show them full screen.
-  function rrFetchPages(manifestUrl) {
-    if (!manifestUrl || !isSafeHref(manifestUrl) || !isLocalUri(manifestUrl)) return Promise.resolve([]);
+  // Everything on an item's IIIF manifest (Presentation 3, with a
+  // fallback for 2): its pages, shaped like fetchRecordImages' output so
+  // the shared lightbox (openImageLightbox) can show them full screen,
+  // and its sound recordings (one Sound canvas per tape side), for the
+  // tape recorder (rrRecorderEl).
+  function rrFetchMedia(manifestUrl) {
+    if (!manifestUrl || !isSafeHref(manifestUrl) || !isLocalUri(manifestUrl)) return Promise.resolve({ pages: [], sounds: [] });
     return rrCached(rrManifestCache, manifestUrl, function () {
       return fetch(manifestUrl).then(function (r) {
         if (!r.ok) throw new Error("manifest " + r.status);
         return r.json();
       }).then(function (m) {
-        var pages = [];
+        var pages = [], sounds = [];
         function svcId(s) { s = Array.isArray(s) ? s[0] : s; return s ? (s["@id"] || s.id) : null; }
         if (Array.isArray(m.items)) {
           m.items.forEach(function (canvas, i) {
             var body = null;
             try { body = canvas.items[0].items[0].body; } catch (e) { body = null; }
+            if (body && (body.type === "Sound" || /^audio\//.test(body.format || ""))) {
+              // IIIF Auth on the file: listening needs a login at IISG.
+              var auth = (Array.isArray(body.service) ? body.service : []).filter(function (sv) {
+                return /auth/i.test((sv["@type"] || sv.type || "") + " " + (sv.profile || ""));
+              })[0];
+              if (body.id && isSafeHref(body.id) && isLocalUri(body.id)) sounds.push({
+                url: body.id, duration: body.duration || canvas.duration || null,
+                restricted: !!auth,
+                failureHeader: auth ? auth.failureHeader : null,
+                failureDescription: auth ? auth.failureDescription : null
+              });
+              return;
+            }
             var svc = body ? svcId(body.service) : null;
             if (!svc && canvas.thumbnail) svc = svcId(canvas.thumbnail[0] && canvas.thumbnail[0].service);
             if (svc) pages.push({ canvas: canvas.id, svc: svc, w: canvas.width, h: canvas.height });
@@ -8287,7 +8399,7 @@
             if (svc) pages.push({ canvas: canvas["@id"], svc: svc, w: canvas.width, h: canvas.height });
           });
         }
-        return pages.filter(function (p) { return isLocalUri(p.svc); }).map(function (p, i) {
+        pages = pages.filter(function (p) { return isLocalUri(p.svc); }).map(function (p, i) {
           var service = p.svc.replace(/\/+$/, "");
           return {
             canvas: p.canvas, manifest: manifestUrl, pos: i, service: service,
@@ -8295,6 +8407,8 @@
             width: p.w || null, height: p.h || null, level: null, conditions: null, credit: null
           };
         });
+        // A sound canvas's thumbnail is only a stand-in picture, not a page.
+        return { pages: sounds.length ? [] : pages, sounds: sounds };
       });
     });
   }
@@ -8374,6 +8488,7 @@
     letter: '<svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6Z"/><path d="M9 10h7M9 14h7M9 18h4"/></svg>',
     photo: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/><path d="M4 16l5-5 4 4 2-2 5 5"/></svg>',
     volume: '<svg viewBox="0 0 24 24"><path d="M6 3h12v18H6Z"/><path d="M9 3v18"/></svg>',
+    audio: '<svg viewBox="0 0 24 24"><circle cx="7" cy="11" r="4"/><circle cx="17" cy="11" r="4"/><path d="M3 19h18M7 15l2 4M17 15l-2 4"/></svg>',
     collection: '<svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M5 20V8h4v12M10 20V5h4v15M15 20v-9h4v9"/></svg>'
   };
 
@@ -8743,7 +8858,9 @@
     if (chunk >= chunks) chunk = 0;
 
     var sheets = kids.filter(function (k) { return k.kind === "letter" || k.kind === "photo"; }).length;
-    var noun = sheets * 2 > kids.length ? ["letter or sheet", "letters and sheets"] : ["folder", "folders"];
+    var tapes = kids.filter(function (k) { return k.kind === "audio"; }).length;
+    var noun = tapes * 2 > kids.length ? ["recording", "recordings"]
+      : sheets * 2 > kids.length ? ["letter or sheet", "letters and sheets"] : ["folder", "folders"];
     var scanned = kids.reduce(function (s, k) { return s + k.scanned; }, 0);
     stage.appendChild(rrCaption(
       (isBundle ? "You untie the bundle: " : "You lift the lid: ") + rrCount(kids.length, noun[0], noun[1]) +
@@ -8842,10 +8959,11 @@
     var native = node.native && isSafeHref(node.native) ? node.native : null;
     if (native) links.appendChild(el("a", { href: native, target: "_blank", rel: "noopener", text: "IISG catalogue ↗" }));
 
-    stage.appendChild(rrCaption(
+    var caption = rrCaption(
       "On your desk: " + RR_KIND_NAMES[kind] + (node.ident ? " " + node.ident : "") + ", " + node.label,
-      node.manifest ? "Turn the pages with ← →, click a page to look closer." : null
-    ));
+      node.manifest ? (kind === "audio" ? "Threading the tape…" : "Turn the pages with ← →, click a page to look closer.") : null
+    );
+    stage.appendChild(caption);
     stage.appendChild(folder);
 
     // Desk controls: previous / put back / next, through the box's order.
@@ -8960,8 +9078,24 @@
     });
 
     var gen = rrGen;
-    rrFetchPages(node.manifest).then(function (ps) {
+    rrFetchMedia(node.manifest).then(function (media) {
       if (gen !== rrGen) return;
+      if (media.sounds.length) {
+        // A recording: the tape recorder takes the place of the pages.
+        var rec = rrRecorderEl(node, media.sounds, { viewer: node.manifest && isSafeHref(node.manifest) ? UNIVERSAL_VIEWER + node.manifest : null });
+        clear(right);
+        right.appendChild(rec.el);
+        pagesStrip.remove();
+        folder.classList.add("is-audio");
+        caption.querySelector(".rr-caption-main").textContent = "On your desk: a tape" + (node.ident ? ", inv. no. " + node.ident : "") + " — " + node.label;
+        var sub = caption.querySelector(".rr-caption-sub");
+        var open = media.sounds.filter(function (snd) { return !snd.restricted; }).length;
+        if (sub) sub.textContent = !open ? "Restricted: this recording can only be heard at the IISG."
+          : "Space to play or pause, ← → to wind 10 seconds" + (media.sounds.length > 1 ? "; " + media.sounds.length + " sides, in the tape boxes below the deck." : ".");
+        Object.keys(rec.keys).forEach(function (k) { keys[k] = rec.keys[k]; });
+        return;
+      }
+      var ps = media.pages;
       if (!ps.length) throw new Error("no pages");
       pages = ps;
       ps.forEach(function (p, i) {
@@ -8987,6 +9121,259 @@
     keys.Home = function () { show(0, -1); };
     keys.End = function () { show(pages.length - 1, 1); };
     return keys;
+  }
+
+  // ---- A recording on the desk: a reel-to-reel tape recorder ----
+  // For an item whose IIIF manifest holds Sound canvases instead of
+  // images (oral-history interviews, recorded meetings: one canvas per
+  // tape side, each an audio/mp3 file on access.iisg.amsterdam). The
+  // sides are laid out as tape boxes; the one on the deck plays through
+  // a plain <audio> element, while the reels turn (faster as a reel
+  // empties, as real ones do), the tape winds over from left to right,
+  // the counter runs and a VU needle follows the signal. Sides behind
+  // IIIF Auth ("Access restricted") show the manifest's own notice
+  // rather than a player that can only fail.
+
+  var RR_REEL_MIN = 20, RR_REEL_MAX = 66;
+
+  function rrClock(sec) {
+    if (!isFinite(sec) || sec < 0) sec = 0;
+    sec = Math.floor(sec);
+    var h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
+    return (h ? h + ":" + pad2(m) : pad2(m)) + ":" + pad2(s);
+  }
+
+  function rrReelSvg(id) {
+    // flange with three cut-outs over the wound tape; hub in the middle
+    function pt(a, rr) { var t = a * Math.PI / 180; return (rr * Math.cos(t)).toFixed(1) + " " + (rr * Math.sin(t)).toFixed(1); }
+    var cut = "";
+    for (var k = 0; k < 3; k++) {
+      var a0 = k * 120 - 38, a1 = k * 120 + 38;
+      cut += '<path d="M' + pt(a0, 24) + 'L' + pt(a0, 64) + 'A64 64 0 0 1 ' + pt(a1, 64) + 'L' + pt(a1, 24) + 'A24 24 0 0 0 ' + pt(a0, 24) + 'Z" class="rr-reel-cut"/>';
+    }
+    return '<g class="rr-reel" id="' + id + '">' +
+      '<circle r="' + RR_REEL_MAX + '" class="rr-tape-wound"/>' +
+      '<g class="rr-reel-spin"><circle r="74" class="rr-reel-flange"/>' + cut +
+      '<circle r="15" class="rr-reel-hub"/><path d="M0 -6L5 3H-5Z" class="rr-reel-key"/></g></g>';
+  }
+
+  function rrRecorderEl(node, sounds, opts) {
+    var root = el("div", { class: "rr-recorder" });
+    var deckWrap = el("div", { class: "rr-deck" });
+    deckWrap.innerHTML =
+      '<svg viewBox="0 0 460 250" role="img" aria-label="Tape recorder">' +
+      '<rect x="4" y="4" width="452" height="242" rx="14" class="rr-deck-plate"/>' +
+      '<rect x="14" y="14" width="432" height="222" rx="9" class="rr-deck-inset"/>' +
+      '<g transform="translate(118 96)">' + rrReelSvg("rr-reel-l") + '</g>' +
+      '<g transform="translate(342 96)">' + rrReelSvg("rr-reel-r") + '</g>' +
+      '<path class="rr-tape-path" d=""/>' +
+      '<circle cx="168" cy="200" r="7" class="rr-roller"/><circle cx="292" cy="200" r="7" class="rr-roller"/>' +
+      '<rect x="200" y="196" width="60" height="26" rx="4" class="rr-head"/>' +
+      '<rect x="226" y="196" width="8" height="8" class="rr-head-gap"/>' +
+      '<text x="230" y="236" class="rr-deck-brand">IISG · 19 cm/s</text>' +
+      '</svg>';
+    root.appendChild(deckWrap);
+    var svg = deckWrap.firstChild;
+    var reelL = svg.querySelector("#rr-reel-l"), reelR = svg.querySelector("#rr-reel-r");
+    var spinL = reelL.querySelector(".rr-reel-spin"), spinR = reelR.querySelector(".rr-reel-spin");
+    var woundL = reelL.querySelector(".rr-tape-wound"), woundR = reelR.querySelector(".rr-tape-wound");
+    var tapePath = svg.querySelector(".rr-tape-path");
+
+    // Control panel: counter, VU meter, piano keys, position.
+    var panel = el("div", { class: "rr-deck-panel" });
+    var counter = el("div", { class: "rr-counter", "aria-live": "off", text: "00:00" });
+    var total = el("span", { class: "rr-counter-total", text: "/ 00:00" });
+    var vu = el("div", { class: "rr-vu", "aria-hidden": "true" });
+    vu.innerHTML = '<svg viewBox="0 0 100 56"><path d="M12 48A44 44 0 0 1 88 48" class="rr-vu-scale"/>' +
+      '<path d="M70 18A44 44 0 0 1 88 48" class="rr-vu-red"/><text x="50" y="40" class="rr-vu-label">VU</text>' +
+      '<line x1="50" y1="52" x2="50" y2="12" class="rr-vu-needle"/></svg>';
+    var needle = vu.querySelector(".rr-vu-needle");
+    function key(label, aria, cls) { return el("button", { type: "button", class: "rr-key " + (cls || ""), "aria-label": aria, title: aria, text: label }); }
+    var kBack = key("◀◀", "Back 10 seconds (←)");
+    var kPlay = key("▶", "Play (space)", "play");
+    var kStop = key("■", "Stop");
+    var kFwd = key("▶▶", "Forward 10 seconds (→)");
+    var keysRow = el("div", { class: "rr-keys" }, [kBack, kPlay, kStop, kFwd]);
+    var scrub = el("input", { type: "range", class: "rr-scrub", min: "0", max: "1000", value: "0", "aria-label": "Position on the tape" });
+    panel.appendChild(el("div", { class: "rr-counter-wrap" }, [counter, total]));
+    panel.appendChild(vu);
+    panel.appendChild(keysRow);
+    panel.appendChild(scrub);
+    root.appendChild(panel);
+
+    var notice = el("div", { class: "rr-restricted", hidden: "" });
+    root.appendChild(notice);
+
+    // The sides, as tape boxes.
+    var shelf = el("div", { class: "rr-tapeboxes", role: "list", "aria-label": "Tape sides" });
+    root.appendChild(shelf);
+    var boxes = sounds.map(function (snd, i) {
+      var b = el("button", { type: "button", class: "rr-tapebox" + (snd.restricted ? " locked" : ""), role: "listitem" }, [
+        el("span", { class: "rr-tapebox-reel", "aria-hidden": "true" }),
+        el("span", { class: "rr-tapebox-label" }, [
+          el("strong", { text: sounds.length > 1 ? "Side " + (i + 1) : "Tape" }),
+          el("span", { text: snd.duration ? rrClock(snd.duration) : "" }),
+          snd.restricted ? el("em", { text: "restricted" }) : null
+        ])
+      ]);
+      b.addEventListener("click", function () { load(i, true); });
+      shelf.appendChild(b);
+      return b;
+    });
+    if (sounds.length < 2) shelf.hidden = true;
+
+    var audio = new Audio();
+    audio.preload = "metadata";
+    var cors = true;
+    audio.crossOrigin = "anonymous";
+    var side = -1, actx = null, analyser = null, buf = null;
+    var angleL = 0, angleR = 0, lastT = 0, level = 0, spinBoost = 0;
+
+    function dur() { return isFinite(audio.duration) && audio.duration ? audio.duration : (sounds[side] && sounds[side].duration) || 0; }
+
+    function load(i, autoplay) {
+      if (i < 0 || i >= sounds.length) return;
+      var snd = sounds[i];
+      side = i;
+      boxes.forEach(function (b, j) { b.setAttribute("aria-current", j === i ? "true" : "false"); });
+      total.textContent = "/ " + rrClock(snd.duration);
+      root.classList.toggle("is-locked", !!snd.restricted);
+      if (snd.restricted) {
+        audio.pause();
+        audio.removeAttribute("src");
+        clear(notice);
+        notice.appendChild(el("strong", { text: snd.failureHeader || "Access restricted" }));
+        notice.appendChild(el("p", { text: snd.failureDescription || "This recording can only be listened to at the IISG." }));
+        if (opts.viewer) notice.appendChild(el("a", { href: opts.viewer, target: "_blank", rel: "noopener", text: "Try it in the Universal Viewer ↗" }));
+        notice.hidden = false;
+        [kBack, kPlay, kStop, kFwd, scrub].forEach(function (k) { k.disabled = true; });
+        draw(0);
+        return;
+      }
+      notice.hidden = true;
+      [kBack, kPlay, kStop, kFwd, scrub].forEach(function (k) { k.disabled = false; });
+      audio.src = snd.url;
+      draw(0);
+      if (autoplay) play();
+    }
+
+    function play() {
+      if (side < 0 || sounds[side].restricted) return;
+      if (cors && !actx && (window.AudioContext || window.webkitAudioContext)) {
+        try {
+          actx = new (window.AudioContext || window.webkitAudioContext)();
+          var src = actx.createMediaElementSource(audio);
+          analyser = actx.createAnalyser();
+          analyser.fftSize = 512;
+          buf = new Uint8Array(analyser.fftSize);
+          src.connect(analyser);
+          analyser.connect(actx.destination);
+        } catch (e) { analyser = null; }
+      }
+      if (actx && actx.state === "suspended") actx.resume();
+      var p = audio.play();
+      if (p && p.catch) p.catch(function () { /* blocked or failed: the error handler says so */ });
+    }
+    function toggle() { if (audio.paused) play(); else audio.pause(); }
+    function seek(d) {
+      if (!dur()) return;
+      audio.currentTime = Math.max(0, Math.min(dur() - 0.25, audio.currentTime + d));
+      spinBoost = d > 0 ? 1 : -1;
+    }
+
+    kPlay.addEventListener("click", toggle);
+    kStop.addEventListener("click", function () { audio.pause(); if (dur()) audio.currentTime = 0; spinBoost = -1; });
+    kBack.addEventListener("click", function () { seek(-10); });
+    kFwd.addEventListener("click", function () { seek(10); });
+    scrub.addEventListener("input", function () { if (dur()) audio.currentTime = dur() * scrub.value / 1000; });
+
+    audio.addEventListener("play", function () { root.classList.add("is-playing"); kPlay.textContent = "❚❚"; kPlay.setAttribute("aria-label", "Pause (space)"); kPlay.title = "Pause (space)"; });
+    audio.addEventListener("pause", function () { root.classList.remove("is-playing"); kPlay.textContent = "▶"; kPlay.setAttribute("aria-label", "Play (space)"); kPlay.title = "Play (space)"; });
+    audio.addEventListener("ended", function () { if (side < sounds.length - 1 && !sounds[side + 1].restricted) load(side + 1, true); });
+    audio.addEventListener("error", function () {
+      if (!audio.getAttribute("src")) return;
+      // The level meter needs CORS; if that is what failed, play without it.
+      if (cors && !actx) {
+        cors = false;
+        audio.removeAttribute("crossorigin");
+        var at = audio.currentTime;
+        audio.src = sounds[side].url;
+        audio.currentTime = at;
+        return;
+      }
+      clear(notice);
+      notice.appendChild(el("strong", { text: "This tape won’t play" }));
+      notice.appendChild(el("p", { text: "IISG’s media server didn’t deliver the recording just now." }));
+      notice.hidden = false;
+    });
+
+    // Tape geometry: what's on each reel follows the position, by area.
+    function radii(p) {
+      var a = RR_REEL_MIN * RR_REEL_MIN, b = RR_REEL_MAX * RR_REEL_MAX;
+      return [Math.sqrt(a + (1 - p) * (b - a)), Math.sqrt(a + p * (b - a))];
+    }
+    function draw(p) {
+      var r = radii(p);
+      woundL.setAttribute("r", r[0].toFixed(1));
+      woundR.setAttribute("r", r[1].toFixed(1));
+      // left reel's underside -> roller -> past the head -> roller -> right reel
+      tapePath.setAttribute("d", "M" + (118 - r[0] * 0.5).toFixed(1) + " " + (96 + r[0] * 0.87).toFixed(1) +
+        " L161 205 L200 209 L260 209 L299 205 L" + (342 + r[1] * 0.5).toFixed(1) + " " + (96 + r[1] * 0.87).toFixed(1));
+      counter.textContent = rrClock(audio.currentTime || 0);
+      if (document.activeElement !== scrub) scrub.value = String(Math.round(p * 1000));
+    }
+
+    function frame(t) {
+      if (!root.isConnected) {
+        // Scene left (another item, the box, a record page): stop the tape.
+        audio.pause();
+        audio.removeAttribute("src");
+        if (actx) actx.close();
+        return;
+      }
+      var dt = lastT ? Math.min(0.1, (t - lastT) / 1000) : 0;
+      lastT = t;
+      var d = dur();
+      var p = d ? Math.min(1, (audio.currentTime || 0) / d) : 0;
+      var r = radii(p);
+      var speed = audio.paused ? 0 : 900;               // tape speed, in SVG units/s
+      if (spinBoost) { speed += spinBoost * 9000; spinBoost *= 0.9; if (Math.abs(spinBoost) < 0.02) spinBoost = 0; }
+      angleL += dt * speed / r[0] * 57.3 * 0.2;
+      angleR += dt * speed / r[1] * 57.3 * 0.2;
+      spinL.setAttribute("transform", "rotate(" + angleL.toFixed(1) + ")");
+      spinR.setAttribute("transform", "rotate(" + angleR.toFixed(1) + ")");
+      draw(p);
+
+      var target = 0;
+      if (!audio.paused) {
+        if (analyser) {
+          analyser.getByteTimeDomainData(buf);
+          var sum = 0;
+          for (var i = 0; i < buf.length; i++) { var v = (buf[i] - 128) / 128; sum += v * v; }
+          target = Math.min(1, Math.sqrt(sum / buf.length) * 4);
+        } else {
+          target = 0.35 + Math.random() * 0.4; // no CORS, no signal: a believable wobble
+        }
+      }
+      level += (target - level) * (target > level ? 0.5 : 0.12);
+      needle.setAttribute("transform", "rotate(" + (-48 + level * 96).toFixed(1) + " 50 52)");
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+    var first = 0;
+    while (first < sounds.length - 1 && sounds[first].restricted) first++;
+    load(first, false);
+
+    return {
+      el: root,
+      keys: {
+        " ": toggle,
+        ArrowLeft: function () { seek(-10); },
+        ArrowRight: function () { seek(10); },
+        Home: function () { if (dur()) audio.currentTime = 0; }
+      }
+    };
   }
 
   // ---- Putting a scene together ----
