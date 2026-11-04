@@ -2270,7 +2270,10 @@
   .rr-pad-path button.current { color: #222 !important; cursor: default; font-weight: 700; }
   .rr-pad-path button.current:hover span:last-child { text-decoration: none; }
   .rr-pad-path .rr-ic { width: 13px; height: 13px; opacity: 0.7; }
-  .rr-pad-rules { margin: 0; padding-left: 18px; }
+  /* two short columns, so the notepad stays low on the request desk */
+  .rr-pad-rules { margin: 0; padding: 0; list-style: none; columns: 2; column-gap: 12px; font-size: 17px; line-height: 26px; }
+  .rr-pad-rules li { break-inside: avoid; padding-left: 10px; text-indent: -10px; }
+  .rr-pad-rules li::before { content: "– "; }
   .rr-pad-tally { margin-top: 6px; color: #3c6e3c; }
   .rr-pad-keys { margin-top: 4px; white-space: pre-line; font-size: 16px; color: #777; line-height: 22px; }
   .rr-pencil {
@@ -9013,7 +9016,7 @@
     } else {
       pad.appendChild(el("div", { class: "rr-pad-head", text: "House rules" }));
       var rules = el("ul", { class: "rr-pad-rules" });
-      ["Pencils only, no pens", "One box on the desk at a time", "Keep folders in their order", "Put back what you take out"].forEach(function (t) {
+      ["Pencils only", "One box at a time", "Keep the order", "Put things back"].forEach(function (t) {
         rules.appendChild(el("li", { text: t }));
       });
       pad.appendChild(rules);
@@ -10231,6 +10234,9 @@
     form.appendChild(results);
     stage.appendChild(form);
 
+    // The library shelf first, then the trolley of archive boxes.
+    var libSlot = el("div", { class: "rr-waiting" });
+    stage.appendChild(libSlot);
     var trolleySlot = el("div", { class: "rr-waiting" });
     stage.appendChild(trolleySlot);
 
@@ -10301,8 +10307,6 @@
       trolleySlot.appendChild(rrTrolleyEl(boxes));
     }).catch(function () { surprise.disabled = true; });
 
-    var libSlot = el("div", { class: "rr-waiting" });
-    stage.appendChild(libSlot);
     rrFetchLibraryPicks().then(function (items) {
       if (gen !== rrGen || !items.length) return;
       libSlot.appendChild(el("h3", { class: "rr-subhead", text: "Up from the library stacks" }));
