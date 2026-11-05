@@ -100,8 +100,10 @@ URL for a differently-hosted store.
   numbers in the data: what is drawn as a box, bundle, folder, letter or
   volume comes from the node's place in the tree and its
   `iisgv:physicalDescription` ("1 map", "3 Briefe", "1 doos", ...).
-  The library comes up too: the request slip searches digitized
-  catalogue records as well as archives, and a library shelf on the
+  The library comes up too: the request slip finds digitized titles at
+  once, then searches the whole catalogue -- titles, descriptions and
+  authors' names. Items that aren't digitized come up as catalogue cards
+  that open their record page instead of the desk. A library shelf on the
   request desk holds a random mix. A library record has no boxes or
   folders -- it arrives on the desk as what it is: a cloth-bound book
   (several manifests are its volumes, as spines to pick from), a
