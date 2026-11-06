@@ -2877,6 +2877,9 @@
   .rr-slipbtn-t { font-weight: 600; font-size: 14px; }
   .rr-slipbtn-m { font-size: 12px; color: var(--rr-ink-soft); }
   .rr-slipbtn.has-scans .rr-slipbtn-no::after { content: " ●"; color: var(--rr-scan); }
+  .rr-slipbtn-why { grid-column: 2; font-size: 12px; color: var(--rr-ink-soft); font-style: italic; }
+  .rr-slipbtn.is-catalogue { background: #fbf7ea; border-style: dashed; }
+  .rr-slipbtn.is-catalogue .rr-slipbtn-no { opacity: 0.7; }
   .rr-slips-text { display: flex; flex-direction: column; gap: 6px; }
   .rr-slips-text:empty { display: none; }
   .rr-slipcard { display: flex; flex-direction: column; }
@@ -10412,6 +10415,46 @@
     return sparql(q).then(rrLibRows);
   }
 
+  // The whole library catalogue, digitized or not: titles, descriptions
+  // and authors' names, every word in the same text. Digitized items
+  // first, then title matches. A second, small query fills in dates and
+  // kinds for the 40 that made it.
+  function rrSearchCatalogue(term) {
+    var words = rrTermWords(term);
+    if (!words.length) return Promise.resolve([]);
+    var q = "SELECT ?s (MAX(?dg) AS ?dig) (MAX(?tm) AS ?title) (SAMPLE(CONCAT(?via, \"\\t\", STR(?o))) AS ?eg) WHERE {\n" +
+      "  GRAPH <https://iisg.amsterdam/graph/biblio> {\n" +
+      "    { ?s <https://schema.org/name> ?o . BIND(\"t\" AS ?via) }\n" +
+      "    UNION { ?s <https://schema.org/description> ?o . BIND(\"d\" AS ?via) }\n" +
+      "    UNION { ?s <https://schema.org/creator> ?p . ?p <https://schema.org/name> ?o . BIND(\"a\" AS ?via) }\n" +
+      words.map(function (w) { return "    FILTER(CONTAINS(LCASE(?o), \"" + escLiteral(w) + "\"))\n"; }).join("") +
+      "    FILTER(STRSTARTS(STR(?s), \"https://iisg.amsterdam/id/item/\"))\n" +
+      "  }\n" +
+      "  OPTIONAL { ?s <https://iisg.amsterdam/vocab/iiifManifest> ?m }\n" +
+      "  BIND(IF(BOUND(?m), 1, 0) AS ?dg) BIND(IF(?via = \"t\", 1, 0) AS ?tm)\n" +
+      "} GROUP BY ?s ORDER BY DESC(?dig) DESC(?title) LIMIT 40";
+    return sparql(q).then(function (rows) {
+      if (!rows.length) return [];
+      var hits = rows.map(function (r) {
+        var eg = r.eg.value, tab = eg.indexOf("\t");
+        return { uri: r.s.value, digitized: r.dig.value === "1", via: eg.slice(0, tab), text: eg.slice(tab + 1) };
+      });
+      var q2 = RR_LIB_SELECT +
+        "  VALUES ?s { " + hits.map(function (h) { return iriRef(h.uri); }).join(" ") + " }\n" +
+        "  ?s (<http://schema.org/name>|<https://schema.org/name>) ?n .\n" + RR_LIB_EXTRA +
+        "} GROUP BY ?s";
+      return sparql(q2).then(rrLibRows).then(function (items) {
+        var by = {};
+        items.forEach(function (it) { by[it.uri] = it; });
+        return hits.filter(function (h) { return by[h.uri]; }).map(function (h) {
+          var it = by[h.uri];
+          it.digitized = h.digitized; it.via = h.via; it.text = h.text;
+          return it;
+        });
+      });
+    });
+  }
+
   function rrFetchLibraryPicks() {
     var others = RR_LIB_SELECT + RR_LIB_ROW + "  ?s a ?t0 . FILTER(?t0 != <https://schema.org/Book>)\n" + RR_LIB_EXTRA + "} GROUP BY ?s";
     var books = RR_LIB_SELECT + RR_LIB_ROW + "  ?s a <https://schema.org/Book> .\n" + RR_LIB_EXTRA +
@@ -10582,7 +10625,7 @@
 
     var form = el("form", { class: "rr-request", role: "search" });
     form.appendChild(el("div", { class: "rr-request-head" }, [el("strong", { text: "Request slip" }), el("span", { text: "No. " + (1000 + Math.floor(Math.random() * 9000)) })]));
-    var label = el("label", { for: "rr-request-input", text: "A name, title, word or call number — the finding aids are searched too" });
+    var label = el("label", { for: "rr-request-input", text: "A name, title, word or call number — finding aids and the library catalogue are searched too" });
     var input = el("input", { id: "rr-request-input", type: "text", placeholder: "e.g. Bakunin, ARCH00018, hongerstaking, railway strike", autocomplete: "off", spellcheck: "false" });
     var submit = el("button", { type: "submit", class: "rr-btn primary", text: "Request" });
     var surprise = el("button", { type: "button", class: "rr-btn", text: "Surprise me" });
@@ -10612,6 +10655,62 @@
       return b;
     }
 
+    // Why a catalogue item came up when it wasn't its title: its author,
+    // or a stretch of its description.
+    function whyEl(it, words) {
+      if (it.via === "a") return el("span", { class: "rr-slipbtn-why", text: "by " + tidyName(it.text) });
+      if (it.via === "d") { var s = rrSnippetEl(it.text, words); s.classList.add("rr-slipbtn-why"); return s; }
+      return null;
+    }
+
+    // A digitized library item: opens on the desk.
+    function libSlipEl(c, words) {
+      var b = el("button", { type: "button", class: "rr-slipbtn has-scans is-library" }, [
+        el("span", { class: "rr-slipbtn-no" }, [rrIcon(c.kind), document.createTextNode(" " + RR_KIND_NAMES[c.kind])]),
+        el("span", { class: "rr-slipbtn-t", text: c.label }),
+        el("span", { class: "rr-slipbtn-m", text: [c.dates, "item " + rrCallNumber(c.uri)].filter(Boolean).join(" · ") }),
+        words ? whyEl(c, words) : null
+      ]);
+      b.addEventListener("click", function () { readingNavigate(c.uri); });
+      return b;
+    }
+
+    // Not digitized: nothing to read at the desk, so a catalogue card that
+    // opens the item's record instead.
+    function catalogueSlipEl(it, words) {
+      var b = el("button", { type: "button", class: "rr-slipbtn is-library is-catalogue", title: "Not digitized: open the catalogue record" }, [
+        el("span", { class: "rr-slipbtn-no" }, [rrIcon(it.kind), document.createTextNode(" " + RR_KIND_NAMES[it.kind])]),
+        el("span", { class: "rr-slipbtn-t", text: it.label }),
+        el("span", { class: "rr-slipbtn-m", text: [it.dates, "not digitized", "catalogue record →"].filter(Boolean).join(" · ") }),
+        whyEl(it, words)
+      ]);
+      b.addEventListener("click", function () { navigate(it.uri); });
+      return b;
+    }
+
+    // An archive whose finding aid mentions the words, with a strip that
+    // goes straight to the folder or file they were found in.
+    function textHitEl(h, words) {
+      var sc = scannedByRoot[h.uri];
+      var b = el("button", { type: "button", class: "rr-slipbtn" }, [
+        el("span", { class: "rr-slipbtn-no", text: rrCallNumber(h.uri) }),
+        el("span", { class: "rr-slipbtn-t", text: h.label }),
+        el("span", { class: "rr-slipbtn-m", text: [fmtNum(h.hits) + (h.hits === 1 ? " match" : " matches"), sc ? fmtNum(sc) + " scanned" : "not scanned"].join(" · ") })
+      ]);
+      if (sc) b.classList.add("has-scans");
+      b.addEventListener("click", function () { readingNavigate(h.uri); });
+      var bare = function (s) { return s.toLowerCase().replace(/[\s.,;:]+$/, ""); };
+      var at = [h.hitNo ? (/^[\d.\s-]+$/.test(h.hitNo) ? "no. " : "") + h.hitNo : null,
+        h.hitName && bare(h.hitName) !== bare(h.text) ? "“" + h.hitName + "”" : null].filter(Boolean).join(" ");
+      var where = h.hit === h.uri ? "In the archive’s description" : (at ? "In " + at : "In the inventory") + " →";
+      var go = el("button", { type: "button", class: "rr-hitbtn", title: "Open where it’s found" }, [
+        el("span", { class: "rr-hitbtn-where", text: where }),
+        rrSnippetEl(h.text, words)
+      ]);
+      go.addEventListener("click", function () { readingNavigate(h.hit); });
+      return el("div", { class: "rr-slipcard" }, [b, go]);
+    }
+
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       var term = input.value.trim();
@@ -10619,12 +10718,28 @@
       clear(results);
       results.appendChild(el("div", { class: "rr-slips-note", text: "The archivist is looking…" }));
       var ask = ++slipAsk;
-      // The full text takes a few seconds; the titles come back at once.
-      var textSlot = el("div", { class: "rr-slips-text" }, [el("div", { class: "rr-slips-note", text: "Searching the finding aids for these words as well…" })]);
-      var textP = /^(ARCH|COLL)\s*\d+$/i.test(term) ? Promise.resolve([]) : rrSearchFullText(term);
+      var live = function () { return gen === rrGen && ask === slipAsk; };
+      // Titles come back at once; the finding aids' full text and the
+      // whole library catalogue take a few seconds and fill in below.
+      var callNo = /^(ARCH|COLL)\s*\d+$/i.test(term);
       var namesP = Promise.all([rrSearchCollections(term), rrSearchLibrary(term).catch(function () { return []; })]);
+      var textP = callNo ? Promise.resolve([]) : rrSearchFullText(term);
+      var catP = callNo ? Promise.resolve([]) : rrSearchCatalogue(term);
+      var textSlot = el("div", { class: "rr-slips-text" }, [el("div", { class: "rr-slips-note", text: "Searching the finding aids for these words as well…" })]);
+      var catSlot = el("div", { class: "rr-slips-text" }, [el("div", { class: "rr-slips-note", text: "…and the whole library catalogue." })]);
+      var words = rrTermWords(term);
+      var shownAny = false, left = 3, failed = 0;
+      function settled(ok) {
+        if (!ok) failed++;
+        if (--left || shownAny || !live()) return;
+        results.appendChild(el("div", { class: "rr-slips-note", text: failed
+          ? "Nothing found so far, but not every part of the search answered. Try again in a moment."
+          : "Nothing found. Try a person, organisation, place, subject or call number." }));
+      }
+      var shownArchives = [], shownItems = [];
+
       namesP.then(function (res) {
-        if (gen !== rrGen || ask !== slipAsk) return;
+        if (!live()) return;
         var found = res[0], books = res[1];
         clear(results);
         if (found.length) {
@@ -10635,58 +10750,43 @@
         }
         if (books.length) {
           results.appendChild(el("div", { class: "rr-slips-group", text: "Library (digitized)" }));
-          books.forEach(function (c) {
-            var b = el("button", { type: "button", class: "rr-slipbtn has-scans is-library" }, [
-              el("span", { class: "rr-slipbtn-no" }, [rrIcon(c.kind), document.createTextNode(" " + RR_KIND_NAMES[c.kind])]),
-              el("span", { class: "rr-slipbtn-t", text: c.label }),
-              el("span", { class: "rr-slipbtn-m", text: [c.dates, "item " + rrCallNumber(c.uri)].filter(Boolean).join(" · ") })
-            ]);
-            b.addEventListener("click", function () { readingNavigate(c.uri); });
-            results.appendChild(b);
-          });
+          books.forEach(function (c) { results.appendChild(libSlipEl(c)); });
         }
+        shownArchives = found.map(function (c) { return c.uri; });
+        shownItems = books.map(function (c) { return c.uri; });
+        shownAny = found.length + books.length > 0;
         results.appendChild(textSlot);
-        return textP.then(function (hits) {
-          if (gen !== rrGen || ask !== slipAsk) return;
+        results.appendChild(catSlot);
+        settled(true);
+
+        textP.then(function (hits) {
+          if (!live()) return;
           clear(textSlot);
           // archives already found by their name are listed above
-          var shown = found.map(function (c) { return c.uri; });
-          hits = hits.filter(function (h) { return shown.indexOf(h.uri) === -1; });
-          if (!hits.length) {
-            if (!found.length && !books.length) textSlot.appendChild(el("div", { class: "rr-slips-note", text: "Nothing found. Try a person, organisation, place, subject or call number." }));
-            return;
+          hits = hits.filter(function (h) { return shownArchives.indexOf(h.uri) === -1; });
+          if (hits.length) {
+            shownAny = true;
+            textSlot.appendChild(el("div", { class: "rr-slips-group", text: "Mentioned in the finding aids" }));
+            hits.forEach(function (h) { textSlot.appendChild(textHitEl(h, words)); });
+            if (hits.length >= 30) textSlot.appendChild(el("div", { class: "rr-slips-note", text: "The 30 archives with the most matches. Add a word to narrow it down." }));
           }
-          textSlot.appendChild(el("div", { class: "rr-slips-group", text: "Mentioned in the finding aids" }));
-          var words = rrTermWords(term);
-          hits.forEach(function (h) {
-            var sc = scannedByRoot[h.uri];
-            var b = el("button", { type: "button", class: "rr-slipbtn" }, [
-              el("span", { class: "rr-slipbtn-no", text: rrCallNumber(h.uri) }),
-              el("span", { class: "rr-slipbtn-t", text: h.label }),
-              el("span", { class: "rr-slipbtn-m", text: [fmtNum(h.hits) + (h.hits === 1 ? " match" : " matches"), sc ? fmtNum(sc) + " scanned" : "not scanned"].join(" · ") })
-            ]);
-            if (sc) b.classList.add("has-scans");
-            b.addEventListener("click", function () { readingNavigate(h.uri); });
-            // straight to the folder or file the words were found in
-            var bare = function (s) { return s.toLowerCase().replace(/[\s.,;:]+$/, ""); };
-            var at = [h.hitNo ? (/^[\d.\s-]+$/.test(h.hitNo) ? "no. " : "") + h.hitNo : null,
-              h.hitName && bare(h.hitName) !== bare(h.text) ? "“" + h.hitName + "”" : null].filter(Boolean).join(" ");
-            var where = h.hit === h.uri ? "In the archive’s description" : (at ? "In " + at : "In the inventory") + " →";
-            var go = el("button", { type: "button", class: "rr-hitbtn", title: "Open where it’s found" }, [
-              el("span", { class: "rr-hitbtn-where", text: where }),
-              rrSnippetEl(h.text, words)
-            ]);
-            go.addEventListener("click", function () { readingNavigate(h.hit); });
-            textSlot.appendChild(el("div", { class: "rr-slipcard" }, [b, go]));
-          });
-          if (hits.length >= 30) textSlot.appendChild(el("div", { class: "rr-slips-note", text: "The 30 archives with the most matches. Add a word to narrow it down." }));
-        }, function () {
-          if (gen !== rrGen || ask !== slipAsk) return;
-          clear(textSlot);
-          if (!found.length && !books.length) textSlot.appendChild(el("div", { class: "rr-slips-note", text: "Nothing by that name, and the full-text search didn’t answer. Try again in a moment." }));
-        });
+          settled(true);
+        }, function () { if (live()) { clear(textSlot); settled(false); } });
+
+        catP.then(function (items) {
+          if (!live()) return;
+          clear(catSlot);
+          items = items.filter(function (it) { return shownItems.indexOf(it.uri) === -1; });
+          if (items.length) {
+            shownAny = true;
+            catSlot.appendChild(el("div", { class: "rr-slips-group", text: "In the library catalogue" }));
+            items.forEach(function (it) { catSlot.appendChild(it.digitized ? libSlipEl(it, words) : catalogueSlipEl(it, words)); });
+            if (items.length >= 40) catSlot.appendChild(el("div", { class: "rr-slips-note", text: "The first 40, digitized ones first. Add a word to narrow it down." }));
+          }
+          settled(true);
+        }, function () { if (live()) { clear(catSlot); settled(false); } });
       }).catch(function () {
-        if (gen !== rrGen || ask !== slipAsk) return;
+        if (!live()) return;
         clear(results);
         results.appendChild(el("div", { class: "rr-slips-note", text: "The request desk can’t be reached right now." }));
       });
